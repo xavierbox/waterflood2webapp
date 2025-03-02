@@ -1,0 +1,9 @@
+Flask
+gunicorn
+Werkzeug
+
+azure-storage-blob
+azure-identity
+python-dotenv 
+flask-wtf
+
