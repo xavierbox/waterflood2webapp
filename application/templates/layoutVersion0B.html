@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Main Layout Component</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+     <!-- Add Plotly CDN -->
+     <script src='https://cdn.plot.ly/plotly-3.0.0.min.js'></script>
+     <!--script src = "components.js"></script-->
+     <!--script src= "app_components.js"></script-->
+
+     <script src="{{ url_for('static', filename='components.js') }}"></script>
+     <script src="{{ url_for('static', filename='app_components.js') }}"></script>
+     <script src="{{ url_for('static', filename='support.js') }}"></script>
+     <link href ="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
+
+ <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  
+
+<style>
+        .hidden{
+            display: none;
+        }
+
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background-color: lightgray;
+            padding: 10px;
+            border-radius: 5px;
+            position: fixed;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .btn-custom {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            border-radius: 0;
+            background-color: transparent;
+            border: 1px solid gray;
+            border-left: 3px solid gray;
+            border-right: 3px solid gray;
+            color: inherit;
+        }
+        .btn-custom i {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+ .svg-container{
+
+    height: 100%;
+    width:100%;
+ }
+
+ .js-plotly-plot{
+    height: 100%;
+    width:100%;
+ }
+
+
+ td { font-weight:bold; color: blueviolet; font-size:0.75em; }
+ td:hover { background-color: lightgrey; }
+
+ .scrollable-list {
+      width: 100%;
+      height: 100%;
+      overflow-y: scroll;
+      box-sizing: border-box;
+      padding: 10px;
+      border: 1px solid #ccc;
+      background-color: #f9f9f9;
+    }
+
+    .scrollable-list ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .scrollable-list li {
+      padding: 8px;
+      border-bottom: 1px solid #ddd;
+    }
+
+.pane{
+    overflow:None;
+    background-color: transparent;
+    border: 2px solid green;
+    padding: 10px;
+    }
+	
+         
+              
+
+                    .columns-container {
+                        display: flex;
+						height: calc(100vh - 66px);
+						border: 2px solid red;
+						
+                    }
+
+                    .column {
+                        display: flex;
+                        flex-direction: column;
+                        border: 2px solid black;
+						height:100%;
+		 
+                    }
+
+                    .separator {
+                        width: 8px;
+                        background-color: grey;
+                        cursor: ew-resize;
+                        position: absolute;
+                        top: 0;
+                        bottom: 0;
+                        z-index: 1;
+                    }
+
+                    .separator:hover {
+                        background-color: black;
+                    }
+
+                    .handler:hover {
+                        background-color: black;
+                        height: 10px;
+                    }
+
+                    .handler {
+                        height: 10px;
+                        background-color: grey;
+                    }
+	
+</style>
+
+
+
+
+</head>
+
+<body>
+    <script>function Id(id){return document.getElementById(id)}</script>
+
+
+    <div id="top-right-pagination">
+        <ul class="pagination">
+          <li class="page-item">
+            <a id='field-tab-button' class="field-tab btn-sm page-link">Field</a>
+          </li>
+
+          <li class="page-item">
+            <a id='sector-tab-button' class="field-tab btn-sm  page-link">Sector </a>
+          </li>
+          <li class="page-item">
+            <a id='activity-tab-button'class="field-tab btn-sm page-link">Activity</a>
+          </li>
+        </ul>
+     
+        <div id="field-charts-container" class="card field-chart-container">
+        <p>Field charts go here...</p></div>
+        <div id="sector-charts-container" class="card field-chart-container">
+        <p>Sector charts go here...</p></div>
+        <div id="activity-charts-container" class="card field-chart-container">
+        <p>Activity charts go here...</p></div>        
+        <script>
+            let items = document.querySelectorAll('.field-tab');
+            items.forEach((item) => {
+                item.addEventListener('click', function(){
+                    
+                    let tabs = document.querySelectorAll('.field-chart-container'); 
+                    tabs.forEach((tab) => {
+                        tab.style.display = 'none';
+                    });
+                    let tab_id = this.id.split('-')[0]+'-charts-container';
+                    document.getElementById(tab_id).style.display = 'block';
+                    
+
+                });
+            }); 
+        </script>
+    </div>
+
+    <div id='side-bar-top' class="abg-secondary h50  p-3">
+          
+        <button id='data-tab1' class="btn btn-sm" onclick="showCard('data-selection-card',this)">Data</button>
+        <button class="btn btn-sm" onclick="showCard('studies-selector-card',this)">Studies</button>
+        <button class="btn btn-sm" onclick="showCard('views-selector-card',this)">Views</button>
+        <!--button class="btn btn-sm" onclick="showCard('workflows-selector-card',this)">Workflows</button-->
+
+
+        <div class="card" id="data-selection-card">
+            <div>
+                <p class="subtitle">Reservoir management unit</p>
+                <combobox-component id="reservoir-unit-selector"></combobox-component>
+            </div>
+            <div>
+   
+                <details><summary style="font-weight: bold;font-size: 1.1em;">Sectors</summary>
+                <two-column-checkbox-list id="sector-selector"></two-column-checkbox-list>
+               </details>
+            </div>
+            <div>
+                <p class="subtitle">Time frame</p>
+                <label for="start-date" class="form-label">Start:</label>
+                <input type="date" id="start-date" name="start-date" class="form-control mb-2">
+                <label for="end-date" class="form-label">End:</label>
+                <input type="date" id="end-date" name="end-date" class="form-control">
+        
+        
+                <p></p>
+                Displace time frame and load data 
+                <div class="d-flex align-items-center gap-2">
+                    
+                    <button class="btn btn-primary">
+                        <i class="fas fa-caret-left"></i>
+                    </button>
+                    <input type="number" id="range-value" name="range-value" class="form-control text-center" min="1" max="180" value="1" style="width: 80px;">
+                    <button class="btn btn-primary">
+                        <i class="fas fa-caret-right"></i>
+                    </button>
+                </div>
+        
+            </div>
+            <hr>
+            <button id='data-selection-button' class="btn btn-primary">Select</button>
+        
+        
+        </div>
+        <div class="card" id="studies-selector-card">
+            <stringlist-component  
+            checkboxes=true 
+            selection_mode='single' 
+            id='study-selector'>
+        </stringlist-component>
+            <button class="btn btn-primary">Load</button>
+        </div> 
+     
+        <div class="card" id="views-selector-card">
+            Other views card goes here....
+        </div>
+          
+
+    </div>
+
+    <div id='side-bar-bottom'  class="h50 p-3 abg-secondary" astyle="top: 50%;">
+        
+        <p class="subtitle">Workflows</p>
+        <div class="card" id="workflows-selector-card">
+            <stringlist-component id='workflow-selector' checkboxes=true 
+            notitle='Workflows' selection_mode='single'> 
+            </stringlist-component>
+        </div>
+    </div>
+
+
+    <!-- Sticky Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+
+        <button id="check">dsdasdf</button>
+        <script>
+            Id('check').addEventListener('click', function(){
+                alert('clicked');
+                let extra_stuff = Id('extra-stuff');
+                let field_stuff = Id('field-stuff');
+                
+                if(extra_stuff.classList.contains('hidden')){
+                    extra_stuff.classList.remove('hidden');
+                    field_stuff.classList.add('hidden');
+                }else{  
+                    extra_stuff.classList.add('hidden');
+                    field_stuff.classList.remove('hidden');
+                }
+                    
+            });
+        </script>
+        
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">My Site</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a id='initialize-app-button'class="nav-link active" aria-current="page">Initialize</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Pricing</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div style="position: relative;top: 57px;" >
+        <div class="row">
+                <!--div class="col-2" style="background-color: black; 4height: 100vh;">
+                    Left menu
+                </div-->
+
+            <div id='field-stuff' class="col-12">
+            <three-column-main-layout id = "main-layout"></three-column-main-layout>
+            </div>
+
+            <div id='extra-stuff' class="col-12 hidden">
+                <div id = "extra-layout">  I am hidden </div>
+            </div>
+    
+
+            <div class="row bg-primary" style="height: 100vh;">
+                <p>sdfdsfdf</p>
+                <p>sdfdsfdf</p>
+                <p>sdfdsfdf</p>
+                <p>sdfdsfdf</p>
+                <p>sdfdsfdf</p>
+                <p>sdfdsfdf</p>
+                <p>sdfdsfdf</p> 
+            </div>
+            
+        </div>
+    </div>
+
+	<div class="bg-primary caontainer-fluid"  >
+      
+	</div>
+ 
+
+
+<script id="initialize-app">
+    let layout = Id('main-layout');
+
+    function Id( id ) { return document.getElementById(id); }    
+
+
+
+    /*
+    const data = [{
+                        x: [1, 2, 3, 4, 5],
+                        y: [10, 11, 12, 13, 14],
+                        mode: 'markers',
+                        type: 'scatter'
+                    }];
+
+    let inner_offset = 60;
+    const chart_layout = {
+                        title: 'Scatter Plot Example',
+                        
+                        //width: layout_placeholder.offsetWidth ,
+                        //height: layout_placeholder.offsetHeight,
+                        autosize: true,
+                        margin: {
+                        l: inner_offset,
+                        r: inner_offset,
+                        b: inner_offset,
+                        t: inner_offset   
+                    },
+                        xaxis: { title: 'X Axis' },
+                        yaxis: { title: 'Y Axis' },
+                        responsive: true
+                    };
+    const config = {responsive: true};
+
+
+   
+    document.getElementById('add-studies').addEventListener('click', ()=>{updateStudyList();});
+    document.getElementById('add-chart1').addEventListener('click', ()=>{
+        let where = 'middle-top'; 
+        const layoutComponent = document.getElementById('main-layout');
+        let layout_placeholder =   layoutComponent.get_pane(where)
+        
+        let lay = {
+            width: layout_placeholder.offsetWidth ,
+            height: layout_placeholder.offsetHeight
+        }
+        lay = Object.assign(lay, chart_layout);  
+    
+
+        addDynamicPlotlyChart('middle','top', data, lay, config );
+    });
+    document.getElementById('add-chart2').addEventListener('click', ()=>{
+    
+        let where = 'middle-bottom'; 
+        const layoutComponent = document.getElementById('main-layout');
+        let layout_placeholder =   layoutComponent.get_pane(where)
+        
+        let lay = {
+            width: layout_placeholder.offsetWidth ,
+            height: layout_placeholder.offsetHeight
+        }
+        lay = Object.assign(lay, chart_layout);  
+    
+
+        addDynamicPlotlyChart('middle','bottom', data, lay, config );
+    });
+    document.getElementById('add-locs-chart').addEventListener('click', ()=>{
+    
+
+        let lat = [ 28.952776  , 29.152776  , 28.84913887,28.891386 ];
+        let lon = [ 47.82002664, 47.82002664, 47.93671361,47.9867127 ];
+        let locations_data = [
+                {
+                name:'Injectors',
+                type: "scattermap", mode: 'markers+text', 
+                text: ['AABG-0739-1_I', 'BBBG-0739B_I', 'CCBG-0757-1_I', 'DDBG-0757-1_I' ],
+                lon: [47.92373148, 47.6673148, 47.97478712, 47.9481827 ],
+                lat: [28.8484854 , 28.55384854 , 28.8856267 , 28.757285  ],
+                marker: { color: 'blue',//['black', 'blue', 'orange','cyan'],
+                        size: 10 , 
+                        //symbol: 'square'
+                        }, 
+                },
+                    {
+                name:'Producers',
+                type: "scattermap", mode: 'markers+text', 
+                text: ['AABG-0739-1_I', 'BBBG-0739B_I', 'CCBG-0757-1_I', 'DDBG-0757-1_I' ],
+                lon: [47.94373148, 47.64373148, 47.93478712, 47.94351827 ],
+                lat: [28.8384854 , 28.56384854 , 28.8456267 , 28.8503285  ],
+                marker: { color: 'red',//['black', 'blue', 'orange','cyan'],
+                        size: 14 , 
+                        //symbol: 'square'
+                        }, 
+                }
+            ];
+        let locations_layout = {
+
+            shapes : [{
+                type: 'line',    
+                //xref: 'map',
+                //yref: 'map',
+                lat0: 28.952776,
+                lon0:  47.82002664,
+                lat1: 29.152776,
+                lon1: 47.82002664,
+                line: {
+                    color: 'rgb(128, 0, 128)',
+                    width: 4,
+                    dash: 'dot'
+                }
+                }
+            ], 
+
+        //dragmode: "zoom",              
+        fitbounds:"locations",     
+        map: {'bounds': {'east': 48.14373147920834,
+                            'north': 29.253362328845775,
+                            'south': 28.138454875171064,
+                            'west': 47.62002664049844},
+                        'center': {'lat': 28.846461299452603,
+                                    'lon': 47.9361300152004},
+                        'domain': {'x': [0.0, 1.0], 'y': [0.0, 1.0]},
+                        'style': 'open-street-map',
+                        'zoom': 8},
+                margin: { r: 0, t: 0, b: 0, l: 0 }
+            };
+    
+        let div_id = 'right-top'//example1';
+        //Plotly.newPlot(div_id, data11, layout11);
+            addDynamicPlotlyChart('right','top', locations_data, locations_layout,config ); 
+
+        
+    });
+    */
+    /*layout.addEventListener('pane-resized', (evt) =>{
+
+        console.log( evt.detail );
+    }); */
+
+
+    Id('initialize-app-button').addEventListener('click', function(){
+        alert('Initializing...');
+
+        let mock = false
+        if( !mock ){
+            let iurl = 'get_project_description'
+            get_server(iurl, 'GET', {})
+            .then( (resp) =>{
+                console.log('get_project_description returned', resp);
+                populate_project_description(resp.data);
+
+
+            })
+            .catch ((error) =>{
+                console.log(error);
+            });
+        }
+
+        Id('field-tab-button').click()
+        Id('data-tab1').click()
+        layout.set('left-top',Id('side-bar-top'));
+        layout.set('left-bottom',Id('side-bar-bottom'));
+        layout.set('right-top',Id('top-right-pagination'));
+     
+
+        return 
+
+        //let studies = new QuickJS_Stringlist();
+        //let container = Id('side-bar-top');
+        //container.innerHTML = '';
+        //container.appendChild(studies);
+        //studies.set_data( data['studies'] );
+        //studies.set_title('Studies');
+        //Id('reservoir-unit-selector').setData(['Unit 1', 'Unit 2', 'Unit 3', 'Unit 4']);
+        //Id('sector-selector').setItems('Sector ', 7 );
+        //Id('end-date').value = new Date('2022-02-16')//.toISOString().slice(0, 16);
+        //Id('start-date').value = new Date('2017-12-26')//.toISOString().slice(0, 16);
+        //Id('reservoir-unit-selector').setValue('Unit 2');
+        //Id('study-selector').set_data(data['studies']);
+        //Id('workflow-selector').set_data(data['workflows']);
+        //Id('field-tab-button').addEventListener('click', function(){alert('Field tab clicked');});
+        //container = Id('side-bar-bottom');
+        
+
+    });
+
+    Id('data-selection-button').addEventListener('click', function(){
+            //alert('Getting field charts...');
+            let read_data = get_project_data_selection();
+            
+            if(read_data!=undefined){
+                console.log('Data read:', read_data);
+
+                get_server('get_field_charts','POST', JSON.stringify(read_data))
+                .then( (resp) =>{
+                    populate_field_plots(resp.data);
+                })  
+                .catch ((error) =>{
+                    console.log(error);
+                });
+
+
+            }
+
+
+        }); 
+
+    let resizePending = false;
+    window.addEventListener('resize', () => {resizePending = true;});
+    layout.addEventListener('pane-resized', () => {resizePending = true;});
+    window.addEventListener('mouseup', () => { 
+        
+        console.log('mouseup...', resizePending);
+        if(resizePending == true){
+        
+            let containers = document.querySelectorAll('.field-chart-container');
+            containers.forEach((container) => {
+
+                console.log('container:', container.offsetWidth, container.offsetHeight);
+                let parent = container.parentElement;
+                console.log('parent container:', parent.id,parent.offsetWidth, parent.offsetHeight);
+                
+
+                let plots = container.querySelectorAll('.js-plotly-plot');
+                if(plots != null){
+                    
+                    for(let plt of plots){
+                    try{
+                    const layout = plt.layout;
+                    console.log('layout', layout);
+                    layout['width'] = parent.offsetWidth;
+                    layout['autosize'] = true;
+                    Plotly.Plots.resize(plt);
+                    }catch(e){
+                        console.log('Error resizing plot:', e);
+                    }}
+
+                }
+            }); 
+
+            resizePending = false;
+        }
+    });
+  
+
+    /*let app_layout = Id('main-layout');
+    app_layout.addEventListener('pane-resized', (evt)=>
+    {
+        console.log( evt.detail );
+    });*/
+
+
+</script>
+   
+
+
+
+</body>
+</html>

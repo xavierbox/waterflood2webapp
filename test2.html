@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Plotly Subplots with Shared X-axis</title>
+    <script src='https://cdn.plot.ly/plotly-3.0.0.min.js'></script>
+</head>
+
+<script>
+    function Id( id ){ return document.getElementById(id); }
+
+</script>
+
+<body>
+    <div class='chart-container plot-container-app'   style="background-color: aquamarine; height: 100vh;">
+    <div id="plot" style="background-color: blue;"></div>
+    </div>
+
+    <script>
+        // Sample data for the plots
+        const x = [1, 2, 3, 4, 5];
+        const y1 = [10, 15, 13, 17, 14];
+        const y2 = [5, 10, 7, 12, 9];
+        const y3 = [2, 4, 5, 8, 6];
+
+        const y1b = [13, 12, 13, 11, 16];
+
+        // Define the individual traces
+        const trace1 = {
+            x: x,
+            y: y1,
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'Plot 1',
+            xaxis: 'x1',
+            yaxis: 'y1',
+            name: 'Sector1',legendgroup: 'group1'
+        };
+        const trace1b = {
+            x: x,
+            y: y1b,
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'Plot 1',
+            xaxis: 'x1',
+            yaxis: 'y1',name: 'Sector2',legendgroup: 'group2' 
+        };
+        const trace2 = {
+            x: x,
+            y: y2,
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'Plot 2',
+            xaxis: 'x2',
+            yaxis: 'y2',name: 'Sector1',legendgroup: 'group1',showlegend: false  
+        };
+        const trace2b = {
+            x: x,
+            y: y1b,
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'Plot 2',
+            xaxis: 'x2',
+            yaxis: 'y2',name: 'Sector2',legendgroup: 'group2',showlegend: false  
+        };
+        const trace3 = {
+            x: x,
+            y: y3,
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'Plot 3',
+            xaxis: 'x3',
+            yaxis: 'y3',name: 'Sector1',legendgroup: 'group1' ,showlegend: false 
+        };
+        const trace3b = {
+            x: x,
+            y: y1b,
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'Plot 2',
+            xaxis: 'x3',
+            yaxis: 'y3',name: 'Sector2',legendgroup: 'group2',showlegend: false  
+        };
+
+
+        const layout = {
+            title: {text:'Plotly Subplots with Shared X-axis'},
+            grid: {rows: 1, columns: 3, pattern: 'independent'},
+            xaxis1: {domain: [0, 0.28], title: {text:'X Axis'}},
+            yaxis1: { title:{text: 'Y1'}},
+            
+            xaxis2: {domain: [0.37, 0.65], title: {text:'X Axis'}},
+            yaxis2: { title:{text: 'Y2'}},
+
+            xaxis3: {domain: [0.72, 1], title: 'X Axis'},
+            yaxis3: { title:{text: 'Y3'}},
+
+            legend: {
+                orientation: "v",
+                x: -0.1,   // Move legend to the left
+                y: 1,      // Align legend to the top
+                xanchor: "right", 
+                yanchor: "top"
+            },
+            margin: {l: 50},  // Increase left margin to accommodate the legend
+
+            annotations: [
+                {
+                    text: "Subtitle 1",
+                    x: 0.1, y: 1.15,  // Position above first subplot
+                    xref: "paper", yref: "paper",
+                    showarrow: false,
+                    font: {size: 14, color: "gray"}
+                },
+                {
+                    text: "Subtitle 1",
+                    x: 0.5, y: 1.15,  // Position above first subplot
+                    xref: "paper", yref: "paper",
+                    showarrow: false,
+                    font: {size: 14, color: "gray"}
+                },
+                {
+                    text: "Subtitle 1",
+                    x: 0.9, y: 1.15,  // Position above first subplot
+                    xref: "paper", yref: "paper",
+                    showarrow: false,
+                    font: {size: 14, color: "gray"}
+                }]
+
+        };
+
+        // Render the plot
+        //Plotly.newPlot('plot', [trace1,trace1b, trace2,trace2b, trace3, trace3b ], layout);
+
+        // Render the plot
+        let plots = undefined;
+        Plotly.newPlot('plot',[trace1,trace1b, trace2,trace2b, trace3, trace3b ], layout, {responsive:true})
+        .then(function (gd) {
+            // Listen for zoom events
+            plots = gd ; 
+
+            function f (eventData) {
+                if (eventData['xaxis.range[0]'] && eventData['xaxis.range[1]']) {
+                    const update = {
+                        'xaxis1.range': [eventData['xaxis.range[0]'], eventData['xaxis.range[1]']],
+                        'xaxis2.range': [eventData['xaxis.range[0]'], eventData['xaxis.range[1]']],
+                        'xaxis3.range': [eventData['xaxis.range[0]'], eventData['xaxis.range[1]']]
+                    };
+                    Plotly.relayout(gd, update);
+                }
+                if (eventData['xaxis3.range[0]'] && eventData['xaxis3.range[1]']) {
+                    const update = {
+                        'xaxis.range': [eventData['xaxis3.range[0]'], eventData['xaxis3.range[1]']],
+                        'xaxis2.range': [eventData['xaxis3.range[0]'], eventData['xaxis3.range[1]']],
+                        //'xaxis3.range': [eventData['xaxis3.range[0]'], eventData['xaxis3.range[1]']]
+                    };
+                    Plotly.relayout(gd, update);
+                }
+
+                if (eventData['xaxis2.range[0]'] && eventData['xaxis2.range[1]']) {
+                    const update = {
+                        'xaxis.range': [eventData['xaxis2.range[0]'], eventData['xaxis2.range[1]']],
+                        //'xaxis1.range': [eventData['xaxis2.range[0]'], eventData['xaxis2.range[1]']],
+                        //'xaxis2.range': [eventData['xaxis2.range[0]'], eventData['xaxis2.range[1]']],
+                        'xaxis3.range': [eventData['xaxis2.range[0]'], eventData['xaxis2.range[1]']]
+                    };
+                    Plotly.relayout(gd, update);
+                }
+                if (eventData['xaxis1.range[0]'] && eventData['xaxis1.range[1]']) {
+                    const update = {
+                        'xaxis.range': [eventData['xaxis1.range[0]'], eventData['xaxis1.range[1]']],
+                        //'xaxis2.range': [eventData['xaxis1.range[0]'], eventData['xaxis1.range[1]']],
+                        //'xaxis3.range': [eventData['xaxis1.range[0]'], eventData['xaxis1.range[1]']]
+                    };
+                    Plotly.relayout(gd, update);
+                }
+
+
+
+
+            };
+
+            //let events = ['plotly_autosize', 'plotly_deselect', 'plotly_doubleclick', 'plotly_redraw']          gd.on('plotly_relayout', (eventData) =>{ f(eventData) });
+            //for( let e of events ){
+            //console.log(e);   
+            //    gd.on( e, (eventData) =>{ f(eventData,gd) });
+            //}
+            gd.on('plotly_relayout', (eventData) =>{ f(eventData) });
+            gd.on('plotly_restyle', (eventData) =>{ f(eventData) });        
+            gd.on('plotly_doubleclick', function() {
+                Plotly.relayout(gd, {
+                    'xaxis2.autorange': true,
+                    'yaxis2.autorange': true,
+                    'xaxis3.autorange': true,
+                    'yaxis3.autorange': true,
+                    'xaxis.autorange': true,
+                    'yaxis.autorange': true
+                    
+                    
+                });
+            });
+            
+
+           /* Id('plot-container-app').onresize = function(){
+                Plotly.Plots.resize(gd);
+            };
+
+            window.addEventListener('resize', () => {
+            Plotly.Plots.resize('plot');
+            });*/
+
+        });
+
+
+
+    </script>
+
+    <script>
+        let containers = document.querySelectorAll('.chart-container');
+        let resizePending = false; 
+        let div= document.querySelector('.chart-container');
+        const resizeObserver = new ResizeObserver((entries) => {
+            for (let entry of entries) {
+            const { width, height } = entry.contentRect;
+            console.log(`Div resized to: Width = ${width}, Height = ${height}`);
+            resizePending = true;
+        }
+    });
+
+    resizeObserver.observe(div);
+    window.addEventListener('resize', () => {resizePending = true;});
+    window.addEventListener('mouseup', () => {
+        console.log('Mouse up---', resizePending);
+        if (resizePending) {
+                for (let container of containers) {
+                    console.log('Window', container.offsetWidth, container.offsetHeight);
+
+                    let plt = container.querySelector('.js-plotly-plot');
+                    if (plt) {
+                        console.log('js-plotly-plot',container.offsetHeight, plt.offsetWidth, plt.offsetHeight);
+
+                        const layout = plt._fullLayout;
+                        console.log('layout', layout);
+                        layout['height'] = container.offsetHeight;
+                        
+                        Plotly.relayout('plot', {'height': container.offsetHeight, 'autosize': true});
+
+                    }}
+        }
+
+        resizePending = false;
+    });
+   
+
+
+
+
+
+
+    </script>
+
+
+
+<script>
+    
+    for (let container of containers) {
+        console.log('Container', container.offsetWidth, container.offsetHeight);
+        container.addEventListener('resize', ()=> {
+            console.log('Resizing', container.offsetWidth, container.offsetHeight);
+
+
+
+
+        });    
+    }
+
+
+    
+    /*window.addEventListener('resize', () => {
+            resizePending = true;
+        });
+
+    window.addEventListener('mouseup', () => {
+        console.log('Mouse up', resizePending);
+        if (resizePending) {
+                for (let container of containers) {
+                    console.log('Window', container.offsetWidth, container.offsetHeight);
+
+                    let plt = container.querySelector('.js-plotly-plot');
+                    if (plt) {
+                        console.log('js-plotly-plot',container.offsetHeight, plt.offsetWidth, plt.offsetHeight);
+
+                        const layout = plt._fullLayout;
+                        console.log('layout', layout);
+                        layout['height'] = container.offsetHeight;
+                        
+                        Plotly.relayout('plot', {'height': container.offsetHeight, 'autosize': true});
+
+                    }}
+        }
+
+        resizePending = false;
+    });
+   
+    */
+</script>
+
+</body>
+</html>

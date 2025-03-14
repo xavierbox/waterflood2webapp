@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Main Layout Component</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+     <!-- Add Plotly CDN -->
+     <script src='https://cdn.plot.ly/plotly-3.0.0.min.js'></script>
+     <script src="{{ url_for('static', filename='components.js') }}"></script>
+ <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  
+ 
+
+<style>
+        .sidebar{
+        background-color: #252526 ; 
+        padding: 10px;
+        }
+
+        .sidebar-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2px;
+            justify-content: center;
+            width: 100%;
+            height: 80px;
+            background-color: #1E1E1E;
+            
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            border:1px solid black;
+        }
+        .sidebar-button i {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        .sidebar-button:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+        dd.ddbutton-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background-color: lightgray;
+            padding: 10px;
+            border-radius: 5px;
+            position: fixed;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .bssstn-custom {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            border-radius: 0;
+            background-color: transparent;
+            border: 1px solid gray;
+            border-left: 3px solid gray;
+            border-right: 3px solid gray;
+            color: inherit;
+        }
+        .bssstn-custom i {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+ .svg-container{
+
+    height: 100%;
+    width:100%;
+ }
+
+ td { font-weight:bold; color: blueviolet; font-size:0.75em; }
+ td:hover { background-color: lightgrey; }
+
+ .scrollable-list {
+      width: 100%;
+      height: 100%;
+      overflow-y: scroll;
+      box-sizing: border-box;
+      padding: 10px;
+      border: 1px solid #ccc;
+      background-color: #f9f9f9;
+    }
+
+    .scrollable-list ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .scrollable-list li {
+      padding: 8px;
+      border-bottom: 1px solid #ddd;
+    }
+
+.pane{
+    overflow:None;
+    padding: 30px;
+    }
+
+
+
+xxbody{
+    background: #252526;
+
+}
+</style>
+
+ 
+
+
+</head>
+
+<body>dfgdf
+    <nav class="navbar navbar-dark bg-dark" style="height: 8vh; background-color: darkslategrey">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Navbar</a>
+            <div class="dropdown">
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                    Menu
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                    <li><a class="dropdown-item" href="#">Open</a></li>
+                    <li><a class="dropdown-item" href="#">New</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <three-column-main-layout style="margin-left:120px" id = "main-layout"></three-column-main-layout>
+    <!-- div id="study-buttons-rack" style="font-size:0.69em">
+        <div>
+        New <buttton id='new-study-button' style = 'padding:0px;border-radius: 14px; width:28px; height:28px;'class="btn btn-success">+</buttton>
+        <span style="padding-left:10px"></span>
+        Delete <buttton id='delete-study-button' style = 'padding:0px;border-radius: 14px; width:28px; height:28px;'class="btn btn-danger">x</buttton>
+        <buttton id='fetch-study-button' style = 'float:right;padding:0px;border-radius: 3px; width:28px; height:28px;'class="btn btn-primary">></buttton>
+        </div>
+    </div -->
+
+        <div class="container-fuid">
+            <div class="row g-0">
+                <div class="sidebar col-1 ">
+                    
+                    <button class="sidebar-button">
+                        <i class="fas fa-home"></i>
+                        Field
+                    </button>
+                    <button class="sidebar-button">
+                        <i class="fas fa-home"></i>
+                        Sector
+                    </button>
+                    <button class="sidebar-button">
+                        <i class="fas fa-home"></i>
+                        Pattern
+                    </button>
+                    <button class="sidebar-button">
+                        <i class="fas fa-home"></i>
+                        Well
+                    </button>
+                </div>
+
+            <div class="col-11" style="background-color: whitesmoke;">
+
+
+                    <div id="study-buttons-rack" style="font-size:0.69em">
+              
+                    New <buttton id='new-study-button' style = 'padding:0px;border-radius: 14px; width:28px; height:28px;'class="btn btn-success">+</buttton>
+                    <span style="padding-left:10px"></span>
+                    Delete <buttton id='delete-study-button' style = 'padding:0px;border-radius: 14px; width:28px; height:28px;'class="btn btn-danger">x</buttton>
+                    <buttton id='fetch-study-button' style = 'float:right;padding:0px;border-radius: 3px; width:28px; height:28px;'class="btn btn-primary">></buttton>
+                  
+                    </div>
+
+                    <div>
+                        <button id ='load-study-case-layout'>load study 1</button>
+                        <button id ='load-study-case-layout2'>load study 2</button>
+                        <button id ='load-study-case-layout3'>load study 3 </button>
+                        
+                    </div>
+
+                    <div>
+                    <three-column-main-layout id = "main-layout"></three-column-main-layout>
+                    </div>
+
+                    <hr>
+                    <div>
+                        <three-column-main-layout id = "2main-layout"></three-column-main-layout>
+                    </div>
+
+                
+            </div>
+            <!-- This is the onl;y line needed to create an entire reponsive layout -->
+            <!-- div class='col' style="margin-left:150px">
+            <three-column-main-layout style="margin-left:120px" id = "main-layout"></three-column-main-layout>
+            </div -->
+        </div>
+        </div>
+    
+
+
+
+<script>
+      function Id( id ) { return document.getElementById(id);     }
+
+        Id('main-layout').addEventListener('pane-resized', (evt)=>{
+
+            //console.log( 'main received event ', evt.detail );
+
+        });
+
+        function getStudyNames(){
+        return  ['Liquid history match', 
+                 'Watercut history match', 
+                 'Static pattern flow balancing',
+                 'Lagged correlation analysis' 
+                 ]
+        }
+
+        function updateStudyList(){
+
+            const mainLayout = document.getElementById('main-layout');
+
+            let names = getStudyNames()
+            let studies = new QuickJS_Stringlist();
+
+            mainLayout.clear('left-top');
+            mainLayout.append('left-top', Id('study-buttons-rack'));
+            mainLayout.append('left-top', studies);
+            studies.set_data( names );
+            studies.set_title('Studies')
+
+            };
+
+        function addDynamicPlotlyChart(column,row, data, layout,config) {
+
+            function relayout( container){
+
+                var update = {
+                    title: {text: 'some new title'}, // updates the title
+                    'width':   (parseInt( container.offsetWidth ) - 30).toString(),   // updates the xaxis range
+                    'height':  (parseInt(container.offsetHeight ) - 30).toString()   // updates the end of the yaxis range
+                    };
+                    Plotly.relayout(container, update);
+
+            }
+
+            // Get the custom element 'main-layout' and set the chart in the 'middle-top' pane
+            const layoutComponent = document.getElementById('main-layout');
+            //layoutComponent.set('middle-top', chartContainer);
+
+            let where = column+'-'+row;
+            let container =   layoutComponent.get_pane(where)
+
+            // Plotly chart initialization
+            Plotly.newPlot(container, data, layout, config);     
+            layoutComponent.addEventListener('pane-resized', (evt)=>{
+
+           
+            if( evt.detail.id.includes(column) )  {
+                relayout( container );
+               }
+            }) ;  
+            relayout( container );
+
+
+
+                    /*window.addEventListener('resize', () => {
+                        Plotly.Plots.resize(layout_top_middle);
+                    });*/
+                }
+
+        function log_message(txt){
+            Id('main-layout').addMessage( txt )
+        }
+
+/*
+        Id('load-study-case-layout').addEventListener('click', (evt)=>{
+
+            
+            const scatter_data_local = [{
+                        x: [1, 2, 3, 4, 5],
+                        y: [10, 11, 12, 13, 14],
+                        mode: 'markers',
+                        type: 'scatter'
+                    }];
+            let inner_offset = 20; //INTERNAL MARGINS
+            let layout_local = {
+                        title: 'Plot added via layout',
+                        autosize: true,
+                        margin: {
+                        l: inner_offset,
+                        r: inner_offset,
+                        b: inner_offset,
+                        t: inner_offset   
+                    },
+                        xaxis: { title: 'X Axis' },
+                        yaxis: { title: 'Y Axis' },
+                        responsive: true
+                    };
+
+            layout_local = {}
+
+            //const config = {responsive: true}; responsiveness is handled by the layout
+            
+            let where  = 'middle-top';
+            let layout = Id('main-layout');
+            layout.addDynamicPlotlyChart(where, scatter_data_local, layout_local,{});
+
+            where  = 'middle-bottom';
+            layout.addDynamicPlotlyChart(where, scatter_data_local, layout_local,{});
+
+            where  = 'right-bottom';
+            let pie_data = [{values: [19, 26, 55],labels: ['Oil', 'Gas', 'Water'],type: 'pie'}];
+            layout.addDynamicPlotlyChart(where, pie_data, layout_local,{});
+
+
+            //locations chart
+            let lat = [ 28.952776  , 29.152776  , 28.84913887,28.891386 ];
+            let lon = [ 47.82002664, 47.82002664, 47.93671361,47.9867127 ];
+            let locations_data = [
+
+            {
+             name:'ssInjectors',
+             showlegend: false, 
+             curve_kind:'connection',
+             type: "scattermap", mode: 'lines', 
+             connectivity: 0.8, 
+             lon: [47.92373148, 47.6673148  ],
+             lat: [28.8484854 , 28.55384854  ],
+   
+             line: { color: 'blue', width: 2, dash: 'dot' },
+            },
+
+            {
+             name:'ssInjectors',
+             showlegend: false, 
+             connectivity: 0.3, 
+             curve_kind:'connection',
+             type: "scattermap", mode: 'lines', 
+
+             lon: [ 47.97478712, 47.9481827 ],
+             lat: [ 28.8856267 , 28.757285 ],
+   
+             line: { color: 'red', width: 4, dash: 'dot' },
+            },
+
+             {
+             name:'Injectors',
+             type: "scattermap", mode: 'markers+text', 
+             text: ['AABG-0739-1_I', 'BBBG-0739B_I', 'CCBG-0757-1_I', 'DDBG-0757-1_I' ],
+             lon: [47.92373148, 47.6673148, 47.97478712, 47.9481827 ],
+             lat: [28.8484854 , 28.55384854 , 28.8856267 , 28.757285  ],
+             marker: { color: 'blue',//['black', 'blue', 'orange','cyan'],
+                       size: 10 , 
+                      //symbol: 'square'
+                     }, 
+            },
+                   {
+              name:'Producers',
+             type: "scattermap", mode: 'markers+text', 
+             text: ['AABG-0739-1_I', 'BBBG-0739B_I', 'CCBG-0757-1_I', 'DDBG-0757-1_I' ],
+             lon: [47.94373148, 47.64373148, 47.93478712, 47.94351827 ],
+             lat: [28.8384854 , 28.56384854 , 28.8456267 , 28.8503285  ],
+             marker: { color: 'red',//['black', 'blue', 'orange','cyan'],
+                       size: 14 , 
+                       //symbol: 'square'
+                     }, 
+            }
+        ];
+            let locations_layout = {
+               
+
+                //dragmode: "zoom",     
+                //showlegend: false,         
+                fitbounds:"locations",     
+                map: {'bounds': {'east': 48.14373147920834,
+                                 'north': 29.253362328845775,
+                                 'south': 28.138454875171064,
+                                 'west': 47.62002664049844},
+                                 'center': {'lat': 28.846461299452603,
+                                            'lon': 47.9361300152004},
+                                'domain': {'x': [0.0, 1.0], 'y': [0.0, 1.0]},
+                                'style': 'open-street-map',
+                                'zoom': 8},
+                        margin: { r: 0, t: 0, b: 0, l: 0 }
+            };
+ 
+            where = 'right-top'//example1';
+            layout.addDynamicPlotlyChart(where, locations_data, locations_layout,{});
+            //layout.addDynamicPlotlyChart(where, xdata, xlayout,{});
+
+
+        });
+*/
+</script>
+
+
+<script id="initialize-app">
+    const data = [{
+                        x: [1, 2, 3, 4, 5],
+                        y: [10, 11, 12, 13, 14],
+                        mode: 'markers',
+                        type: 'scatter'
+                    }];
+
+    let inner_offset = 60;
+    const chart_layout = {
+                        title: 'Scatter Plot Example',
+                        
+                        //width: layout_placeholder.offsetWidth ,
+                        //height: layout_placeholder.offsetHeight,
+                        autosize: true,
+                        margin: {
+                        l: inner_offset,
+                        r: inner_offset,
+                        b: inner_offset,
+                        t: inner_offset   
+                    },
+                        xaxis: { title: 'X Axis' },
+                        yaxis: { title: 'Y Axis' },
+                        responsive: true
+                    };
+    const config = {responsive: true};
+
+let layout = Id('main-layout');
+/*
+document.getElementById('add-studies').addEventListener('click', ()=>{updateStudyList();});
+document.getElementById('add-chart1').addEventListener('click', ()=>{
+    let where = 'middle-top'; 
+    const layoutComponent = document.getElementById('main-layout');
+    let layout_placeholder =   layoutComponent.get_pane(where)
+    
+    let lay = {
+        width: layout_placeholder.offsetWidth ,
+        height: layout_placeholder.offsetHeight
+    }
+    lay = Object.assign(lay, chart_layout);  
+   
+
+    addDynamicPlotlyChart('middle','top', data, lay, config );
+});
+document.getElementById('add-chart2').addEventListener('click', ()=>{
+  
+    let where = 'middle-bottom'; 
+    const layoutComponent = document.getElementById('main-layout');
+    let layout_placeholder =   layoutComponent.get_pane(where)
+    
+    let lay = {
+        width: layout_placeholder.offsetWidth ,
+        height: layout_placeholder.offsetHeight
+    }
+    lay = Object.assign(lay, chart_layout);  
+   
+
+    addDynamicPlotlyChart('middle','bottom', data, lay, config );
+});
+
+document.getElementById('add-locs-chart').addEventListener('click', ()=>{
+  
+
+     let lat = [ 28.952776  , 29.152776  , 28.84913887,28.891386 ];
+     let lon = [ 47.82002664, 47.82002664, 47.93671361,47.9867127 ];
+     let locations_data = [
+             {
+             name:'Injectors',
+             type: "scattermap", mode: 'markers+text', 
+             text: ['AABG-0739-1_I', 'BBBG-0739B_I', 'CCBG-0757-1_I', 'DDBG-0757-1_I' ],
+             lon: [47.92373148, 47.6673148, 47.97478712, 47.9481827 ],
+             lat: [28.8484854 , 28.55384854 , 28.8856267 , 28.757285  ],
+             marker: { color: 'blue',//['black', 'blue', 'orange','cyan'],
+                       size: 10 , 
+                      //symbol: 'square'
+                     }, 
+            },
+                   {
+              name:'Producers',
+             type: "scattermap", mode: 'markers+text', 
+             text: ['AABG-0739-1_I', 'BBBG-0739B_I', 'CCBG-0757-1_I', 'DDBG-0757-1_I' ],
+             lon: [47.94373148, 47.64373148, 47.93478712, 47.94351827 ],
+             lat: [28.8384854 , 28.56384854 , 28.8456267 , 28.8503285  ],
+             marker: { color: 'red',//['black', 'blue', 'orange','cyan'],
+                       size: 14 , 
+                       //symbol: 'square'
+                     }, 
+            }
+        ];
+     let locations_layout = {
+
+        shapes : [{
+            type: 'line',    
+            //xref: 'map',
+            //yref: 'map',
+            lat0: 28.952776,
+            lon0:  47.82002664,
+            lat1: 29.152776,
+            lon1: 47.82002664,
+            line: {
+                color: 'rgb(128, 0, 128)',
+                width: 4,
+                dash: 'dot'
+            }
+            }
+        ], 
+
+       //dragmode: "zoom",              
+       fitbounds:"locations",     
+       map: {'bounds': {'east': 48.14373147920834,
+                        'north': 29.253362328845775,
+                        'south': 28.138454875171064,
+                        'west': 47.62002664049844},
+                     'center': {'lat': 28.846461299452603,
+                                'lon': 47.9361300152004},
+                     'domain': {'x': [0.0, 1.0], 'y': [0.0, 1.0]},
+                     'style': 'open-street-map',
+                     'zoom': 8},
+             margin: { r: 0, t: 0, b: 0, l: 0 }
+         };
+ 
+       let div_id = 'right-top'//example1';
+       //Plotly.newPlot(div_id, data11, layout11);
+        addDynamicPlotlyChart('right','top', locations_data, locations_layout,config ); 
+
+    
+   });
+*/
+layout.addEventListener('pane-resized', (evt) =>{
+
+    //console.log( evt.detail );
+
+    if( (evt.detail.id == 'middle-pane' ) || (evt.detail.id == 'middle-top' ) ) {
+    
+        log_message( JSON.stringify( evt.detail) );
+    
+    }
+
+}); 
+
+
+document.getElementById('load-study-case-layout').addEventListener('click', ()=>{
+
+    //pretent to generate som e data and pass it to the UI/
+    let pie_data = [{
+    values: [19, 26, 55],
+    labels: ['Oil', 'Gas', 'Water'],
+    type: 'pie'
+    }];
+    let pie_config = {'responsive': true};
+ 
+    //Plotly.newPlot('left-top', pie_data, {}, config);
+    let inner_offset= 40;
+    const pie_chart_layout = {
+                        title: 'Scatter Plot Example',
+                        
+                        //width: layout_placeholder.offsetWidth ,
+                        //height: layout_placeholder.offsetHeight,
+                        autosize: true,
+                        showlegend:false,
+                        margin: {
+                        l: inner_offset,
+                        r: inner_offset,
+                        b: inner_offset,
+                        t: inner_offset   
+                    },
+                        xaxis: { title: 'X Axis' },
+                        yaxis: { title: 'Y Axis' },
+                        responsive: true
+                    };
+    
+    addDynamicPlotlyChart('middle','top', pie_data, pie_chart_layout,config );
+
+
+});
+
+</script> 
+
+   
+
+
+
+</body>
+</html>

@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waterflood insights</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src='https://cdn.plot.ly/plotly-3.0.0.min.js'></script>
+ 
+    <script src="{{ url_for('static', filename='components.js') }}"></script>
+    <link href ="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
+    <script>
+    function get_server(iurl, imethod, idata, resolve, reject) {
+
+        return new Promise((resolve, reject) => {
+                $.ajax({
+                    type: imethod,
+                    url: iurl,
+                    xhr: function () { return new window.XMLHttpRequest(); },
+    
+                    processData: false,
+                    contentType: 'application/json',
+                    data: idata,
+                    success: function (resp) {
+                        
+                    let obj = resp;//JSON.parse( resp )
+                    console.log('success')
+                    if (resolve != undefined) resolve(obj);
+                    },
+                    error: function (jqXHR, status, errorThrown) {
+                        console.log('error', jqXHR, 'status', status, 'thrown', errorThrown);
+                        console.log('status', status);
+                        console.log('errorThrown', errorThrown);
+                        
+                        let error_message = jqXHR.responseText
+                        let message = 'Error in the backend.\nThe error was:\n'+ error_message + '\n\n'+ '\nThe status code was: '+jqXHR.status
+                        console.log( message );
+    
+                        if (reject != undefined) reject(jqXHR,status, errorThrown );
+                    }
+                });
+            });//ajax promise
+    }
+    function Id(id){ return document.getElementById(id); }
+
+    </script>
+</head>
+
+<script>
+
+</script>
+
+<body>
+
+
+    <!-- Sticky Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">My Site</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <button>Fetch data</button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a id='initialize-app-button'class="nav-link active" aria-current="page">Initialize</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Pricing</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!--div class="container-fluid">
+
+        <div class="row " style="margin-top:60px; height: 50vh;">
+            <div class="col-2" style="color: aquamarine; background-color: blue;">
+                side
+            </div>
+            <div class="col-10 avh-50" style="background-color: aquamarine;">
+
+                <div class="col-6" style="height: 50%; background-color: blueviolet;">gbdfgdfgdfhgfgh</div>
+                
+            </div>
+        </div>
+    </div> 
+    <div style='height:47vh;background-color: black;' class="container-fluid" >
+
+        dfgg
+    </div-->
+
+
+    <div class="container-fluid vh-100" style="background-color: brown;margin-top: 56px;">
+        
+        <div class="row vh-100" style="background-color: blue;">
+
+            <!-- Sidebar -->
+            <div style="background-color: bisque;" class="col-2 vh-100 aatext-white p-0 position-fixed" 
+            style="left: 0; height: 100vh; min-height: 100vh;">
+
+                <div id='side-bar-top' class="abg-secondary h50  p-3">
+          
+                    <button id='data-tab1' class="btn btn-sm" onclick="showCard('data-selection-card',this)">Data</button>
+                    <button class="btn btn-sm" onclick="showCard('studies-selector-card',this)">Studies</button>
+                    <button class="btn btn-sm" onclick="showCard('views-selector-card',this)">Views</button>
+                    <!--button class="btn btn-sm" onclick="showCard('workflows-selector-card',this)">Workflows</button-->
+
+
+                    <div class="card" id="data-selection-card">
+                        <div>
+                            <p class="subtitle">Reservoir management unit</p>
+                            <combobox-component id="reservoir-unit-selector"></combobox-component>
+                        </div>
+                        <div>
+               
+                            <details><summary style="font-weight: bold;font-size: 1.1em;">Sectors</summary>
+                            <two-column-checkbox-list id="sector-selector"></two-column-checkbox-list>
+                           </details>
+                        </div>
+                        <div>
+                            <p class="subtitle">Time frame</p>
+                            <label for="start-date" class="form-label">Start:</label>
+                            <input type="datetime-local" id="start-date" name="start-date" class="form-control mb-2">
+                            <label for="end-date" class="form-label">End:</label>
+                            <input type="datetime-local" id="end-date" name="end-date" class="form-control">
+                    
+                    
+                            <p></p>
+                            Displace time frame and load data 
+                            <div class="d-flex align-items-center gap-2">
+                                
+                                <button class="btn btn-primary">
+                                    <i class="fas fa-caret-left"></i>
+                                </button>
+                                <input type="number" id="range-value" name="range-value" class="form-control text-center" min="1" max="180" value="1" style="width: 80px;">
+                                <button class="btn btn-primary">
+                                    <i class="fas fa-caret-right"></i>
+                                </button>
+                            </div>
+                    
+                        </div>
+                        <hr>
+                        <button id='data-selection-button' class="btn btn-primary">Select</button>
+                    
+                    
+                    </div>
+                    <div class="card" id="studies-selector-card">
+                        <stringlist-component  
+                        checkboxes=true 
+                        selection_mode='single' 
+                        id='study-selector'>
+                    </stringlist-component>
+                        <button class="btn btn-primary">Load</button>
+                    </div> 
+                 
+                    <div class="card" id="views-selector-card">
+                        Other views card goes here....
+                    </div>
+                      
+
+                </div>
+
+                <div id='side-bar-bottom'  class="h50 p-3 abg-secondary" astyle="top: 50%;">
+                    
+                    <label class="btn-sm">Workflows</label>
+                    <div class="card" id="workflows-selector-card">
+                        <stringlist-component id='workflow-selector' checkboxes=true 
+                        notitle='Workflows' selection_mode='single'> 
+                        </stringlist-component>
+                    </div>
+                </div>
+            
+            </div>
+     
+
+            <!-- Main Content -->
+            <div class="vh-100 col-10 offset-md-2">
+           
+                      <!-- Additional Content -->
+                        <div class="row vh-100">
+                            <div id='locs-chart-container' class="col-6 text-white p-3" 
+                            style="background-color: brown; height: 100%;">
+                            
+                            <div  id='locs-chart' style="background-color: aqua; height: 100%;">
+                                <h4>Additional Content 1</h4>
+                                <p>Locations go here.</p>
+                                </div>
+                            </div>
+
+                            <div class="col-6 text-white p-3">
+                
+                                <div>
+                                <ul class="pagination">
+                                  <li class="page-item">
+                                    <a id='field-tab-button' class="field-tab btn-sm page-link">Field</a>
+                                  </li>
+                    
+                                  <li class="page-item">
+                                    <a id='sector-tab-button' class="field-tab btn-sm  page-link">Sector </a>
+                                  </li>
+                                  <li class="page-item">
+                                    <a id='activity-tab-button'class="field-tab btn-sm page-link">Activity</a>
+                                  </li>
+                                </ul>
+                             
+                                <div id="field-charts-container" class="card field-chart-container">
+                                <p>Field charts go here...</p></div>
+                                <div id="sector-charts-container" class="card field-chart-container">
+                                <p>Sector charts go here...</p></div>
+                                <div id="activity-charts-container" class="card field-chart-container">
+                                <p>Activity charts go here...</p></div>        
+                                <script>
+                                    let items = document.querySelectorAll('.field-tab');
+                                    items.forEach((item) => {
+                                        item.addEventListener('click', function(){
+                                            
+                                            let tabs = document.querySelectorAll('.field-chart-container'); 
+                                            tabs.forEach((tab) => {
+                                                tab.style.display = 'none';
+                                            });
+                                            let tab_id = this.id.split('-')[0]+'-charts-container';
+                                            document.getElementById(tab_id).style.display = 'block';
+                                            
+
+                                        });
+                                    }); 
+                                </script>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <!--div class="row aavh-100" style="background-color: green; 
+                        min-height: 500px;">
+                        </div-->
+
+            </div>
+
+
+
+        </div>
+    </div>
+
+
+
+
+    <script>
+
+        function populate_project_description( data ){
+            console.log(typeof(data),data['reservoir_management_units']);
+            Id('reservoir-unit-selector').setData( data['reservoir_management_units']);          
+            Id('sector-selector').setItems('Sector ', data['sectors'] );
+            Id('end-date').value = new Date(data['dates'][0]).toISOString().slice(0, 16);
+            Id('start-date').value = new Date(data['dates'][1]).toISOString().slice(0, 16);
+            Id('study-selector').set_data(data['studies']);
+            Id('workflow-selector').set_data(data['workflows']);         
+        }
+        function get_project_data_selection( ){
+     
+            let data = {}
+            data['reservoir_management_units'] = Id('reservoir-unit-selector').getValue();
+            
+            data['dates'] = [Id('start-date').value, Id('end-date').value];
+            data['sectors'] = Id('sector-selector').getCheckedItems();
+
+            return data;
+            /*.setData( data['reservoir_management_units']);          
+            Id('sector-selector').setItems('Sector ', data['sectors'] );
+            Id('end-date').value = new Date(data['dates'][0]).toISOString().slice(0, 16);
+            Id('start-date').value = new Date(data['dates'][1]).toISOString().slice(0, 16);
+            Id('study-selector').set_data(data['studies']);
+            Id('workflow-selector').set_data(data['workflows']);        */ 
+        }
+
+        function populate_field_plots( data ){
+            console.log('Populating field plots...');
+            
+            let field_plots = []; 
+            
+            let locs_container = Id('locs-chart');
+            locs_container.innerHTML = '';
+            let locs_data = data['locations'];
+            let locs_plot = document.createElement('div');
+            locs_container.appendChild(locs_plot);
+            locs_plot.id = 'locs-plot';
+            key = 'locations';
+            l = data[key]['layout'];
+            l['height'] = Id('locs-chart').offsetHeight;
+            Plotly.newPlot(locs_plot, data[key]['data'], l, {responsive: true});                 
+            field_plots.push(locs_container);
+            
+
+            let chart_keys = ['fractions','historical_production'];
+            let container = Id('field-charts-container');
+            container.innerHTML = '';
+            for( let key of chart_keys){
+
+                let plot = document.createElement('div');
+                container.appendChild(plot);
+                plot.id = 'field-plot-'+key;
+                Plotly.newPlot(plot, data[key]['data'], data[key]['layout'], {responsive: true});    
+                container.appendChild(document.createElement('hr'));
+                field_plots.push(plot);
+            }
+
+            let activity_container = Id('activity-charts-container');
+            activity_container.innerHTML = '';
+            let activity_data = data['activity'];
+            let plot = document.createElement('div');
+            activity_container.appendChild(plot);
+            plot.id = 'activity-plot';
+            Plotly.newPlot(plot, activity_data['data'], activity_data['layout'], {responsive: true});  
+            field_plots.push(plot);
+
+            let sector_container = Id('sector-charts-container');
+            sector_container.innerHTML = '';
+            plot = document.createElement('div');
+            sector_container.appendChild(plot);
+            plot.id = 'sector-plot-volumes';
+            Plotly.newPlot(plot, data['sector_volumes']['data'], data['sector_volumes']['layout'], {responsive: true});
+
+
+            console.log('Field plots populated');
+
+        }
+
+
+        function get_project_description_mock_server(){
+
+            let wokflow_names=['Liquid history match', 
+                 'Watercut history match', 
+                 'Static pattern flow balancing',
+                 'Lagged correlation analysis' 
+                 ]
+        
+            let backend_data  = {
+                'workflows': wokflow_names,
+                'studies':['Study 1', 'Study 2', 'Study 3'],
+                'reservoir_management_units': ['RMU 1', 'RMU 2', 'RMU 3'],
+                'sectors': ['Sector 1', 'Sector 2', 'Sector 3'],    
+            }
+
+            return backend_data;
+
+        }
+       
+        function showCard(cardId, btn) {
+            document.getElementById('data-selection-card').style.display = 'none';
+            document.getElementById('studies-selector-card').style.display = 'none';
+            document.getElementById('views-selector-card').style.display = 'none';
+            //document.getElementById('workflows-selector-card').style.display = 'none';
+            document.getElementById(cardId).style.display = 'block';
+
+            //Id('data_studies_views_buttons').querySelectorAll('.btn-sm').forEach((btn)=>{
+            //    btn.classList.remove('active');
+            //});
+            btn.classList.add('active');
+        }
+
+        Id('initialize-app-button').addEventListener('click', function(){
+            alert('Initializing...');
+
+            let mock = false
+            if( !mock ){
+                let iurl = 'get_project_description'
+                get_server(iurl, 'GET', {})
+                .then( (resp) =>{
+                    console.log(resp);
+                    populate_project_description(resp.data);
+
+
+                })
+                .catch ((error) =>{
+                    console.log(error);
+                });
+             }
+
+            Id('field-tab-button').click()
+            Id('data-tab1').click()
+
+            return 
+
+            //let studies = new QuickJS_Stringlist();
+            //let container = Id('side-bar-top');
+            //container.innerHTML = '';
+            //container.appendChild(studies);
+            //studies.set_data( data['studies'] );
+            //studies.set_title('Studies');
+            Id('reservoir-unit-selector').setData(['Unit 1', 'Unit 2', 'Unit 3', 'Unit 4']);
+            Id('sector-selector').setItems('Sector ', 7 );
+            Id('end-date').value = new Date('2022-02-16').toISOString().slice(0, 16);
+            Id('start-date').value = new Date('2017-12-26').toISOString().slice(0, 16);
+            Id('reservoir-unit-selector').setValue('Unit 2');
+            Id('study-selector').set_data(data['studies']);
+            Id('workflow-selector').set_data(data['workflows']);
+            Id('field-tab-button').addEventListener('click', function(){alert('Field tab clicked');});
+
+
+            //container = Id('side-bar-bottom');
+            
+
+        });
+
+        Id('data-selection-button').addEventListener('click', function(){
+            //alert('Getting field charts...');
+            let read_data = get_project_data_selection();
+            
+            if(read_data!=undefined){
+                console.log('Data read:', read_data);
+
+                get_server('get_field_charts','POST', JSON.stringify(read_data))
+                .then( (resp) =>{
+                    populate_field_plots(resp.data);
+                })  
+                .catch ((error) =>{
+                    console.log(error);
+                });
+
+
+            }
+
+
+        }); 
+
+
+    </script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
+
+
+</body>
+</html>

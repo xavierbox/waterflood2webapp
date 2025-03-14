@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Main Layout Component</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src='https://cdn.plot.ly/plotly-3.0.0.min.js'></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+    <script src="{{ url_for('static', filename='server.js') }}"></script>
+    <script src="{{ url_for('static', filename='components.js') }}"></script>
+    <script src="{{ url_for('static', filename='app_components.js') }}"></script>
+    <link href ="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
+    
+    <script>
+         function Id(id){ return document.getElementById(id); }
+    
+    </script>
+<body>
+
+    <div class="container-fluid">
+    <app-side-layout-component></app-side-layout-component>
+    </div>
+
+
+    <button id="fetch-data">Get data</button>
+    <div id="chart"></div>
+
+    <button id="load-locations">Get Locations</button>
+ 
+
+    <div class="container-fluid">
+    
+    <app-layout-component id="app-layout"></app-layout-component>
+
+</div>
+        
+ 
+    <div id='data_studies_views_buttons' class="d-flex gap-2">
+        <script>
+         function showCard(cardId, btn) {
+            document.getElementById('data-selection-card').style.display = 'none';
+            document.getElementById('studies-selector-card').style.display = 'none';
+            document.getElementById('views-selector-card').style.display = 'none';
+            document.getElementById(cardId).style.display = 'block';
+
+            Id('data_studies_views_buttons').querySelectorAll('.btn-sm').forEach((btn)=>{
+                btn.classList.remove('active');
+            });
+            btn.classList.add('active');
+        }
+
+        
+        </script>
+
+        <button class="btn btn-sm" onclick="showCard('data-selection-card',this)">Data</button>
+        <button class="btn btn-sm" onclick="showCard('studies-selector-card',this)">Studies</button>
+        <button class="btn btn-sm" onclick="showCard('views-selector-card',this)">Views</button>
+
+    </div>
+
+    <div class="card" id="data-selection-card">
+    <div>
+        <p class="subtitle">Reservoir management unit</p>
+        <combobox-component id="reservoir-unit-selector"></combobox-component>
+    </div>
+    <div>
+        <p class="subtitle">Sectors</p>
+        <details>
+        <two-column-checkbox-list id="sector-selector"></two-column-checkbox-list>
+       </details>
+    </div>
+    <div>
+        <p class="subtitle">Time frame</p>
+        <label for="start-date" class="form-label">Start:</label>
+        <input type="datetime-local" id="start-date" name="start-date" class="form-control mb-2">
+        <label for="end-date" class="form-label">End:</label>
+        <input type="datetime-local" id="end-date" name="end-date" class="form-control">
+
+
+        <p></p>
+        Displace time frame and load data 
+        <div class="d-flex align-items-center gap-2">
+            
+            <button class="btn btn-primary">
+                <i class="fas fa-caret-left"></i>
+            </button>
+            <input type="number" id="range-value" name="range-value" class="form-control text-center" min="1" max="180" value="1" style="width: 80px;">
+            <button class="btn btn-primary">
+                <i class="fas fa-caret-right"></i>
+            </button>
+        </div>
+
+    </div>
+    <hr>
+    <button id='data-selection-button' class="btn btn-primary">Select</button>
+
+
+    </div>
+
+    <div class="card" id="studies-selector-card">
+        <stringlist-component title='Sectors' checkboxes=true selection_mode='single' 
+        id='study-selector'></stringlist-component>
+        <button class="btn btn-primary">Load</button>
+    </div> 
+ 
+    <div class="card" id="views-selector-card">
+        Other views card goes here....
+    </div>
+ 
+    <script id="debug">
+         Id('load-locations').addEventListener('click', (evt)=>{
+
+                /*
+                const scatter_data_local = [{
+                            x: [1, 2, 3, 4, 5],
+                            y: [10, 11, 12, 13, 14],
+                            mode: 'markers',
+                            type: 'scatter'
+                        }];
+                let inner_offset = 20; //INTERNAL MARGINS
+                let layout_local = {
+                            title: 'Plot added via layout',
+                            autosize: true,
+                            margin: {
+                            l: inner_offset,
+                            r: inner_offset,
+                            b: inner_offset,
+                            t: inner_offset   
+                        },
+                            xaxis: { title: 'X Axis' },
+                            yaxis: { title: 'Y Axis' },
+                            responsive: true
+                        };
+
+                layout_local = {}
+                let where  = 'middle-top';
+                let layout = Id('app-layout');
+                layout.addDynamicPlotlyChart(where, scatter_data_local, layout_local,{});
+
+                where  = 'middle-bottom';
+                layout.addDynamicPlotlyChart(where, scatter_data_local, layout_local,{});
+
+                where  = 'right-bottom';
+                let pie_data = [{values: [19, 26, 55],labels: ['Oil', 'Gas', 'Water'],type: 'pie'}];
+                layout.addDynamicPlotlyChart(where, pie_data, layout_local,{});
+                */
+
+
+                //locations chart
+                let layout = Id('app-layout');
+                let lat = [ 28.952776  , 29.152776  , 28.84913887,28.891386 ];
+                let lon = [ 47.82002664, 47.82002664, 47.93671361,47.9867127 ];
+
+                let locations_data = [
+                {
+                name:'ssInjectors',
+                showlegend: false, 
+                curve_kind:'connection',
+                type: "scattermap", mode: 'lines', 
+                connectivity: 0.8, 
+                lon: [47.92373148, 47.6673148  ],
+                lat: [28.8484854 , 28.55384854  ],
+
+                line: { color: 'blue', width: 2, dash: 'dot' },
+                },
+
+                {
+                name:'ssInjectors',
+                showlegend: false, 
+                connectivity: 0.3, 
+                curve_kind:'connection',
+                type: "scattermap", mode: 'lines', 
+
+                lon: [ 47.97478712, 47.9481827 ],
+                lat: [ 28.8856267 , 28.757285 ],
+
+                line: { color: 'red', width: 4, dash: 'dot' },
+                },
+
+                {
+                name:'Injectors',
+                type: "scattermap", mode: 'markers+text', 
+                text: ['AABG-0739-1_I', 'BBBG-0739B_I', 'CCBG-0757-1_I', 'DDBG-0757-1_I' ],
+                lon: [47.92373148, 47.6673148, 47.97478712, 47.9481827 ],
+                lat: [28.8484854 , 28.55384854 , 28.8856267 , 28.757285  ],
+                marker: { color: 'blue',//['black', 'blue', 'orange','cyan'],
+                        size: 10 , 
+                        //symbol: 'square'
+                        }, 
+                },
+                    {
+                name:'Producers',
+                type: "scattermap", mode: 'markers+text', 
+                text: ['AABG-0739-1_I', 'BBBG-0739B_I', 'CCBG-0757-1_I', 'DDBG-0757-1_I' ],
+                lon: [47.94373148, 47.64373148, 47.93478712, 47.94351827 ],
+                lat: [28.8384854 , 28.56384854 , 28.8456267 , 28.8503285  ],
+                marker: { color: 'red',//['black', 'blue', 'orange','cyan'],
+                        size: 14 , 
+                        //symbol: 'square'
+                        }, 
+                }
+                ];
+                let locations_layout = {
+                    /*shapes : [{
+                        type: 'line',    
+                        letref: lat,
+                        lonref: lon,
+                        lat0: 28.952776,
+                        lon0:  47.82002664,
+                        lat1: 29.152776,
+                        lon1: 47.82002664,
+                        line: {
+                            color: 'rgb(128, 0, 128)',
+                            width: 4,
+                            //dash: 'dot'
+                        }
+                        }
+                    ], */
+
+                    //dragmode: "zoom",     
+                    //showlegend: false,         
+                    fitbounds:"locations",     
+                    map: {'bounds': {'east': 48.14373147920834,
+                                    'north': 29.253362328845775,
+                                    'south': 28.138454875171064,
+                                    'west': 47.62002664049844},
+                                    'center': {'lat': 28.846461299452603,
+                                                'lon': 47.9361300152004},
+                                    'domain': {'x': [0.0, 1.0], 'y': [0.0, 1.0]},
+                                    'style': 'open-street-map',
+                                    'zoom': 8},
+                            margin: { r: 0, t: 0, b: 0, l: 0 }
+                };
+
+                where = 'middle-top'//example1';
+                layout.addDynamicPlotlyChart(where, locations_data, locations_layout,{});
+                //layout.addDynamicPlotlyChart(where, xdata, xlayout,{});
+
+
+});
+
+    </script>
+
+
+
+    <script>
+       
+        function fetch_locations(){
+ 
+        function relayout( container){
+
+        //container.style.padding = '20px';
+        let inner_offset = 10; 
+        let pad = 50;
+        const update = {
+            //title: {text: 'some new title'}, // updates the title
+            'width':   (parseInt( container.offsetWidth ) - pad).toString(),   // updates the xaxis range
+            'height':  (parseInt(container.offsetHeight ) - pad/2).toString(),   // updates the end of the yaxis range
+            
+            //'paper_bgcolor': 'orange',
+            'plot_bgcolor': 'lightgrey',
+
+            //'x': inner_offset,
+            'margin': {
+            'l': 78,
+            'r': 78,
+            'b': 48,
+            't': 48,
+            //'pad': 4  
+            },
+            'autosize': true,
+            
+        };
+        Plotly.relayout(container, update);
+        }
+
+
+            console.log('I am heere 1')
+            const iurl    = '/get_locations';
+            const imethod = 'GET';
+            const idata   = {};
+            get_server(iurl, imethod, idata )
+            .then( (response) =>{
+                console.log('I am heere ')
+                let fig = response['data']['historical_production']
+                let data_layout = Id('app-layout');
+
+
+                fig.layout['responsive'] = true;
+
+                let container = data_layout.get_pane("right-top"); 
+                Plotly.newPlot(container, fig.data, fig.layout, {responsive: true});
+
+
+                 
+                data_layout.addEventListener('pane-resized', (evt)=>{
+                    if( evt.detail.id.includes('right-top') )  {
+                        relayout( container );
+                    }
+                }) ;  
+                relayout( container );
+
+                //data_layout.addDynamicPlotlyChart('right-bottom', fig.data, fig.layout, {responsive: true})
+                let fig2 = response['data']['fractions']
+                data_layout.addDynamicPlotlyChart('right-bottom', fig2.data, fig2.layout, {responsive: true})
+                
+
+                
+                
+                //let where = data_layout.get_pane('middle-top');
+                //Plotly.newPlot(where, fig.data, fig.layout, {responsive: true});
+
+            })
+            .catch( (error) =>{
+
+            });
+           
+            
+            return 'sent';
+        }
+
+        document.getElementById('fetch-data').addEventListener('click',(evt)=>{
+
+        console.log('-clicled!!');
+        let locations = fetch_locations();
+
+        });
+
+        class ProjectData{
+    
+        data = {
+    
+        }
+    
+        constructor(){
+            ;
+        }
+    
+        setData(){
+            ;
+        }
+        appendData(){
+            ;
+        }
+        clearData(){
+            ;
+        }
+    
+    };
+    
+        let project_data = new ProjectData();
+    
+        function initApp(){
+            function showCard(cardId) {
+            document.getElementById('data-selection-card').style.display = 'none';
+            document.getElementById('studies-selector-card').style.display = 'none';
+            document.getElementById('views-selector-card').style.display = 'none';
+            document.getElementById(cardId).style.display = 'block';
+            }
+
+            Id('reservoir-unit-selector').setData(['Unit 1', 'Unit 2', 'Unit 3', 'Unit 4']);
+            Id('sector-selector').setItems('Sector ', 7 );
+            Id('end-date').value = new Date('2022-02-16').toISOString().slice(0, 16);
+            Id('start-date').value = new Date('2017-12-26').toISOString().slice(0, 16);
+            Id('reservoir-unit-selector').setValue('Unit 2');
+    
+            let data_card = Id('data-selection-card');
+            let study_card = Id('studies-selector-card');
+            let views_card = Id('views-selector-card');
+
+
+            let study_selector = Id('study-selector');
+            study_selector.set_data(['Study 1', 'Study 2', 'Study 3', 'Study 4']);
+            study_selector.set_title('Studies');
+     
+            
+    
+            let data_layout = Id('app-layout');
+
+            let selection_buttons = Id("data_studies_views_buttons");
+            data_layout.append('left-top', selection_buttons);
+            data_layout.append('left-top', data_card);
+            data_layout.append('left-top', study_card);
+
+
+        }
+        initApp();
+    
+        document.getElementById('data-selection-button').addEventListener('click',(evt)=>{
+            console.log('Data requested'); 
+            let unit = Id('reservoir-unit-selector').getValue();
+            let sectors = Id('sector-selector').getCheckedItems();
+            let start_date = Id('start-date').value.slice(0, 10);
+            let end_date = Id('end-date').value.slice(0, 10);
+            console.log('Unit:', unit);
+            console.log('sectors:', sectors);
+            console.log('start_date:', start_date);
+            console.log('end_date:', end_date);
+        });
+    
+    </script>
+
+<div style="min-height:100px; background-color: aqua;">...</div>    
+</body>
+</html>
