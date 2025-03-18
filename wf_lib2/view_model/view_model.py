@@ -112,7 +112,16 @@ def apply_dataset_filters( input_dataset:CRMDataset, filters: dict = None ) -> C
         well_names = d.locations_df[d.locations_df[col_name].isin(sector)][NAME_COL].values
         d = d.filter_by(NAME_COL, well_names ) 
         
-    
+    keys = [zone, subzone, reservoir]
+    known_keys = [ZONE_KEYS, SUBZONE_KEYS, RESERVOIR_KEYS]
+    for n, key in enumerate(keys):
+        if key is not None:
+            if not isinstance(key, List):
+                key = [key]
+            col_name   = find_column( d.locations_df.columns, known_keys[n] )
+            well_names = d.locations_df[d.locations_df[col_name].isin(key)][NAME_COL].values
+            d = d.filter_by(NAME_COL, well_names )
+            
         
     return d 
 
@@ -170,8 +179,7 @@ def get_dataset_field_summary( input_dataset:CRMDataset, cummulative=False, filt
     water  = water_production_summary[last_date]  
     oil    = oil_production_summary[last_date]
     gas    = gas_production_summary[last_date]    
-    
-    print('------liquid', liquid, 'water', water, 'oil', oil, 'gas', gas, 'total', water+oil+gas)
+     
         
     total = gas + water + oil
     liquid = liquid/total
@@ -207,10 +215,6 @@ def get_dataset_field_summary_plots(input_dataset:CRMDataset, cummulative = Fals
 
 
     colors = ['blue','lightgrey','brown','green'] + default_colors #['green','cyan','grey','orange','blue','red','purple','yellow','brown','pink']
-    #xx =  [ {'fillcolor':'light'+colors[n],
-    #        'name':key.replace('_',' ').capitalize()} for n, (key, value) in  enumerate(production_summary.items())]
- 
- 
     data = [ {'fillcolor': {'color':'light'+colors[n]}, 'line': {'color':colors[n]},
             'name':key.replace('_',' ').capitalize(), 
             'type':'scatter','mode':'lines','opacity': 0.99915,#'fill':  'tonexty', #'tonexty',
@@ -478,3 +482,73 @@ def get_dataset_sector_summary_plots(input_dataset:CRMDataset, filters: dict = N
     
     sector_fig = {'data':data, 'layout':layout, 'config':default_plotly_config_python() }
     return sector_fig
+
+
+def get_field_wells_snapshot( crm_dataset,# date_cutoff = '2020-02-01', 
+                             x_column = None,y_column= None, filters = None ):
+
+    if x_column is None: 
+        x_column = 'WATER_PRODUCTION' 
+    if y_column is None: 
+        y_column = 'OIL_PRODUCTION'
+        
+
+    filtered = apply_dataset_filters( crm_dataset , filters )
+
+    sector_map = filtered.locations_df.set_index('NAME')['SECTOR'].to_dict()
+    filtered.producers_df['SECTOR'] = filtered.producers_df['NAME'].map( sector_map )
+
+
+    df = filtered.producers_df.sort_values( by=['DATE'], ascending=True)
+    #df = df[ df['DATE'] == date_cutoff ].sort_values( by=['DATE'],ascending=True)
+  
+
+    data = [] 
+    markers = ['circle', 'triangle-right','square', 'diamond', 'triangle-up', 'triangle-down', 'cross', 'star','cross', 
+               'hexagon','square-cross','circle-x','hourglass', 'pentagon','square-cross']
+    
+    sectors_array = sorted(df['SECTOR'].unique())
+    xmax = 0.0 
+    for s in sectors_array:
+        ddf = df[df['SECTOR'] == s]
+        grouped = ddf.groupby('NAME').agg( {x_column:'sum', y_column:'sum'} )[[x_column,y_column]]
+        x,y = grouped[x_column].values.tolist(), grouped[y_column].values.tolist() 
+        well_names = grouped.index.tolist() 
+        #well_names = ddf['NAME'].values.tolist()
+        #water_production = ddf[ x_column].values.tolist()
+        #oil_production = ddf[ y_column].values.tolist()
+    
+        
+        
+        #sector = ddf['SECTOR'].values.tolist()
+        marker = {'symbol': np.random.choice(markers)  }#, 'size':10}
+        series = { 'marker':marker, 'textposition':'top center',
+                  'textfont':{'size': 8},
+                  'name':'Sector '+str(s),'text':well_names, 
+                'x':x, 'y':y, 'mode':'markers', 'type':'scatter'}
+        data.append( series )
+        xmax = max( xmax, np.max(x) )
+        
+    #finally, add a straing line y = x as a guide to the eye 
+    #xmin,xmax = np.min(water_production), np.max(water_production)
+    #ymin,ymax = np.min(water_production), np.max(water_production)
+    line = { 'x':[0,xmax], 'y':[0.0001,xmax], 
+                       'mode':'lines', 
+                       'line':{'width':1, 'color':'lightgrey', 'dash':'dashdot', 'color':'black'},
+                       'type':'scatter', 'name':'y=x'
+
+            }
+    
+    data.append( line )
+        
+    
+    title1 = x_column.replace('_',' ').capitalize()
+    title2 = y_column.replace('_',' ').capitalize()
+    
+    
+    layout = {'xaxis':{'title': title1}, 'yaxis':{'title':title2}}
+    fig = {'data':data, 'layout':layout}
+    return fig 
+   
+ 
+ 
