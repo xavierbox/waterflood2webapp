@@ -1,3 +1,47 @@
+const resizeObserver = new ResizeObserver(entries => {
+    for (let entry of entries) {
+    //console.log('entry:', entry.target.id);
+    //console.log('Size changed:', entry.contentRect);
+    //console.log(`Width: ${entry.contentRect.width}px, Height: ${entry.contentRect.height}px`);
+    
+    relayout( entry.target );
+
+    }
+});
+
+function relayout( container){
+
+    //container.style.padding = '20px';
+    let inner_offset = 30; 
+    let pad = 50;
+
+    let body = document.getElementsByTagName('body')[0];
+    const styles = getComputedStyle(body);
+    let color = styles.getPropertyValue('--tint-color')
+
+    const update = {
+        //title: {text: 'some new title'}, // updates the title
+        'width':   (parseInt( container.offsetWidth ) - pad).toString(),   // updates the xaxis range
+        'height':  (parseInt(container.offsetHeight ) - pad).toString(),   // updates the end of the yaxis range
+        
+        'paper_bgcolor': color,
+        //'plot_bgcolor':  'darkblue',
+
+        //'x': inner_offset,
+        'margin': {
+        'l': inner_offset,
+        'r': inner_offset,
+        'b': inner_offset,
+        't': inner_offset,
+        //'pad': 4  
+        },
+        'autosize': true,
+        
+        };
+    Plotly.relayout(container, update);
+
+}
+
 function get_server(iurl, imethod, idata, resolve, reject) {
 
     return new Promise((resolve, reject) => {
@@ -30,14 +74,24 @@ function get_server(iurl, imethod, idata, resolve, reject) {
         });//ajax promise
 }
  
+
 function populate_project_description( data ){
+    function rmu_selection_changed(evt){
+            let subzone_selected =Id('reservoir-unit-selector').getValue();
+            let data = JSON.parse( Id('reservoir-unit-selector').dataset.info );
+            let reservoir = Object.keys(data['reservoirs'])[0];
+            let sectors = data['reservoirs'][reservoir][subzone_selected];
+            Id('sector-selector').set_data( sectors );
+    }
+    //pick the first reservoir regardless of how many there are.
+    let reservoir = Object.keys(data['reservoirs'])[0];
+    let subzone_names = Object.keys(data['reservoirs'][reservoir]);
+    Id('reservoir-unit-selector').setData( subzone_names);
+    Id('reservoir-unit-selector').dataset.info = JSON.stringify(data);
 
-    console.log('Populating project description...');
-    console.log(data);
+    Id('reservoir-unit-selector').removeEventListener('change', rmu_selection_changed );
+    Id('reservoir-unit-selector').addEventListener('change', rmu_selection_changed );
 
-    console.log(typeof(data),data['reservoir_management_units']);
-    Id('reservoir-unit-selector').setData( data['reservoir_management_units']);          
-    Id('sector-selector').setItems('Sector ', data['sectors'] );
     Id('end-date').value = new Date(data['dates'][1]).toISOString().slice(0, 10);
     Id('start-date').value = new Date(data['dates'][0]).toISOString().slice(0, 10);
     Id('study-selector').set_data(data['studies']);
@@ -47,10 +101,13 @@ function populate_project_description( data ){
 function get_project_data_selection( ){
 
     let data = {}
-    data['reservoir_management_units'] = Id('reservoir-unit-selector').getValue();
+    data['subzone'] = Id('reservoir-unit-selector').getValue();
+    data['date']   = [Id('start-date').value, Id('end-date').value];
+    data['sector'] = Id('sector-selector').getCheckedItems();
+
+    if(selected_well_names != undefined)
+        data['name']   = selected_well_names
     
-    data['dates'] = [Id('start-date').value, Id('end-date').value];
-    data['sectors'] = Id('sector-selector').getCheckedItems();
 
     return data;
     /*.setData( data['reservoir_management_units']);          
@@ -61,102 +118,73 @@ function get_project_data_selection( ){
     Id('workflow-selector').set_data(data['workflows']);        */ 
 }
 
+
 function populate_field_plots( data ){
-    console.log('Populating field plots...');
-    
-    let field_plots = []; 
-    
-    let app_layout = Id('main-layout');
 
-    let where = 'middle-top';
-    let locs_container = app_layout.get_pane(where);// Id('locs-chart');
-    locs_container.innerHTML = '';
-    /*
-    
-    let locs_data = data['locations'];
-    let locs_plot = document.createElement('div');
-    locs_container.appendChild(locs_plot);
-    locs_plot.id = 'locs-plot';
-    */
-    key = 'locations';
-    l = data[key]['layout'];
-    l['height'] = locs_container.offsetHeight;
-    l['autosize'] = true;
-    Plotly.newPlot(locs_container, data[key]['data'], l, {responsive: true});                 
-    field_plots.push(locs_container);
-    
-    /**/
-    function relayout( container){
-
-        //container.style.padding = '20px';
-        let inner_offset = 10; 
-        let pad = 50;
-        const update = {
-            title: {text: 'some new title'}, // updates the title
-            'width':   (parseInt( container.offsetWidth ) - pad).toString(),   // updates the xaxis range
-            'height':  (parseInt(container.offsetHeight ) - pad/2).toString(),   // updates the end of the yaxis range
-            
-            //'paper_bgcolor': 'orange',
-            'plot_bgcolor': 'lightgrey',
-
-            //'x': inner_offset,
-            'margin': {
-            'l': 8,
-            'r': 8,
-            'b': 8,
-            't': 8,
-            //'pad': 4  
-            },
-            'autosize': true,
-            
-            };
-            Plotly.relayout(container, update);
-
-    }
-   
-    // Plotly chart initialization
-    app_layout.addEventListener('pane-resized', (evt)=>{
-    if( evt.detail.id.includes(where) )
-    {relayout( locs_container );}}) ;relayout( locs_container );
-
-    /**/
-
-
+    let field_plots = [];
     let chart_keys = ['fractions','historical_production'];
     let container =   Id('field-charts-container');
     container.innerHTML = '';
+
+
+    const xdata = [ ]
+    let xplot = document.createElement('div');
+    container.appendChild(xplot);
     for( let key of chart_keys){
 
+        //xdata.push(data[key]['data']);
         let plot = document.createElement('div');
         container.appendChild(plot);
         plot.id = 'field-plot-'+key;
-        Plotly.newPlot(plot, data[key]['data'], data[key]['layout'], {responsive: true});    
-        container.appendChild(document.createElement('hr'));
-        field_plots.push(plot);
+        Plotly.newPlot(plot, data[key]['data'], data[key]['layout'], {responsive: true})
+        //.then ((p)=>{
+        //    field_plots.push(plot);
+        //    //resizeObserver.observe( plot );
+        //    relayout( plot );
+        //});    
+        
+        
     }
+    //const layout = { autosize:true, grid: { rows: 2, columns: 1, pattern: 'independent' }};
+    //Plotly.newPlot(container, xdata, layout, {responsive: true}).then((p)=>{  
+    //relayout( container );
+    //});
+    //resizeObserver.observe( xplot );
 
-    let activity_container = Id('activity-charts-container');
-    activity_container.innerHTML = '';
+
+    let activity_container = container;//Id('activity-charts-container');
+    //activity_container.innerHTML = '';
     let activity_data = data['activity'];
     let plot = document.createElement('div');
     activity_container.appendChild(plot);
     plot.id = 'activity-plot';
-    Plotly.newPlot(plot, activity_data['data'], activity_data['layout'], {responsive: true});  
-    field_plots.push(plot);
+    Plotly.newPlot(plot, activity_data['data'], activity_data['layout'], {responsive: true})
+    //.then ((p)=>{
+    //    resizeObserver.observe( plot );
+    //});
+    //field_plots.push(plot);
+     
 
-    let sector_container = Id('sector-charts-container');
-    sector_container.innerHTML = '';
+
+
+
+    let sector_container = container;//Id('sector-charts-container');
+    //sector_container.innerHTML = '';
     plot = document.createElement('div');
     sector_container.appendChild(plot);
     plot.id = 'sector-plot-volumes';
     Plotly.newPlot(plot, data['sector_volumes']['data'], data['sector_volumes']['layout'], {responsive: true});
+    //field_plots.push(plot);
 
+    /*for( let observed in field_plots ){
+        resizeObserver.observe( observed );
+    }*/
 
-    let containers = document.querySelectorAll('.field-chart-container');
+    //let containers = document.querySelectorAll('.field-chart-container');
 
     
 
-    }
+}
     /*for( let svg_container of svg_containers){
         svg_container.style.height = '100%';
         //svg_container.style.width = '100%';

@@ -6,7 +6,8 @@ import numpy as np
 from pyproj import Proj, Transformer
 import copy
 
-default_colors = ['green','cyan','grey','orange','blue','red','purple','yellow','brown','pink']
+default_colors = ['green','cyan','lightgrey','salmon','blue','red','purple','yellow','brown','pink']
+ 
 
 def default_plotly_layout_python():
     
@@ -79,6 +80,8 @@ def apply_dataset_filters( input_dataset:CRMDataset, filters: dict = None ) -> C
     dates = filters.get(DATE_KEYS[0], None)
     producer_names = filters.get('producer_names', None)
     injector_names = filters.get('injector_names', None)
+    well_names = filters.get('names', None)
+    
     sector    = filters.get(SECTOR_KEYS[0], None)
     zone      = filters.get(ZONE_KEYS[0], None)  
     subzone   = filters.get(SUBZONE_KEYS[0], None)   
@@ -91,9 +94,15 @@ def apply_dataset_filters( input_dataset:CRMDataset, filters: dict = None ) -> C
     if producer_names is not None:
         names = producer_names + d.injector_names
         d = d.filter_by( NAME_COL, names )
+        
     if injector_names is not None:
         names = d.producer_names + injector_names
         d = d.filter_by(NAME_COL, names )
+        
+    if well_names is not None:
+        d = d.filter_by(NAME_COL, well_names )
+        
+        
         
     if sector is not None:
         if not isinstance(sector, List):
@@ -197,22 +206,20 @@ def get_dataset_field_summary_plots(input_dataset:CRMDataset, cummulative = Fals
     layout = default_plotly_layout_python()
 
 
-    colors = ['blue','grey','brown','green'] + default_colors #['green','cyan','grey','orange','blue','red','purple','yellow','brown','pink']
-    xx =  [ {'fillcolor':'light'+colors[n],
-            'name':key.replace('_',' ').capitalize()} for n, (key, value) in  enumerate(production_summary.items())]
+    colors = ['blue','lightgrey','brown','green'] + default_colors #['green','cyan','grey','orange','blue','red','purple','yellow','brown','pink']
+    #xx =  [ {'fillcolor':'light'+colors[n],
+    #        'name':key.replace('_',' ').capitalize()} for n, (key, value) in  enumerate(production_summary.items())]
  
-    #print(xx)
-     
-    
+ 
     data = [ {'fillcolor': {'color':'light'+colors[n]}, 'line': {'color':colors[n]},
             'name':key.replace('_',' ').capitalize(), 
             'type':'scatter','mode':'lines','opacity': 0.99915,#'fill':  'tonexty', #'tonexty',
             'stackgroup':'Aggregated', 
             'x':value.index.astype(str).values.tolist(), 
-            'y':value.values.tolist()  } for n, (key, value) in  enumerate(production_summary.items()) ]
-    
+            'y':value.values.tolist()} for n, (key, value) in  enumerate(production_summary.items()) ]
     
     #historical aggregates 
+    #round 2 decimals the production history  
     layout['title']['text'] = 'Stacked historical volumes' + (' (cummulative)' if cummulative else '')   
     producers_fig = { 'data': data,'layout': copy.deepcopy(layout),'config':default_plotly_config_python()
                      }
@@ -221,18 +228,24 @@ def get_dataset_field_summary_plots(input_dataset:CRMDataset, cummulative = Fals
     #add the water as a line 
     inj_data = {'name':'Water injection', 'type':'scatter','mode':'lines', 'line':{'color':'black','dash':'dot'}}
     inj_data['x'] = injection_summary['water_injection'].index.astype(str).values.tolist()
-    inj_data['y'] = injection_summary['water_injection'].values.tolist()
+    inj_data['y'] = [ round(i,2) for i in injection_summary['water_injection'].values.tolist()]
     producers_fig['data'].append( inj_data )
     
-    
+    for d in producers_fig['data']:
+        d['y'] = [ round(i,2) for i in d['y']]
     
     #pie chart with the fractions the last day (cummulative if selected)
     #water-oil-gas and liquid fractions
     labels = [ x.replace('_',' ').capitalize() for x in list(fractions.keys()) ]
-    print(labels)
-    fractions_data = [ {'values': list(fractions.values()), 'labels': labels, 'type':'pie',
-                        'marker':{'colors':['blue','grey','brown','green']}, 'hole':0.4, 'name':'Fractions'
+    
+    values = [round(i,2) for i in list(fractions.values())]
+    fractions_data = [ {'values': values, 'labels': labels, 'type':'pie',
+                        'marker':{'colors':['blue','lightgrey','brown','green']}, 'hole':0.4, 'name':'Fractions'
                         } ]
+    #for d in fractions_data['data']:
+    #    d['y'] = [ round(i,2) for i in d['y']]
+    
+    
     
     layout['title']['text'] = 'Volume fractions at present-day' + "" if not cummulative else " (cummulative)"
     layout['legend'] =dict(
@@ -269,18 +282,34 @@ def get_dataset_locations_plot( crm_dataset, filters: dict = None ):
     LONG_COL = find_column( d.locations_df.columns, LONG_KEYS )
     
     f = d.locations_df[ d.locations_df['NAME'].isin( d.producer_names )]
+    
+    custom_data = ['Sector:' + str(s) for s in f[SECTOR_COL].values.tolist()]
+    
     producers_data = {
         'name':'Producers','type':"scattermap", 'mode': 'markers+text',
         'text': f['NAME'].unique().tolist(),
-        'lat': f[LAT_COL].values.tolist(),
-        'lon': f[LONG_COL].values.tolist(),
+        'customdata': custom_data,
+        'hovertemplate': 
+            '%{text}<br>' + 
+            '%{customdata}<extra></extra>',
+            
         'sector': f[SECTOR_COL].values.tolist(),
         'marker': {
             'size': 10, 
             'color': 'red', 
             #'symbol': 'square'
         }}
-
+    
+    if LAT_COL in f:
+        producers_data['lat'] = f[LAT_COL].values.tolist()
+        producers_data['lon'] = f[LONG_COL].values.tolist()
+    else:
+        X_COL = find_column( d.locations_df.columns, X_KEYS )
+        Y_COL = find_column( d.locations_df.columns, Y_KEYS )
+        producers_data['x'] = f[ X_COL].values.tolist()
+        producers_data['y'] = f[ Y_COL].values.tolist()
+        
+        
    
     f = d.locations_df[ d.locations_df['NAME'].isin( d.injector_names )]
     injectors_data = {
@@ -292,15 +321,37 @@ def get_dataset_locations_plot( crm_dataset, filters: dict = None ):
             'size': 10,'color': 'blue', 
             #'symbol': 'triangle'
         }}  
-    
-    
-    lat, lon = d.locations_df['LAT'], d.locations_df['LONG'] 
-    min_lat,max_lat, min_lon, max_lon = lat.min(),lat.max(),lon.min(), lon.max()
-    
+    if LAT_COL in f:
+        injectors_data['lat'] = f[LAT_COL].values.tolist()
+        injectors_data['lon'] = f[LONG_COL].values.tolist()
+    else:
+        X_COL = find_column( d.locations_df.columns, X_KEYS )
+        Y_COL = find_column( d.locations_df.columns, Y_KEYS )
+        injectors_data['x'] = f[ X_COL].values.tolist()
+        injectors_data['y'] = f[ Y_COL].values.tolist()
+        
+        
+  
     layout = {
-        #'fitbounds':"locations",  
-        'legend':{'x':0,'y':1,'xanchor':'left','yanchor':'top'}, 
-        'map': {'bounds': {'east':  max_lon+0.5,
+            'hoverlabel': {
+                'font': {
+                    'size': 16,      
+                    'color': 'black'
+                }},
+                
+            #'fitbounds':"locations",  
+            'legend':{'x':0,'y':1,'xanchor':'left','yanchor':'top'}, 
+            'autosize':True,
+            #'title': {'text':'Field locations'},
+            'margin': { 'r': 10, 't': 10, 'b': 10, 'l': 10 }
+        }  
+      
+    if LAT_COL in f:
+        lat, lon = d.locations_df['LAT'], d.locations_df['LONG'] 
+        min_lat,max_lat, min_lon, max_lon = lat.min(),lat.max(),lon.min(), lon.max()
+ 
+
+        layout['map'] = {'bounds': {'east':  max_lon+0.5,
                            'north': max_lat+0.5,
                            'south': min_lat-0.5,
                            'west':  min_lon-0.5
@@ -309,12 +360,9 @@ def get_dataset_locations_plot( crm_dataset, filters: dict = None ):
                            'domain': {'x': [0.0, 1.0], 'y': [0.0, 1.0]},
                            'style': 'open-street-map',
                            #'zoom': 2
-                           },
-        'margin': { 'r': 0, 't': 0, 'b': 0, 'l': 0 }
-    }   
-
-    layout2 = copy.deepcopy(layout).update(layout)
-   
+                           }
+    
+     
    
     fig = {'data':[producers_data, injectors_data] , 'layout':layout } #, 'config':default_plotly_config_python() }
     return fig
@@ -372,22 +420,24 @@ def get_dataset_sector_summary_plots(input_dataset:CRMDataset, filters: dict = N
         total_liquid.append( total.astype(float) )
     
     
+    total_liquid = [ round(x,2) for x in total_liquid]
+    total_water_injected = [ round(x,2) for x in total_water_injected]
+    
     charts = [ total_water_produced, total_oil_produced, total_gas_produced,total_water_injected,total_liquid]
     
     
     data = [] 
     names.append('Total liquid produced')
-    colors =  ['blue','grey','brown','cyan','green']  + default_colors# ['blue','grey','brown','cyan','green','red','purple','yellow','brown','pink']
+    colors =  ['blue','lightgrey','brown','cyan','green']  + default_colors# ['blue','grey','brown','cyan','green','red','purple','yellow','brown','pink']
     for n,chart in enumerate(charts):
         chart_name_ = names[n].replace("_"," ").capitalize()
-        
-        print( colors[n], chart_name_)
-        
+         
         y,x = chart,sectors
-        y= [float(x) for x in y]
+        y= [round(float(xx),2) for xx in y]
         #print(sectors, type(sectors), type(sectors[0]))
         
-        d = { 'sector':sectors[n], 'name' : chart_name_, 'x':x, 'y':y, 'type':'bar', 'marker':{'color':colors[n]} }
+        d = { #'sector':sectors[n], 
+             'name' : chart_name_, 'x':x, 'y':y, 'type':'bar', 'marker':{'color':colors[n]} }
         if chart == total_water_injected or chart == total_liquid:
             d['yaxis'] = 'y2'
             d['marker']['size'] = 16

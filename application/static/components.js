@@ -352,14 +352,54 @@ class QuickJS_Stringlist extends HTMLElement {
               
               // not clicked on a cell
           let row_data= this_object.getRow( i );
-              if (!cell)  this_object.raise_click_event({'selected':s, 'row_index': i, 'row_data':row_data });	 
+              if (!cell)  this_object.raise_click_event({'clicked':s, 'row_index': i, 'row_data':row_data });	 
               
               else
-          this_object.raise_click_event({ 'selected':s, 'row_index': i, 'row_data':row_data, 'cell_text': evt.target.innerText, 'cell_index': cell.cellIndex });	
+          this_object.raise_click_event({ 'clicked':s, 'row_index': i, 'row_data':row_data, 'cell_text': evt.target.innerText, 'cell_index': cell.cellIndex });	
               }
               
           });
           
+          row.addEventListener('dblclick', (evt) =>   //add a click event 
+          {
+              if( table.disabled==true){;}
+          
+              else{
+          
+         if(this_object.selection_mode =='none'){
+             return;
+         }  
+                  
+          if(this_object.selection_mode ==undefined){
+              this_object.selection_mode = 'single';
+          }
+                  
+              if(this_object.selection_mode =='single'){
+                  this_object.unselect_all_rows(i);
+                  this_object.flip_row_selection(i);
+              }
+              
+              if(this_object.selection_mode =='multiple'){
+                  this_object.flip_row_selection(i);
+              }
+              
+              //now the data 
+              const cell = evt.target.closest('td');
+              let data = undefined 
+              
+              let s = this_object.selected()
+              console.log( 'selected', s )
+              
+              // not clicked on a cell
+          let row_data= this_object.getRow( i );
+              if (!cell)  this_object.raise_dclick_event({'dclicked':s, 'row_index': i, 'row_data':row_data });	 
+              
+              else
+          this_object.raise_dclick_event({ 'dclicked':s, 'row_index': i, 'row_data':row_data, 'cell_text': evt.target.innerText, 'cell_index': cell.cellIndex });	
+              }
+              
+          });
+
           }//rows
       }//function
       
@@ -372,9 +412,21 @@ class QuickJS_Stringlist extends HTMLElement {
           let x = new CustomEvent("clicked", { bubbles: true, detail: data }); 
           this_object.dispatchEvent(x);
   
-          console.log('dispatching event, data ', data )
+          //console.log('dispatching event, data ', data )
           }
   
+          raise_dclick_event(data) {
+            let this_object = this;
+            let table = this_object.getElementsByTagName('table')[0];
+            this_object.selected();
+    
+            
+            let x = new CustomEvent("dclicked", { bubbles: true, detail: data }); 
+            this_object.dispatchEvent(x);
+    
+            //console.log('dispatching event, data ', data )
+            }
+
       set_data( strings ){
           let this_object = this;
           let table = this_object.getElementsByTagName('table')[0];

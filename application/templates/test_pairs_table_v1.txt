@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Producers & Injectors</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background: #f4f4f4;
+        }
+        .actions {
+            text-align: right;
+        }
+        button {
+            cursor: pointer;
+            border: none;
+            padding: 5px 10px;
+            margin: 2px;
+            font-size: 14px;
+            border-radius: 4px;
+        }
+        .add-btn {
+            color: green;
+            background: transparent;
+        }
+        .remove-btn {
+            color: red;
+            background: transparent;
+        }
+        .trash-btn {
+            color: gray;
+            background: transparent;
+        }
+        .dialog {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+            min-width: 300px;
+        }
+        .dialog-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .close-btn {
+            background: #ccc;
+            padding: 5px 8px;
+            border-radius: 50%;
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 5;
+        }
+        .injector-list {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .injector-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f9f9f9;
+            padding: 5px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <table id="producerTable">
+        <thead>
+            <tr>
+                <th>Producer</th>
+                <th>Injectors</th>
+                <th class="actions">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Dynamic Content -->
+        </tbody>
+    </table>
+
+    <!-- Add Injector Dialog -->
+    <div class="overlay" id="overlay"></div>
+    <div class="dialog" id="addInjectorDialog">
+        <div class="dialog-header">
+            <h3>Add Injectors</h3>
+            <button class="close-btn" onclick="closeDialog()">X</button>
+        </div>
+        <div class="injector-list" id="availableInjectors"></div>
+    </div>
+
+    <!-- Remove Injector Dialog -->
+    <div class="dialog" id="removeInjectorDialog">
+        <div class="dialog-header">
+            <h3>Remove Injectors</h3>
+            <button class="close-btn" onclick="closeDialog()">X</button>
+        </div>
+        <div class="injector-list" id="currentInjectors"></div>
+    </div>
+
+    <script>
+        let data = {
+            "producer1": ["injector1", "injector2", "TT", "injector3"],
+            "producer2": ["Injector4", "TT", "Injector5", "XX"],
+            "producer3": ["Injector6", "XX"]
+        };
+        const originalInjectors = [...new Set(Object.values(data).flat())];
+
+        function renderTable() {
+            const tableBody = document.querySelector("#producerTable tbody");
+            tableBody.innerHTML = "";
+            Object.keys(data).forEach(producer => {
+                const row = document.createElement("tr");
+
+                const producerCell = document.createElement("td");
+                producerCell.textContent = producer;
+                row.appendChild(producerCell);
+
+                const injectorsCell = document.createElement("td");
+                injectorsCell.textContent = data[producer].join(", ");
+                row.appendChild(injectorsCell);
+
+                const actionsCell = document.createElement("td");
+                actionsCell.classList.add("actions");
+
+                const addButton = document.createElement("button");
+                addButton.innerHTML = "+";
+                addButton.classList.add("add-btn");
+                addButton.onclick = () => showAddDialog(producer);
+                actionsCell.appendChild(addButton);
+
+                const removeButton = document.createElement("button");
+                removeButton.innerHTML = "-";
+                removeButton.classList.add("remove-btn");
+                removeButton.onclick = () => showRemoveDialog(producer);
+                actionsCell.appendChild(removeButton);
+
+                const trashButton = document.createElement("button");
+                trashButton.innerHTML = "🗑";
+                trashButton.classList.add("trash-btn");
+                trashButton.onclick = () => deleteProducer(producer);
+                actionsCell.appendChild(trashButton);
+
+                row.appendChild(actionsCell);
+                tableBody.appendChild(row);
+            });
+        }
+
+        function showAddDialog(producer) {
+            document.getElementById("overlay").style.display = "block";
+            document.getElementById("addInjectorDialog").style.display = "block";
+
+            const availableInjectors = document.getElementById("availableInjectors");
+            availableInjectors.innerHTML = "";
+
+            const unusedInjectors = originalInjectors.filter(inj => !data[producer].includes(inj));
+            unusedInjectors.forEach(injector => {
+                const item = document.createElement("div");
+                item.classList.add("injector-item");
+                item.innerHTML = `${injector} <button class="add-btn" onclick="addInjector('${producer}', '${injector}')">+</button>`;
+                availableInjectors.appendChild(item);
+            });
+        }
+
+        function showRemoveDialog(producer) {
+            document.getElementById("overlay").style.display = "block";
+            document.getElementById("removeInjectorDialog").style.display = "block";
+
+            const currentInjectors = document.getElementById("currentInjectors");
+            currentInjectors.innerHTML = "";
+
+            data[producer].forEach(injector => {
+                const item = document.createElement("div");
+                item.classList.add("injector-item");
+                item.innerHTML = `${injector} <button class="remove-btn" onclick="removeInjector('${producer}', '${injector}')">-</button>`;
+                currentInjectors.appendChild(item);
+            });
+        }
+
+        function closeDialog() {
+            document.querySelectorAll(".dialog, .overlay").forEach(el => el.style.display = "none");
+        }
+
+        function addInjector(producer, injector) {
+            data[producer].push(injector);
+            renderTable();
+            closeDialog();
+        }
+
+        function removeInjector(producer, injector) {
+            data[producer] = data[producer].filter(item => item !== injector);
+            renderTable();
+            closeDialog();
+        }
+
+        function deleteProducer(producer) {
+            delete data[producer];
+            renderTable();
+        }
+
+        renderTable();
+    </script>
+
+</body>
+</html>

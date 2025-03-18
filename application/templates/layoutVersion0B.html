@@ -15,137 +15,11 @@
      <script src="{{ url_for('static', filename='components.js') }}"></script>
      <script src="{{ url_for('static', filename='app_components.js') }}"></script>
      <script src="{{ url_for('static', filename='support.js') }}"></script>
+     <script src="{{ url_for('static', filename='locs_chart_support.js') }}"></script>
+     
      <link href ="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
 
  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-  
-
-<style>
-        .hidden{
-            display: none;
-        }
-
-        .button-container {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            background-color: lightgray;
-            padding: 10px;
-            border-radius: 5px;
-            position: fixed;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-        }
-        .btn-custom {
-            width: 60px;
-            height: 60px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            border-radius: 0;
-            background-color: transparent;
-            border: 1px solid gray;
-            border-left: 3px solid gray;
-            border-right: 3px solid gray;
-            color: inherit;
-        }
-        .btn-custom i {
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
-
- .svg-container{
-
-    height: 100%;
-    width:100%;
- }
-
- .js-plotly-plot{
-    height: 100%;
-    width:100%;
- }
-
-
- td { font-weight:bold; color: blueviolet; font-size:0.75em; }
- td:hover { background-color: lightgrey; }
-
- .scrollable-list {
-      width: 100%;
-      height: 100%;
-      overflow-y: scroll;
-      box-sizing: border-box;
-      padding: 10px;
-      border: 1px solid #ccc;
-      background-color: #f9f9f9;
-    }
-
-    .scrollable-list ul {
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }
-
-    .scrollable-list li {
-      padding: 8px;
-      border-bottom: 1px solid #ddd;
-    }
-
-.pane{
-    overflow:None;
-    background-color: transparent;
-    border: 2px solid green;
-    padding: 10px;
-    }
-	
-         
-              
-
-                    .columns-container {
-                        display: flex;
-						height: calc(100vh - 66px);
-						border: 2px solid red;
-						
-                    }
-
-                    .column {
-                        display: flex;
-                        flex-direction: column;
-                        border: 2px solid black;
-						height:100%;
-		 
-                    }
-
-                    .separator {
-                        width: 8px;
-                        background-color: grey;
-                        cursor: ew-resize;
-                        position: absolute;
-                        top: 0;
-                        bottom: 0;
-                        z-index: 1;
-                    }
-
-                    .separator:hover {
-                        background-color: black;
-                    }
-
-                    .handler:hover {
-                        background-color: black;
-                        height: 10px;
-                    }
-
-                    .handler {
-                        height: 10px;
-                        background-color: grey;
-                    }
-	
-</style>
-
-
-
 
 </head>
 
@@ -263,49 +137,69 @@
         </div>
     </div>
 
+        <!-- Sticky Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
 
-    <!-- Sticky Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-
-        <button id="check">dsdasdf</button>
-        <script>
-            Id('check').addEventListener('click', function(){
-                alert('clicked');
-                let extra_stuff = Id('extra-stuff');
-                let field_stuff = Id('field-stuff');
-                
-                if(extra_stuff.classList.contains('hidden')){
-                    extra_stuff.classList.remove('hidden');
-                    field_stuff.classList.add('hidden');
-                }else{  
-                    extra_stuff.classList.add('hidden');
-                    field_stuff.classList.remove('hidden');
-                }
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">Waterflood insights</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+    
+         
+         
+    
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a id='initialize-app-button'class="nav-link active" aria-current="page">Initialize</a>
+                        </li>
                     
-            });
-        </script>
-        
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">My Site</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a id='initialize-app-button'class="nav-link active" aria-current="page">Initialize</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Features</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Pricing</a>
-                    </li>
-                </ul>
+                    </ul>
+    
+                    <button style='float:right' id="check">dsdasdf</button>
+                    <script>
+                        Id('check').addEventListener('click', function(){
+            
+              
+            
+                            alert('clicked');
+                            let extra_stuff = Id('extra-stuff');
+                            let field_stuff = Id('field-stuff');
+                            
+                            if(extra_stuff.classList.contains('hidden')){
+                                extra_stuff.classList.remove('hidden');
+                                field_stuff.classList.add('hidden');
+                            }else{  
+                                extra_stuff.classList.add('hidden');
+                                field_stuff.classList.remove('hidden');
+                            }
+                                
+                        });
+                    </script>
+    
+                    <button style='margin-left:20%'class="warning-button" 
+                    id="well-selection-indicator">
+                        <span class="warning-icon">&#9888;
+                          Well selection active
+                        </span>
+                      </button>
+                </div>
+    
+      
+    
+          
+    
             </div>
-        </div>
-    </nav>
+    
+    
+    
+          
+    
+        </nav>
+
+    <div id='all-app-wrapper' class="container-fluid">
+
 
     <div style="position: relative;top: 57px;" >
         <div class="row">
@@ -322,7 +216,15 @@
             </div>
     
 
-            <div class="row bg-primary" style="height: 100vh;">
+            <div class="hidden row bg-primary" style="height: calc(100vh - 57
+            px);">
+                <tabs-component id="bottom-tabs"></tabs-component>
+                <script>
+                    Id('bottom-tabs').addNewTab('tab1', 'sdfgsdgdfg');
+                    Id('bottom-tabs').addNewTab('tab2', 'sdfgsdgdfg');
+                    Id('bottom-tabs').addNewTab('tab3', 'sdfgsdgdfg');
+                    
+                </script>
                 <p>sdfdsfdf</p>
                 <p>sdfdsfdf</p>
                 <p>sdfdsfdf</p>
@@ -335,11 +237,11 @@
         </div>
     </div>
 
-	<div class="bg-primary caontainer-fluid"  >
-      
-	</div>
+    </div>
+    
  
 
+ 
 
 <script id="initialize-app">
     let layout = Id('main-layout');
@@ -482,10 +384,8 @@
 
 
     Id('initialize-app-button').addEventListener('click', function(){
-        alert('Initializing...');
-
-        let mock = false
-        if( !mock ){
+  
+   
             let iurl = 'get_project_description'
             get_server(iurl, 'GET', {})
             .then( (resp) =>{
@@ -497,7 +397,7 @@
             .catch ((error) =>{
                 console.log(error);
             });
-        }
+        
 
         Id('field-tab-button').click()
         Id('data-tab1').click()
@@ -534,15 +434,26 @@
             if(read_data!=undefined){
                 console.log('Data read:', read_data);
 
-                get_server('get_field_charts','POST', JSON.stringify(read_data))
+                get_server('get_locations_chart','POST', JSON.stringify(read_data))
                 .then( (resp) =>{
-                    populate_field_plots(resp.data);
+                    populate_locations_plot(resp.data);
+                    return resp;
                 })  
                 .catch ((error) =>{
-                    console.log(error);
-                });
+                    console.log(error);alert('Error getting data for locations');
+                }); 
+
+                get_server('get_field_charts','POST', JSON.stringify(read_data))
+                .then( (resp) =>{
+                    console.log('get_field_charts returned', resp);
+                    populate_field_plots(resp.data);
+                })
+                .catch ((error) =>{
+                    console.log(error);alert('Error getting data for field data');
+                }); 
 
 
+                dummy();
             }
 
 
@@ -595,8 +506,149 @@
 
 </script>
    
+<script id='ui_events'>
+
+    function old_showDialog(element, title) {
+  return new Promise((resolve) => {
+    const dialog = document.createElement('dialog');
+    dialog.innerHTML = `
+      <form method="dialog" class="p-4 border rounded shadow-sm">
+          <h5 class="mb-3">${title}</h5>
+          <div class="dialog-content mb-3"></div>
+          <div class="mb-3">
+              <label for="inputText" class="form-label">Enter text:</label>
+              <input type="text" id="inputText" name="inputText" class="form-control">
+          </div>
+          <div class="d-flex justify-content-end">
+              <button id="cancelButton" value="cancel" class="btn btn-secondary me-2">Cancel</button>
+              <button id="applyButton" value="apply" class="btn btn-primary">Apply</button>
+          </div>
+      </form>
+    `;
+
+    dialog.querySelector('.dialog-content').appendChild(element);
+    document.body.appendChild(dialog);
+    dialog.showModal();
+
+    dialog.addEventListener('close', () => {
+      resolve({
+        action: dialog.returnValue,
+        text: document.getElementById('inputText').value
+      });
+      dialog.remove();
+    });
+  });
+}
+
+function showDialog(element, title) {
+  return new Promise((resolve) => {
+    const dialog = document.createElement('div');
+    dialog.classList.add('dialog');
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-labelledby', 'dialog-title');
+    dialog.setAttribute('tabindex', '-1');
+    dialog.style.zIndex = '9999';
+
+    dialog.innerHTML = `
+      <div id="dialog-title" class='drag-handle'>
+          ${title}
+          <button class="close-btn" aria-label="Close">&times;</button>
+      </div>
+      <div class="dialog-body">
+          <div class="dialog-content"></div>
+      </div>
+      <div class="dialog-footer">
+          <button data-action="cancel" type="button" class="btn btn-secondary">Cancel</button>
+          <button data-action="apply" type="button" class="btn btn-primary">Apply</button>
+      </div>
+    `;
+
+    dialog.querySelector('.dialog-content').appendChild(element);
+    document.body.appendChild(dialog);
+
+    // Center the dialog initially
+    dialog.style.left = `${(window.innerWidth - dialog.offsetWidth) / 2}px`;
+    dialog.style.top = `${(window.innerHeight - dialog.offsetHeight) / 2}px`;
+    dialog.focus();
+
+    const handle = dialog.querySelector('.drag-handle');
+    let offsetX, offsetY, isDragging = false;
+
+    handle.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      offsetX = e.clientX - dialog.offsetLeft;
+      offsetY = e.clientY - dialog.offsetTop;
+      document.body.style.userSelect = 'none';
+
+      const onMouseMove = (e) => {
+        if (isDragging) {
+          dialog.style.left = `${e.clientX - offsetX}px`;
+          dialog.style.top = `${e.clientY - offsetY}px`;
+        }
+      };
+
+      const onMouseUp = () => {
+        isDragging = false;
+        document.body.style.userSelect = 'auto';
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+      };
+
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp, { once: true });
+    });
+
+    dialog.addEventListener('click', (e) => {
+      if (e.target.dataset.action === 'cancel' || e.target.classList.contains('close-btn')) {
+        resolve({ action: 'cancel', text: '' });
+        dialog.remove();
+      } else if (e.target.dataset.action === 'apply') {
+        const inputText = element.value || element.textContent || '';
+        resolve({ action: 'apply', text: inputText });
+        dialog.remove();
+      }
+    });
+  });
+}
 
 
+    Id('workflow-selector').addEventListener('dclicked',(evt)=>{
+        console.log('Workflow double-clicked:', evt.detail);
+
+        let w = new CRMSetupElement();//crm-setup-element
+        Id('activity-charts-container').appendChild(w);
+
+        
+        /*let p  = showDialog(w, 'Data-driven model setup');
+        p.then ( (resp) =>{
+            console.log( resp ); 
+        });*/
+
+
+        /*
+        let te = document.createElement('textarea');
+        te.innerHTML = 'This is a test element';
+        let p  = showDialog(te, evt.detail.text);
+        p.then ( (resp) =>{
+            console.log( resp, te.value); 
+        });*/
+
+
+    });
+
+</script>
+
+<script id="load-empty-app">
+    function load_empty_app(){
+        
+        Id('initialize-app-button').click();
+
+        
+    }
+    window.onload = function() {
+        load_empty_app();
+    };
+</script>
 
 </body>
 </html>

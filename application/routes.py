@@ -13,85 +13,113 @@ from wf_lib2.data.crm_pattern  import CRMPattern
 from typing import List
 from wf_lib2.view_model.view_model import *
  
-def DEAD_mock_get_field_plots():
+class Storage:
     
-    locs = pd.read_csv( 'example_datasets/locations_example1.csv')
-    locs['LAT'], locs['LONG'] = utm_to_latlon( locs['X'], locs['Y'] )
-    inj =  pd.read_csv( 'example_datasets/injectors_example1.csv')
-    prd =  pd.read_csv( 'example_datasets/producers_example1.csv')
-
-    time_format = '%d/%m/%Y' #01/07/2024
-    crm_dataset = CRMDataset.instance( inj, prd, locs, time_format=time_format ) 
-
-    #ignore the errors 
-    #reduce the size 
-    dataset = crm_dataset.filter_by('SECTOR', [1, 2, 3])
-
-    
-    #dataset = CRMDataset.generate_default_multiwell_dataset()
-    #dataset.producers_df['OIL_VOLUME'] = 0.2*dataset.producers_df['WATER_VOLUME'] 
-    #dataset.producers_df['WATER_VOLUME'] = 0.8*dataset.producers_df['WATER_VOLUME'] 
-  
-    (active_wells, 
-    production_summary, 
-    injection_summary, 
-    fractions, 
-    filtered_dataset, pattern) = get_dataset_field_summary( dataset,cummulative=True )
-   
-    (producers_fig, 
-     fractions_fig, 
-     active_fig
-    ) = get_dataset_field_summary_plots(active_wells, production_summary, injection_summary, fractions) 
-    
-    locs = get_dataset_locations_plot( dataset )
-    
-    return producers_fig, fractions_fig, active_fig, locs 
-
- 
-def mock_get_project_description(project_name='Project 1'):
-            
-    wokflow_names=['Liquid history match', 
-                   'Watercut history match', 
-                   'Static pattern flow balancing',
-                   'Lagged correlation analysis',
-                   'Genetic optimization' 
-                  ]
-    studies = ['Field scale', 'Demo 1', 'Lasso-sector ']
-    reservoir_management_units = ['RMU 1', 'RMU 2', 'RMU 3']
-    sectors =  7  
-    dates   = ['2016-01-01', '2020-01-01'] 
-                
-    backend_data  = {
-                'workflows': wokflow_names,
-                'studies': studies,
-                'reservoir_management_units': reservoir_management_units,
-                'sectors': sectors,
-                'dates': dates   
-            }
-
-    return backend_data
+    def __init__(self, config ):
+        self.config = config 
         
-def mock_get_dataset( ):
-    
-    locs = pd.read_csv( 'example_datasets/locations_example1.csv')
-    locs['LAT'], locs['LONG'] = utm_to_latlon( locs['X'], locs['Y'] )
-    inj =  pd.read_csv( 'example_datasets/injectors_example1.csv')
-    prd =  pd.read_csv( 'example_datasets/producers_example1.csv')
+    def get_dataset( self, filters = None ):
+        
+        if not filters is None:
+            print('---received a request with filters', filters)
 
-    time_format = '%d/%m/%Y' #01/07/2024
-    crm_dataset = CRMDataset.instance( inj, prd, locs, time_format=time_format ) 
-    
-    crm_dataset = crm_dataset.filter_by('SECTOR', [1,2,3,4,5])
-    crm_dataset = crm_dataset.slice_dates_dataset(  '01/06/2019', '01/01/2021' )
- 
-    return crm_dataset
+        
+        locs = pd.read_csv( 'example_datasets/locations_example1.csv')
+        locs['LAT'], locs['LONG'] = utm_to_latlon( locs['X'], locs['Y'] )
+        inj =  pd.read_csv( 'example_datasets/injectors_example1.csv')
+        prd =  pd.read_csv( 'example_datasets/producers_example1.csv')
+
+        time_format = DATE_FORMAT  #21/07/2024
+        crm_dataset = CRMDataset.instance( inj, prd, locs, time_format=time_format ) 
+        
+        if not filters is None:
+
+            if 'name'in filters:
+                names = filters['name']
+                if not isinstance(names, list):
+                    names = [names]
+                crm_dataset = crm_dataset.filter_by(NAME_KEYS[0], names)
+                
+            if 'date' in filters:
+                date1,date2 = filters['date'] 
+                crm_dataset = crm_dataset.slice_dates_dataset(  date1, date2 )
+            
+            if 'zone' in filters:
+                unit = filters['zone']
+                if not isinstance(unit, list):
+                    unit = [unit]
+                    
+                if len(unit)>0:
+                    crm_dataset = crm_dataset.filter_by(ZONE_KEYS[0], unit)
+            
+            if 'subzone' in filters:
+                unit = filters['subzone']
+                if not isinstance(unit, list):
+                    unit = [unit]
+                    
+                if len(unit)>0:
+                    crm_dataset = crm_dataset.filter_by(SUBZONE_KEYS[0], unit)
+            
+            if 'sector' in filters:
+                sector = filters['sector']
+                if not isinstance(sector, list):
+                    print('***filtering sectors', sector)
+                    sector = [sector]
+                if len(sector) > 0:
+                    crm_dataset = crm_dataset.filter_by(SECTOR_KEYS[0], [int(i) for i in sector] )
+            
+     
+        return crm_dataset
+
+    def get_project_description(self, project_name='Project 1'):
+            
+        crm_dataset = self.get_dataset()
+        reservoir_names = crm_dataset.locations_df[ZONE_KEYS[0]].unique().tolist()
+        print('----reservoir_names', reservoir_names)
+        reservoirs = {} 
+        for name in reservoir_names:
+            reservoirs[name] = {}
+            tmp = crm_dataset.filter_by(ZONE_KEYS[0], [name])
+            subzones = crm_dataset.locations_df[SUBZONE_KEYS[0]].unique().tolist()
+            print('----subzones', subzones)
+            
+            for subzone in subzones:
+                tmp2 = tmp.filter_by(SUBZONE_KEYS[0], [subzone])
+                sectors = sorted(tmp2.locations_df[SECTOR_KEYS[0]].unique().tolist())
+                reservoirs[name][subzone] = [ int(s) for s in sectors ]  
+                
+
+        
+        wokflow_names=['Liquid history match', 
+                    'Watercut history match', 
+                    'Static pattern flow balancing',
+                    'Lagged correlation analysis',
+                    'Genetic optimization' 
+                    ]
+        studies = ['Field scale', 'Demo 1', 'Lasso-sector ']
+        reservoir_management_units = ['RMU 1', 'RMU 2', 'RMU 3']
+        sectors =  7  
+        dates   = [crm_dataset.producers_df['DATE'].min(),crm_dataset.producers_df['DATE'].max()]
+        print(dates)
+                    
+                
+        backend_data  = {
+                    'workflows': wokflow_names,
+                    'studies': studies,
+                    #'reservoir_management_units': reservoir_management_units,
+                    #'sectors': sectors,
+                    'dates': dates   ,
+                    'reservoirs': reservoirs
+                }
+
+        return backend_data
+            
 
 @app.route('/get_project_description',methods=['GET','POST'])
 def get_project_description():
 
     print('Request get_project_description fullfilled')
-    data = mock_get_project_description()
-    print('Request get_project_description fullfilled')
+    data = Storage( None ).get_project_description()
     
     return {'data':data }, 200 
   
@@ -99,17 +127,16 @@ def get_project_description():
 @app.route('/get_field_charts',methods=['GET','POST'])
 def get_field_charts():
 
-    crm_dataset = mock_get_dataset()
-    print('Request for /get_field_charts received')
-    locs_fig  = get_dataset_locations_plot( crm_dataset )#, filters  )
+    filters = request.get_json()
+    print('Request for /get_field_charts received', filters)
+
+    crm_dataset = Storage( None ).get_dataset( filters )
+       
     producers_fig, fractions_fig, active_fig  =  get_dataset_field_summary_plots( crm_dataset )# , filters  )
     sector_volumes_fig = get_dataset_sector_summary_plots( crm_dataset )
-     
-    
     field_charts = dict( fractions = fractions_fig, 
                         historical_production = producers_fig, 
                         activity = active_fig,
-                        locations = locs_fig,
                         sector_volumes = sector_volumes_fig
                         )
      
@@ -126,24 +153,80 @@ def get_field_charts():
     #                    )
     #return jsonify( {'message':'Data loaded', 'data' : field_charts }), 200   
     
+@app.route('/get_locations_chart',methods=['GET','POST'])
+def get_locations_chart():
+
+    filters = request.get_json()
+    print('Request for /get_field_charts received', filters)
+
+    crm_dataset = Storage(None).get_dataset( filters )
+    locs_fig  = get_dataset_locations_plot( crm_dataset )#, filters  )
     
+    locs_charts = dict(locations = locs_fig)
+    return jsonify( {'message':'Data loaded', 'data' : locs_charts }), 200   
+    
+
+    # field 
+    # time cummulatives, current step aggregates and active wells in time 
+    #producers_fig, fractions_fig, active_fig, locs  = mock_get_field_plots() 
+    #field_charts = dict( fractions = fractions_fig, 
+    #                    historical_production = producers_fig, 
+    #                    activity = active_fig,
+    #                    locations = locs
+    #                    )
+    #return jsonify( {'message':'Data loaded', 'data' : field_charts }), 200   
+
+
+@app.route('/get_well_charts',methods=['GET','POST'])
+def get_well_charts():
+
+    return "all good", 200 
+
+    filters = request.get_json()
+    print('Request for /get_well_charts received', filters)
+
+    crm_dataset = mock_get_dataset( filters )
+       
+    producers_fig, fractions_fig, active_fig  =  get_dataset_field_summary_plots( crm_dataset )# , filters  )
+    sector_volumes_fig = get_dataset_sector_summary_plots( crm_dataset )
+    field_charts = dict( fractions = fractions_fig, 
+                        historical_production = producers_fig, 
+                        activity = active_fig,
+                        sector_volumes = sector_volumes_fig
+                        )
+     
+    return jsonify( {'message':'Data loaded', 'data' : field_charts }), 200   
+    
+
+    # field 
+    # time cummulatives, current step aggregates and active wells in time 
+    #producers_fig, fractions_fig, active_fig, locs  = mock_get_field_plots() 
+    #field_charts = dict( fractions = fractions_fig, 
+    #                    historical_production = producers_fig, 
+    #                    activity = active_fig,
+    #                    locations = locs
+    #                    )
+    #return jsonify( {'message':'Data loaded', 'data' : field_charts }), 200   
+    
+
 @app.route('/layout')
 def layout():
      #return render_template('layoutVersion1B.html')
-     return render_template('FixedColumnLeftSide.html')
+     #return render_template('FixedColumnLeftSide.html')
      
-     #return render_template('layoutVersion0B.html')
+     return render_template('layoutVersion0B.html')
  
- 
- 
-@app.route('/layout1')
-def layout1():
-     return render_template('layoutVersion1.html')
- 
- 
-
        
-            
+@app.route('/crm')
+def crm():
+     #return render_template('layoutVersion1B.html')
+     #return render_template('FixedColumnLeftSide.html')
+     
+     return render_template('crm_setup_page0.html')
+ 
+ 
+ 
+      
 
 @app.route('/users')
 def users():

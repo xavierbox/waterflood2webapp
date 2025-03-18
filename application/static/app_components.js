@@ -2167,7 +2167,7 @@ document.addEventListener('mouseup', () => {
             'height':  (parseInt(container.offsetHeight ) - pad/2).toString(),   // updates the end of the yaxis range
             
             //'paper_bgcolor': 'orange',
-            'plot_bgcolor': 'lightgrey',
+            //'plot_bgcolor': 'lightgrey',
 
             //'x': inner_offset,
             'margin': {
@@ -2271,3 +2271,234 @@ get_pane( id ){
 
 }
 customElements.define('three-column-main-layout', QuickJS_ThreeColumnMainLayout);
+
+
+class xxCRMSetupElement extends HTMLElement {
+    constructor() {
+        super();
+    }
+
+    connectedCallback() {
+        this.innerHTML = this.getTemplate();
+        this.initializeChart();
+    }
+
+    getTemplate() {
+        return `
+            <div id='modelling-page' class='page'>
+                <div class="container-fluid chart-container">
+                    <div id="chart-grid" style="height: 500px;"></div>
+                </div>
+                <h5>Well selection</h5>
+                <div id='lasso-selected-indicator' style="line-height: 60px; vertical-align: middle;" class="hidden blue-indicator">Lasso selection active</div>
+                <div id='all-selected-indicator' style="line-height: 60px; vertical-align: middle;" class="white-indicator">Applied filters in chart</div>
+                <p></p>
+                <h5>Apply distance filter</h5>
+                <div>
+                    <input id='model-distance' type="number" step="250" value='1750' name="quantity" class='form-control form-control-sm' min="500" max="15000">
+                    <p></p>
+                    <div>
+                        <label>Generate simulations table</label><br>
+                        <button id='extract-pairs-button' class='btn btn-primary'>Apply</button>
+                    </div>
+                </div>
+                <p></p>
+                <table-component id='simulations-table'></table-component>
+                <p></p>
+                <h5>Simulation name</h5>
+                <input id='model-name' class="form-control form-control-sm" type="text" value="TestModel1">
+                <p></p>
+                <div>
+                    <hr>
+                    Export only? <input id='export-only' type="checkbox" checked>
+                    <button id='history-match-save-and-run' style='margin:5px' class="btn btn-success">Run</button>
+                </div>
+            </div>
+        `;
+    }
+
+    initializeChart() {
+        const subplots = [
+            {x: [1, 2, 3], y: [2, 6, 3]},
+            {x: [1, 2, 3], y: [5, 2, 7]},
+            {x: [1, 2, 3], y: [3, 4, 1]},
+            {x: [1, 2, 3], y: [4, 1, 5]}
+        ];
+
+        const data = subplots.map((trace, idx) => ({
+            ...trace,
+            type: 'scatter',
+            xaxis: `x${idx + 1}`,
+            yaxis: `y${idx + 1}`
+        }));
+
+        const layout = {
+            grid: {rows: 2, columns: 2, pattern: 'independent'},
+            autosize: true,
+            margin: {l: 40, r: 40, t: 20, b: 30},
+            xaxis: {matches: 'x'},
+            xaxis2: {matches: 'x'},
+            xaxis3: {matches: 'x'},
+            xaxis4: {matches: 'x'}
+        };
+
+        Plotly.newPlot('chart-grid', data, layout, {responsive: true});
+    }
+}
+
+customElements.define('xxcrm-setup-element', xxCRMSetupElement);
+
+
+
+
+
+class CRMSetupElement extends HTMLElement {
+    constructor() {
+        super();
+    }
+
+    connectedCallback() {
+        this.innerHTML = this.getTemplate();
+        this.initializeChart();
+
+        //this.style.overflow = 'hidden';
+
+    }
+
+    getTemplate() {
+        return `
+            <div id='modelling-page' class='page'>
+                <div class="container-fluid chart-container">
+                    <div id="chart-grid" style="height: 500px;"></div>
+                </div>
+                <h5>Well selection</h5>
+                <div id='lasso-selected-indicator' style="line-height: 60px; vertical-align: middle;" class="hidden blue-indicator">Lasso selection active</div>
+                <div id='all-selected-indicator' style="line-height: 60px; vertical-align: middle;" class="white-indicator">Applied filters in chart</div>
+                <p></p>
+                <h5>Apply distance filter</h5>
+                <div>
+                    <input id='model-distance' type="number" step="250" value='1750' name="quantity" class='form-control form-control-sm' min="500" max="15000">
+                    <p></p>
+                    <div>
+                        <label>Generate simulations table</label><br>
+                        <button id='extract-pairs-button' class='btn btn-primary'>Apply</button>
+                    </div>
+                </div>
+                <p></p>
+                <table>
+  <tr>
+    <th>Company</th>
+    <th>Contact</th>
+    <th>Country</th>
+  </tr>
+  <tr>
+    <td>Alfreds Futterkiste</td>
+    <td>Maria Anders</td>
+    <td>Germany</td>
+  </tr>
+  <tr>
+    <td>Centro comercial Moctezuma</td>
+    <td>Francisco Chang</td>
+    <td>Mexico</td>
+  </tr>
+  <tr>
+    <td>Ernst Handel</td>
+    <td>Roland Mendel</td>
+    <td>Austria</td>
+  </tr>
+  <tr>
+    <td>Island Trading</td>
+    <td>Helen Bennett</td>
+    <td>UK</td>
+  </tr>
+  <tr>
+    <td>Laughing Bacchus Winecellars</td>
+    <td>Yoshi Tannamuri</td>
+    <td>Canada</td>
+  </tr>
+  <tr>
+    <td>Magazzini Alimentari Riuniti</td>
+    <td>Giovanni Rovelli</td>
+    <td>Italy</td>
+  </tr>        
+  <tr>
+    <th>Company</th>
+    <th>Contact</th>
+    <th>Country</th>
+  </tr>
+  <tr>
+    <td>Alfreds Futterkiste</td>
+    <td>Maria Anders</td>
+    <td>Germany</td>
+  </tr>
+  <tr>
+    <td>Centro comercial Moctezuma</td>
+    <td>Francisco Chang</td>
+    <td>Mexico</td>
+  </tr>
+  <tr>
+    <td>Ernst Handel</td>
+    <td>Roland Mendel</td>
+    <td>Austria</td>
+  </tr>
+  <tr>
+    <td>Island Trading</td>
+    <td>Helen Bennett</td>
+    <td>UK</td>
+  </tr>
+  <tr>
+    <td>Laughing Bacchus Winecellars</td>
+    <td>Yoshi Tannamuri</td>
+    <td>Canada</td>
+  </tr>
+  <tr>
+    <td>Magazzini Alimentari Riuniti</td>
+    <td>Giovanni Rovelli</td>
+    <td>Italy</td>
+  </tr>
+                
+                </table>
+                <p></p>
+                <h5>Simulation name</h5>
+                <input id='model-name' class="form-control form-control-sm" type="text" value="TestModel1">
+                <p></p>
+                <div>
+                    <hr>
+                    Export only? <input id='export-only' type="checkbox" checked>
+                    <button id='history-match-save-and-run' style='margin:5px' class="btn btn-success">Run</button>
+                </div>
+            </div>
+        `;
+    }
+
+    initializeChart() {
+        const subplots = [
+            {x: [1, 2, 3], y: [2, 6, 3]},
+            {x: [1, 2, 3], y: [5, 2, 7]},
+            {x: [1, 2, 3], y: [3, 4, 1]},
+            {x: [1, 2, 3], y: [4, 1, 5]}
+        ];
+
+        const data = subplots.map((trace, idx) => ({
+            ...trace,
+            type: 'scatter',
+            xaxis: `x${idx + 1}`,
+            yaxis: `y${idx + 1}`
+        }));
+
+        const layout = {
+            grid: {rows: 2, columns: 2, pattern: 'independent'},
+            autosize: true,
+            margin: {l: 40, r: 40, t: 20, b: 30},
+            xaxis: {matches: 'x'},
+            xaxis2: {matches: 'x'},
+            xaxis3: {matches: 'x'},
+            xaxis4: {matches: 'x'}
+        };
+
+        Plotly.newPlot('chart-grid', data, layout, {responsive: true});
+    }
+}
+
+customElements.define('crm-setup-element', CRMSetupElement);
+
