@@ -1779,18 +1779,18 @@ class QuickJS_ThreeColumnMainLayout extends HTMLElement {
                                     <div id="middle-pane" class="col-5 column gx-2" style="position: relative;">
                                         <div id="left-separator" class="separator"  ></div>
                                         <div id = 'middle-top'  class="pane flex-grow-1" style="overflow-y: auto;flex-basis: 100%;"></div>
-                                        <div class="handler flex-grow-0 lex-basis: 2%;"></div>
+                                        <div class="handler flex-grow-0 flex-basis: 2%;"></div>
                                         <div id = 'middle-bottom' class="pane flex-grow-1" style="overflow-y: auto;flex-basis: 100%;"></div>
                                     </div>
 
                                     <!-- Right Pane -->
-                                    <div id="right-pane" class="col-5 column" style="position: relative;">
+                                    <div id="right-pane" class="col-5 column" style="position: relative; xxleft:10px">
                                         <div  id = 'right-top' class="pane flex-grow-1" style="overflow-y: auto;flex-basis: 100%;"></div>
-                                        <div class="handler flex-grow-0 lex-basis: 2%;"></div>
+                                        <div class="handler flex-grow-0 flex-basis: 2%;"></div>
                                         <div  id = 'right-bottom' class="pane flex-grow-1" style="overflow-y: auto;flex-basis: 100%;">
                                   
                                         </div>
-                                        <div id="right-separator" class="separator"></div>
+                                        <div id="right-separator" class="separator" style="xxleft:-12px"></div>
                                     </div>
                                 </div>
                             </div>
@@ -2053,8 +2053,9 @@ document.addEventListener('mousemove', (e) => {
     
     //let x = window.innerWidth -20 - (leftPane.offsetWidth + offset + newMiddleWidth);
     //console.log(this.parentNode.offsetWidth)
-    let x = this.parentNode.offsetWidth -20 - (leftPane.offsetWidth + offset + newMiddleWidth);
+    let x = this.parentNode.offsetWidth -15 - (leftPane.offsetWidth + offset + newMiddleWidth);
     rightPane.style.width = `${x}px`;
+    //rightPane.style.left = '100px';
     lastDownXRight = e.clientX;
 
 
@@ -2352,7 +2353,7 @@ customElements.define('xxcrm-setup-element', xxCRMSetupElement);
 
 
 
-class CRMSetupElement extends HTMLElement {
+class wwwCRMSetupElement extends HTMLElement {
     constructor() {
         super();
     }
@@ -2490,7 +2491,7 @@ class CRMSetupElement extends HTMLElement {
             grid: {rows: 2, columns: 2, pattern: 'independent'},
             autosize: true,
             margin: {l: 40, r: 40, t: 20, b: 30},
-            xaxis: {matches: 'x'},
+            xaxis:  {matches: 'x'},
             xaxis2: {matches: 'x'},
             xaxis3: {matches: 'x'},
             xaxis4: {matches: 'x'}
@@ -2500,5 +2501,135 @@ class CRMSetupElement extends HTMLElement {
     }
 }
 
-customElements.define('crm-setup-element', CRMSetupElement);
+customElements.define('wwwcrm-setup-element', wwwCRMSetupElement);
+
+
+class ProjectListComponent extends HTMLElement {
+    constructor() {
+        super();
+    }
+
+    connectedCallback() {
+        const defaultProjects = ["Project Alpha", "Project Beta", "Project Gamma"];
+        this.renderProjects(defaultProjects);
+    }
+
+    renderProjects(names) {
+        this.innerHTML = ""; // Clear previous content
+
+        // Add the "Projects" heading
+        const title = document.createElement("h3");
+        title.classList.add("projects-component-title");
+        title.textContent = "Projects ";
+        this.appendChild(title);
+        this.appendChild( document.createElement("hr") );
+
+        names.forEach(name => {
+            const card = document.createElement("div");
+            card.classList.add("projects-component-card", "d-flex", "justify-content-between", "align-items-center");
+
+            const projectName = document.createElement("span");
+            projectName.textContent = name;
+
+            const button = document.createElement("button");
+            button.textContent = "Open";
+            button.classList.add("projects-component-button", "btn", "btn-primary");
+            button.onclick = () => this.emitClickEvent(name);
+
+            card.appendChild(projectName);
+            card.appendChild(button);
+            this.appendChild(card);
+        });
+    }
+
+    emitClickEvent(projectName) {
+        const event = new CustomEvent("clicked", {
+            detail: { projectName },
+            bubbles: true,
+            composed: true
+        });
+        this.dispatchEvent(event);
+    }
+
+    set projects(names) {
+        this.renderProjects(names);
+    }
+}
+
+// Register the custom element with the new name
+customElements.define("project-list-component", ProjectListComponent);
+
+
+class QuickJS_ConnectDatasetComponent extends HTMLElement {
+    constructor() {
+      super();
+      this.folders = [];
+      this.selectedFolder = null;
+    }
+
+    connectedCallback() {
+      this.render();
+    }
+
+    setData(foldersArray) {
+      if (Array.isArray(foldersArray)) {
+        this.folders = foldersArray;
+        this.selectedFolder = null;
+        this.render();
+      }
+    }
+
+    getData(){
+    return this.folders ;
+    }
+
+    
+
+    getSelected() {
+    return this.selectedFolder;
+  }
+
+    render() {
+      this.innerHTML = `
+        <div class="connect-dataset-grid connect-dataset-folder-grid"></div>
+        <button class="connect-dataset-button">Connect</button>
+      `;
+
+      const grid = this.querySelector(".connect-dataset-folder-grid");
+
+      this.folders.forEach(folderName => {
+        const folderEl = document.createElement("div");
+        folderEl.classList.add("connect-dataset-folder");
+        folderEl.dataset.folder = folderName;
+        folderEl.innerHTML = `
+          <div class="connect-dataset-folder-icon"></div>
+          <div class="connect-dataset-folder-label">${folderName}</div>
+        `;
+
+        folderEl.addEventListener("click", () => this.selectFolder(folderName));
+        grid.appendChild(folderEl);
+      });
+
+      const button = this.querySelector(".connect-dataset-button");
+      button.addEventListener("click", () => {
+        if (this.selectedFolder) {
+          this.dispatchEvent(new CustomEvent("clicked", {
+            detail: { folder: this.selectedFolder }
+          }));
+        } else {
+          alert("Please select a folder before connecting.");
+        }
+      });
+    }
+
+    selectFolder(folderName) {
+      this.selectedFolder = folderName;
+      const allFolders = this.querySelectorAll(".connect-dataset-folder");
+
+      allFolders.forEach(folderEl => {
+        folderEl.classList.toggle("open", folderEl.dataset.folder === folderName);
+      });
+    }
+}
+customElements.define("connect-dataset-component", QuickJS_ConnectDatasetComponent);
 

@@ -101,17 +101,21 @@ class CRMDataset:
         Returns:
             list: A list of error messages if issues are found; an empty list otherwise.
         '''
-        #print('checking')
-        def check_date_column(df, table_name, errors):
+       
+        
+        def check_date_column(df, table_name, errors, importance='critical'):
             if df.index.name != DATE_KEYS[0] and len(find_columns(df, DATE_KEYS)) == 0:
-                errors.append( f'{table_name}: Date column was not found. The name of the column missing is one of these: {",".join(DATE_KEYS)}')
+                
+                error = f'{table_name}: Date column was not found. The name of the column missing is one of these: {",".join(DATE_KEYS)}'
+                errors.append( (error, importance) )
                 return False
             return True  
         
-        def check_required( table_name, df, keys, errors ):
+        def check_required( table_name, df, keys, errors, importance='critical' ):
             for key in keys:
                 if len( find_columns(df, key) ) == 0:
-                    errors.append(f'{table_name} table: {key[0]} column was not found. ')   
+                    error = f'{table_name} table: {key[0]} column was not found. '  
+                    errors.append( (error, importance) )   
                     return False
             return True 
         
@@ -134,13 +138,13 @@ class CRMDataset:
                         xdf = df[ df[SUBZONE_COL] == s ]
                         min_date, max_date = min(xdf.index),max(xdf.index)
                         day_range = pd.date_range( min_date, max_date, freq = sampling_frequency)
-                        if abs(len(day_range) - xdf.shape[0])>1: 
+                        if len(day_range) != xdf.shape[0]: 
                             return True 
                     return False
                 
                 min_date, max_date = min(df.index),max(df.index)
                 day_range = pd.date_range( min_date, max_date, freq = sampling_frequency)
-                if abs(len(day_range) -df.shape[0]) > 1: 
+                if len(day_range) != df.shape[0]: 
                     return True 
                 else:
                     return False
@@ -173,15 +177,36 @@ class CRMDataset:
             raise ValueError('DATE column or index not found')
                 
         crm_dataset = self 
+        unknown_colums = [] 
+     
+
+        
         errors = []
+        warnings = [] 
         checks_passed = [ ]
         injector_names, producer_names = None, None 
-        
         inj, prd, loc = crm_dataset.injectors_df, crm_dataset.producers_df,crm_dataset.locations_df  
+        
+        #report unknown columns  as a warning 
+        ALL_KEYWORDS_flat = [ key for key_set in ALL_KEYWORDS for key in key_set   ]
+        unknown_colums.extend( [ key for key in inj.columns if not key in ALL_KEYWORDS_flat ] )
+        unknown_colums.extend( [ key for key in prd.columns if not key in ALL_KEYWORDS_flat ] )    
+        unknown_colums.extend( [ key for key in loc.columns if not key in ALL_KEYWORDS_flat ] )    
+        unknown_colums = list( set( unknown_colums ) )
+        
+        for unknown in unknown_colums:
+            warnings.append( (f'Unknown column {unknown} in the dataset', 'warning') )
+        
+        
+        #ALL_KEYWORDS_flat = [ key for key_set in ALL_KEYWORDS for key in key_set   ]
+        #for key, columns in self.get_column_names().items():
+        #    temp  = [ col for col in columns if not col in ALL_KEYWORDS_flat]
+        #    unknown_columns.append( temp ) 
+        #print( unknown_columns )
         
         
         # When creating it, some missing columns ar given default values 
-        # This implifies the multi-zone and multi-reservoir handling later 
+        # This simplifies the multi-zone and multi-reservoir handling later 
         dfs = [ inj, prd, loc ]
         x = ['injectors', 'producers']
         for df in dfs: 
@@ -197,61 +222,103 @@ class CRMDataset:
         
         #there are REQUIRED columns in each dataset table 
         location_required_keys   = NAME_KEYS, X_KEYS, Y_KEYS
-        check_required('Locations', loc, location_required_keys, errors )
+        importance = 'critical'
+        check_required('Locations', loc, location_required_keys, errors ,importance )
         
         production_required_keys =  NAME_KEYS,WATER_PRODUCTION_KEYS, GAS_PRODUCTION_KEYS, OIL_PRODUCTION_KEYS, LIQUID_PRODUCTION_KEYS       
-        check_required('Producers', prd, production_required_keys, errors )
+        check_required('Producers', prd, production_required_keys, errors,importance )
                 
         injection_required_keys =  NAME_KEYS,WATER_INJECTION_KEYS      
-        check_required('Injectors', inj, injection_required_keys, errors )
+        check_required('Injectors', inj, injection_required_keys, errors,importance )
                
         # any error up to here is critical 
         if len( errors ) > 0:
-            return errors, checks_passed  
+            return errors, warnings, checks_passed  
                          
-        #dates as special, they could be an index or a column
+        #dates are special, they could be an index or a column
         dates_there = check_date_column(prd, 'Producers', errors) & check_date_column(inj, 'Injectors', errors)
         if not dates_there:
-            return errors, checks_passed 
+            return errors, warnings, checks_passed   
         
         checks_passed.append( 'Required columns present in the dataset' )
+     
+        #key columns must have the same name in all the three tables.
+        if not (find_column(loc,NAME_KEYS) == find_column(inj,NAME_KEYS) == find_column(prd,NAME_KEYS)):
+            errors.append( ('The NAME column is not the same in all tables', importance) )
+        if not (find_column(inj,DATE_KEYS) == find_column(prd,DATE_KEYS)):
+            errors.append( ('The DATE column is not the same in the injectors and producers tables', importance) )
+        if not (find_column(loc,ZONE_KEYS) == find_column(inj,ZONE_KEYS) == find_column(prd,ZONE_KEYS)):
+            errors.append( ('The ZONE column is not the same in all tables', importance) )
+        if not (find_column(loc,SUBZONE_KEYS) == find_column(inj,SUBZONE_KEYS) == find_column(prd,SUBZONE_KEYS)):
+            errors.append( ('The SUBZONE column is not the same in all tables', importance) )
+        if not (find_column(loc,SECTOR_KEYS) == find_column(inj,SECTOR_KEYS) == find_column(prd,SECTOR_KEYS)):  
+            errors.append( ('The SECTOR column is not the same in all tables', importance) )
+                
+        if len(errors) > 0:
+           
+            errors.append( ('Key columns are present but have different names in across the tables', importance) )
+            return errors, warnings, checks_passed  
+                
+        checks_passed.append( 'Key columns have the same name in all the tables' )
      
 
 
         # well names must be there in all tables and the methods to retieve them must work 
         try:
+            #these use the producers_df and injectors_df tables 
             producer_names = set(crm_dataset.producer_names) 
             injector_names = set(crm_dataset.injector_names) 
             
         except Exception as e:
-             errors.append(f'Cannot fetch the producer names or injector names. Internal methods to retrieve them failed')
-             return errors, checks_passed
+             error = f'Cannot fetch the producer names or injector names. Internal methods failed due to an unknown reason'
+             errors.append( (error, 'critical')) 
+             return errors, warnings, checks_passed  
          
         try:
             
-            col = find_columns(loc,NAME_KEYS)[0]
+            col = find_column(loc,NAME_KEYS)
             location_names = set(loc[col].unique())
-            
-            #every injector,producer must have a location
-            if injector_names.issubset( location_names ) is False:
-                errors.append('The location for all injectors is not available ')
-            if producer_names.issubset( location_names ) is False:
-                errors.append('The location for all producers is not available ')
-
+        
         except Exception as e:
-             errors.append(f'Not all the wells listed have a known location in the locations table')
-             return errors, checks_passed
+             errors.append((f'Failed to fetch well names in the locations table due to an unknown reason', importance))
+             return errors, warnings, checks_passed  
+         
+        #every injector,producer must have a location
+        if injector_names.issubset( location_names ) is False:
+            errors.append(('The location for all injectors is not available in the locations table',importance))
+        if producer_names.issubset( location_names ) is False:
+            errors.append(('The location for all producers is not available in the locations table',importance))
+
+        #now it becomes tricky, because the locations must be known for each subzone.
+        #each subzone in the producers and locations must also be in the locations table 
+        temp_dfs = [prd,inj]
+        WELL_TYPE_COL = find_column( loc, WELL_TYPE )
+        NAME_COL = find_column( loc, NAME_KEYS )
+        names = ['producer','injector']
+        for n, tdf in enumerate(temp_dfs):
+            
+            SUBZONE_COL = find_column( tdf, SUBZONE_KEYS )
+            for subzone in tdf[SUBZONE_COL].unique():
+
+                tmp_prd = tdf[ tdf[SUBZONE_COL] == subzone ]
+                tmp_loc = loc[ (loc[SUBZONE_COL] == subzone) & (loc[WELL_TYPE_COL].str.lower()==names[n])]
+                tmp_names = set(tmp_prd[NAME_COL].unique())
+                loc_names = set(tmp_loc[NAME_COL].unique())
+                if tmp_names.issubset( loc_names ) is False:
+                    error = f'The location for all {names[n]}s in {subzone} is not available in the locations table'
+                    errors.append((error,importance))
+                    
          
          
         checks_passed.append( 'Well locations found for all listed producers and injectors' )
      
+ 
          
         try:
             letter   = self.mode_sampling_frequency()
-            print('Sampling frequecy appears to be ', letter )
-            if letter == 'aaaaaaaaD': 
+            checks_passed.append( 'Sampling frequency appears to be ' + letter )
+            if not letter == 'D': 
                 print('If the frequency isnt daily, time-gaps cant be checked in this version')
-                
                 
             else:
                 # checking for time-gaps 
@@ -260,35 +327,36 @@ class CRMDataset:
                 for producer_name in producer_names:
                     df1 = prd[ prd[NAME_COL] == producer_name ]
                     if _check_if_time_gaps(df1, letter):
-                        errors.append('There are time-gaps in the producers data')
+                        errors.append(('There are time-gaps in the producers data', importance))
                         #raise ValueError('Time gaps found for producer ' + producer_name) 
-                        return errors, checks_passed
+                        break 
                 
                             
                 for injector_name in injector_names:
                     df2 = inj[ inj[NAME_COL] == injector_name ]
                     if _check_if_time_gaps(df2, letter):
-                        errors.append('There are time-gaps in the injectors data for inj ' + injector_name)
-                        #raise ValueError('Time gaps found for injector ' + injector_name) 
-                        return errors, checks_passed
+                        errors.append(('There are time-gaps in the injectors data', importance))
+                   #raise ValueError('Time gaps found for injector ' + injector_name) 
+                        break 
                 
-        
+                if len(errors) > 0:
+                     return errors, warnings, checks_passed  
+                 
         except Exception as e:
-             errors.append('Unexpected error when checking for time-gaps')
-             print( e )
-             errors.append( e  )
+             errors.append('Unexpected error when checking for time-gaps or sampling frequency')
+             errors.append( (str(e),importance  ) )
              
-             return errors, checks_passed
+             return errors, warnings, checks_passed  
          
         checks_passed.append( 'No time-gaps found' )
              
                     
         # some columns must have strickly possitive values 
         raise_error = False 
-        col = find_columns(inj,WATER_INJECTION_KEYS)[0] 
+        col = find_column(inj,WATER_INJECTION_KEYS) 
         negative_count = (inj[col] < 0).sum()
         if negative_count > 0:
-            errors.append('Negative values found in column ' + col + ' in the injectors table')
+            errors.append(('Negative values found in column ' + col + ' in the injectors table', importance))
             raise_error = True 
                 
         cols = find_columns(prd,WATER_PRODUCTION_KEYS)[0],\
@@ -299,11 +367,11 @@ class CRMDataset:
         for col in cols:
             negative_count = (prd[col] < -0.0000001).sum()
             if negative_count > 0:
-                errors.append('Negative values found in column ' + col + ' in the producers table')
+                errors.append(('Negative values found in column ' + col + ' in the producers table',importance))
                 raise_error = True 
                     
         if raise_error:
-            return errors, checks_passed 
+            return errors, warnings, checks_passed   
 
         checks_passed.append( 'Not found negative rates' )
      
@@ -328,16 +396,16 @@ class CRMDataset:
             #        errors.append('There are time gaps in the table: ' + names[n] )
         
         except Exception as e:
-            errors.append('The dataset cannot be converted to a pattern representaion. Potentially, some data is missing or  there are  time gaps ')
-            errors.append('The error reported was ' + str(e))
-            return errors, checks_passed
+            errors.append(('The dataset cannot be converted to a pattern representaion. Potentially, some data is missing or there are  time gaps ', importance))
+            errors.append(('The error reported was ' + str(e), importance))
+            return errors, warnings, checks_passed  
 
      
         checks_passed.append( 'Dataset can be converted to a pattern' )
      
    
      
-        return errors, checks_passed 
+        return errors, warnings, checks_passed   
                
     def get_column_names( self )->dict:
         '''
@@ -417,6 +485,16 @@ class CRMDataset:
             if key in key_set: return _find( key_set )
           
         return None 
+    
+    def get_distances_flat( self ):
+    
+        df = self['distance']
+        if df is None: return None
+           
+        return [ {"producer": producer, "injector": injector, "distance": df.loc[producer, injector]}
+        for producer in df.index
+        for injector in df.columns
+        ]
               
     def get_distances( self )->None:
         '''
@@ -607,6 +685,7 @@ class CRMDataset:
         # if a time form at is passed.      
         if not time_format is None:
            
+            print('time format passed', time_format)
          
             for n, df in enumerate([ ret.injectors_df,ret.producers_df]):
             
@@ -621,8 +700,7 @@ class CRMDataset:
         # try to guess the date format and use dayfirst or yearfirst 
         # keywords from the poducers data     
         else:
-           
-            
+  
             for n,df in enumerate(dfs[0:2]):
                 date_column = find_column( df, DATE_KEYS )
                 sample_data = None 
@@ -640,26 +718,18 @@ class CRMDataset:
              
                 dayfirst_dates_count     = pd.to_datetime(sample_data, dayfirst=True,  errors='coerce').notnull().sum()
                 not_dayfirst_dates_count = pd.to_datetime(sample_data, dayfirst=False, errors='coerce').notnull().sum()
+                print( dayfirst_dates_count, not_dayfirst_dates_count)
                 
                 # Compare parsing success
                 dayfirst = True if dayfirst_dates_count > not_dayfirst_dates_count else False
-                    
+                print('Tying to guess the DATE format. dayforst ?',dayfirst)
                 for df in [ ret.injectors_df, ret.producers_df ]:
                     if date_column:
                         df[ date_column ] = pd.to_datetime( df[ date_column ], dayfirst =dayfirst ) 
                     else:
                         df.index = pd.to_datetime(df.index, dayfirst =dayfirst )
             
-                    
-        #errors,passed = ret.check_dataset()
-        #if any( errors ):
-        #    print('Errors')
-        #    print(errors)
-        #    print('passed tests')
-        #    print(passed)
-        #    
-        #    raise ValueError(f'Cannot create the dataset. Errors found in the input: { " ".join(errors) }')
-        
+       
         
         return ret 
 
@@ -813,7 +883,7 @@ class CRMDataset:
         
         return CRMDataset().instance( inj,pro,loc)
            
-    def get_pattern( self, fix_time_gaps = True,fill_nan = 0.0 ):
+    def get_pattern( self, fix_time_gaps = True, fill_nan = 0.0 ):
         '''
         This function converts the CRMDataset to a CRMPattern as the later can be used in 
         the simulations.
@@ -870,21 +940,26 @@ class CRMDataset:
                     #print() 
                     
                     
-        #.sort_values( by='DATE')
-                    
-                     
+            
                     
         pattern = CRMPattern( d )
         pattern[DISTANCE_KEYS[0]] = self.distances_df
         pattern[LOCATION_KEYS[0]] = self.locations_df 
+        frequency =  self.mode_sampling_frequency()
 
         if fix_time_gaps:
-            fix_index_time_gaps_in_pattern( pattern )
+            frequency = self.mode_sampling_frequency()
+            print('We have a fix-time gaps instruction')
+            if frequency == 'D':
+                fix_index_time_gaps_in_pattern( pattern, frequency )
+            else:
+                print('Cannot fix time-gaps for frequency ', frequency)
+        
         
         #pattern=pattern
         return pattern 
 
-    def get_distance_patterns( self, distance:float,fix_time_gaps = True, fill_nan=0.0 ):
+    def get_distance_patterns( self, distance:float, fix_time_gaps = True, fill_nan=0.0 ):
        
         '''
         Patterns here is just a list of dictionaries. One item in the list per pattern 

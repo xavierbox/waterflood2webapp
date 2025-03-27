@@ -14,7 +14,8 @@ def default_plotly_layout_python():
     layout={'title' : {'text':' ',
                        #'font-size':24,
                        #'font-color':'black',
-                       'x':0.5,'xanchor':'center'
+                       'x':0.5,'xanchor':'center',
+                       'textposition':  'top center',
                       },
                      'legend':{'x':0.015,'y':0.985,'xanchor':'left','yanchor':'top'},
                      'margin': {
@@ -152,7 +153,7 @@ def get_dataset_field_summary( input_dataset:CRMDataset, cummulative=False, filt
     d= apply_dataset_filters( input_dataset, filters )
             
 
-    p = d.get_pattern(fix_time_gaps=False, fill_nan=0.0)
+    p = d.get_pattern(fix_time_gaps=True, fill_nan=0.0)
     liquid_production_summary = p.liquid_production.sum(axis=1)
     water_production_summary = p.water_production.sum(axis=1)
     oil_production_summary = p.oil_production.sum(axis=1)
@@ -187,7 +188,8 @@ def get_dataset_field_summary( input_dataset:CRMDataset, cummulative=False, filt
     oil    = oil/total
     gas    = gas/total
     
-    #charts = [ total_water_produced, total_oil_produced, total_gas_produced,total_liquid,total_water_injected]
+    
+    
          
     return  {'active_producers':active_producers, 'active_injectors':active_injectors},\
         {'water_production':water_production_summary,   
@@ -207,14 +209,9 @@ def get_dataset_field_summary_plots(input_dataset:CRMDataset, cummulative = Fals
  
     active_wells, production_summary, injection_summary, fractions, dataset, pattern = get_dataset_field_summary( input_dataset, cummulative=cummulative,  filters = filters )
     
-    #returns aggregated time series 
-    #active_wells, production_summary, injection_summary, fractions, \
-    #dataset, pattern = get_dataset_field_summary( input_dataset,cummulative=cummulative, filters = filters )
-
+    #historical aggregates 
     layout = default_plotly_layout_python()
-
-
-    colors = ['blue','lightgrey','brown','green'] + default_colors #['green','cyan','grey','orange','blue','red','purple','yellow','brown','pink']
+    colors = ['blue','grey','brown','green'] + default_colors #['green','cyan','grey','orange','blue','red','purple','yellow','brown','pink']
     data = [ {'fillcolor': {'color':'light'+colors[n]}, 'line': {'color':colors[n]},
             'name':key.replace('_',' ').capitalize(), 
             'type':'scatter','mode':'lines','opacity': 0.99915,#'fill':  'tonexty', #'tonexty',
@@ -222,35 +219,22 @@ def get_dataset_field_summary_plots(input_dataset:CRMDataset, cummulative = Fals
             'x':value.index.astype(str).values.tolist(), 
             'y':value.values.tolist()} for n, (key, value) in  enumerate(production_summary.items()) ]
     
-    #historical aggregates 
     #round 2 decimals the production history  
     layout['title']['text'] = 'Stacked historical volumes' + (' (cummulative)' if cummulative else '')   
-    producers_fig = { 'data': data,'layout': copy.deepcopy(layout),'config':default_plotly_config_python()
-                     }
-    
-    
+    producers_fig = { 'data': data,'layout': copy.deepcopy(layout),'config':default_plotly_config_python()}   
     #add the water as a line 
     inj_data = {'name':'Water injection', 'type':'scatter','mode':'lines', 'line':{'color':'black','dash':'dot'}}
     inj_data['x'] = injection_summary['water_injection'].index.astype(str).values.tolist()
     inj_data['y'] = [ round(i,2) for i in injection_summary['water_injection'].values.tolist()]
     producers_fig['data'].append( inj_data )
-    
-    for d in producers_fig['data']:
-        d['y'] = [ round(i,2) for i in d['y']]
+    for d in producers_fig['data']:d['y'] = [ round(i,2) for i in d['y']]
+        
     
     #pie chart with the fractions the last day (cummulative if selected)
     #water-oil-gas and liquid fractions
     labels = [ x.replace('_',' ').capitalize() for x in list(fractions.keys()) ]
-    
     values = [round(i,2) for i in list(fractions.values())]
-    fractions_data = [ {'values': values, 'labels': labels, 'type':'pie',
-                        'marker':{'colors':['blue','lightgrey','brown','green']}, 'hole':0.4, 'name':'Fractions'
-                        } ]
-    #for d in fractions_data['data']:
-    #    d['y'] = [ round(i,2) for i in d['y']]
-    
-    
-    
+    fractions_data = [ {'values': values, 'labels': labels, 'type':'pie','marker':{'colors':['blue','lightgrey','brown','green']}, 'hole':0.4, 'name':'Fractions'}]   
     layout['title']['text'] = 'Volume fractions at present-day' + "" if not cummulative else " (cummulative)"
     layout['legend'] =dict(
         orientation='h',   # Set legend to horizontal
@@ -259,16 +243,19 @@ def get_dataset_field_summary_plots(input_dataset:CRMDataset, cummulative = Fals
         xanchor='center',
         x=0.5              # Center the legend
     )
-    fractions_fig = {'data': fractions_data, 'layout': copy.deepcopy(layout),
-                     'config':default_plotly_config_python()
-                    }
+    fractions_fig = {'data': fractions_data, 
+                     'layout': copy.deepcopy(layout),
+                     'config':default_plotly_config_python(),
+                
+                     }
+    
     
     # a bar chart with the active wells
     active_data = [ { 'name': key.replace('_',' ').capitalize(), 
                      #'type':'bar',
                      #'mode':'bar', \
-                      'x':value.index.astype(str).tolist(), 'y':value.values.tolist()}\
-                      for key, value in active_wells.items() ] 
+                     'x':value.index.astype(str).tolist(), 'y':value.values.tolist()}\
+                     for key, value in active_wells.items() ] 
     layout=default_plotly_layout_python()
     layout['title']['text'] = 'Active wells'
 
@@ -293,6 +280,8 @@ def get_dataset_locations_plot( crm_dataset, filters: dict = None ):
         'name':'Producers','type':"scattermap", 'mode': 'markers+text',
         'text': f['NAME'].unique().tolist(),
         'customdata': custom_data,
+        'textposition':  'top center',
+          
         'hovertemplate': 
             '%{text}<br>' + 
             '%{customdata}<extra></extra>',
@@ -321,6 +310,7 @@ def get_dataset_locations_plot( crm_dataset, filters: dict = None ):
         'text': f['NAME'].unique().tolist(),
         'lat': f['LAT'].values.tolist(),
         'lon': f['LONG'].values.tolist(),
+        'textposition':  'top center',  
         'marker': {
             'size': 10,'color': 'blue', 
             #'symbol': 'triangle'
@@ -346,6 +336,7 @@ def get_dataset_locations_plot( crm_dataset, filters: dict = None ):
             #'fitbounds':"locations",  
             'legend':{'x':0,'y':1,'xanchor':'left','yanchor':'top'}, 
             'autosize':True,
+            'textposition':  'top center',
             #'title': {'text':'Field locations'},
             'margin': { 'r': 10, 't': 10, 'b': 10, 'l': 10 }
         }  
@@ -403,15 +394,10 @@ def get_dataset_sector_summary_plots(input_dataset:CRMDataset, filters: dict = N
         total_water_injected.append( tmp.injectors_df[ [WATER_INJ_COL] ].sum(axis=0)[0])
     
     #this can be an inset: absolute values 
-    water_injected = copy.deepcopy(total_water_injected)
-    water_produced = copy.deepcopy(total_water_produced)
-    oil_produced   = copy.deepcopy(total_oil_produced)
-    gas_produced   = copy.deepcopy(total_gas_produced)
-    
-    
-    
-    
-    
+    #water_injected = copy.deepcopy(total_water_injected)
+    #water_produced = copy.deepcopy(total_water_produced)
+    #oil_produced   = copy.deepcopy(total_oil_produced)
+    #gas_produced   = copy.deepcopy(total_gas_produced)
     
     
     #normalize per sector 
@@ -552,3 +538,259 @@ def get_field_wells_snapshot( crm_dataset,# date_cutoff = '2020-02-01',
    
  
  
+def get_field_wells_snapshot_singles( crm_dataset,# date_cutoff = '2020-02-01', 
+                             x_column = None,y_column= None, filters = None ):
+
+    if x_column is None: 
+        x_column = 'WATER_PRODUCTION' 
+    if y_column is None: 
+        y_column = 'OIL_PRODUCTION'
+        
+
+    filtered = apply_dataset_filters( crm_dataset , filters )
+
+    sector_map = filtered.locations_df.set_index('NAME')['SECTOR'].to_dict()
+    filtered.producers_df['SECTOR'] = filtered.producers_df['NAME'].map( sector_map )
+
+
+    df = filtered.producers_df.sort_values( by=['DATE'], ascending=True)
+    #df = df[ df['DATE'] == date_cutoff ].sort_values( by=['DATE'],ascending=True)
+  
+
+    data = [] 
+    markers = ['circle', 'triangle-right','square', 'diamond', 'triangle-up', 'triangle-down', 'cross', 'star','cross', 
+               'hexagon','square-cross','circle-x','hourglass', 'pentagon','square-cross']
+    
+    sectors_array = sorted(df['SECTOR'].unique())
+    xmax = 0.0 
+    for s in sectors_array:
+        ddf = df[df['SECTOR'] == s]
+        grouped = ddf.groupby('NAME').agg( {x_column:'sum', y_column:'sum'} )[[x_column,y_column]]
+        x,y = grouped[x_column].values.tolist(), grouped[y_column].values.tolist() 
+        well_names = grouped.index.tolist() 
+        #well_names = ddf['NAME'].values.tolist()
+        #water_production = ddf[ x_column].values.tolist()
+        #oil_production = ddf[ y_column].values.tolist()
+    
+        
+        
+        #sector = ddf['SECTOR'].values.tolist()
+        marker = {'symbol': np.random.choice(markers)  }#, 'size':10}
+        series = { 'marker':marker, 'textposition':'top center',
+                  'textfont':{'size': 8},
+                  'name':'Sector '+str(s),'text':well_names, 
+                'x':x, 'y':y, 
+                'mode':'markers', 'type':'scatter'}
+        data.append( series )
+        xmax = max( xmax, np.max(x) )
+        
+    #finally, add a straing line y = x as a guide to the eye 
+    #xmin,xmax = np.min(water_production), np.max(water_production)
+    #ymin,ymax = np.min(water_production), np.max(water_production)
+    line = { 'x':[0,xmax], 'y':[0.0001,xmax], 
+                       'mode':'lines', 
+                       'line':{'width':1, 'color':'lightgrey', 'dash':'dashdot', 'color':'black'},
+                       'type':'scatter', 'name':'y=x'
+
+            }
+    
+    data.append( line )
+        
+    
+    title1 = x_column.replace('_',' ').capitalize()
+    title2 = y_column.replace('_',' ').capitalize()
+    
+    
+    layout = {'xaxis':{'title': title1}, 'yaxis':{'title':title2}}
+    fig = {'data':data, 'layout':layout}
+    return fig 
+   
+    
+ 
+def get_field_wells_snapshot_helper( index, crm_dataset,x_column = None,y_column= None, filters = None ):
+
+    showlegend= False if index != 1 else True  
+
+    if x_column is None: x_column = 'WATER_PRODUCTION' 
+    if y_column is None: y_column = 'OIL_PRODUCTION'
+            
+
+    filtered = apply_dataset_filters( crm_dataset , filters )
+
+    sector_map = filtered.locations_df.set_index('NAME')['SECTOR'].to_dict()
+    filtered.producers_df['SECTOR'] = filtered.producers_df['NAME'].map( sector_map )
+
+
+    df = filtered.producers_df.sort_values( by=['DATE'], ascending=True)
+    #df = df[ df['DATE'] == date_cutoff ].sort_values( by=['DATE'],ascending=True)
+  
+
+    data = [] 
+    markers = ['circle', 'triangle-right','square', 'diamond', 'triangle-up', 'triangle-down', 'cross', 'star','cross', 
+               'hexagon','square-cross','circle-x','hourglass', 'pentagon','square-cross']
+    
+    sectors_array = sorted(df['SECTOR'].unique())
+    xmax = 0.0 
+    for s in sectors_array:
+        
+        ddf = df[df['SECTOR'] == s]
+        grouped = ddf.groupby('NAME').agg( {x_column:'sum', y_column:'sum'} )[[x_column,y_column]]
+        x,y = grouped[x_column].values.tolist(), grouped[y_column].values.tolist() 
+        well_names = grouped.index.tolist() 
+        #well_names = ddf['NAME'].values.tolist()
+        #water_production = ddf[ x_column].values.tolist()
+        #oil_production = ddf[ y_column].values.tolist()
+    
+        
+        
+        #sector = ddf['SECTOR'].values.tolist()
+        marker = {'symbol': np.random.choice(markers)  }#, 'size':10}
+        series = { 'marker':marker, 'textposition':'top center',
+                  'textfont':{'size': 8},
+                   
+                   
+                    'xaxis': 'x'+str(index),
+                   
+                    'yaxis': 'y'+str(index), #'xaxis': 'x' ,
+                    
+                    'showlegend': showlegend, 
+        
+                  'name':'Sector '+str(s),'text':well_names, 'legendgroup': 'group'+str(s),
+                'x':x, 'y':y, 'mode':'markers', 'type':'scatter'}
+        
+        
+        data.append( series )
+        xmax = max( xmax, np.max(x) )
+        
+
+        
+    return data, xmax 
+        
+    #finally, add a straing line y = x as a guide to the eye 
+    #xmin,xmax = np.min(water_production), np.max(water_production)
+    #ymin,ymax = np.min(water_production), np.max(water_production)
+    line = { 'x':[0,xmax], 'y':[0.0001,xmax], 
+                       'mode':'lines', 
+                       'line':{'width':1, 'color':'lightgrey', 'dash':'dashdot', 'color':'black'},
+                       'type':'scatter', 'name':'y=x'
+
+            }
+    
+    data.append( line )
+        
+    
+    title1 = x_column.replace('_',' ').capitalize()
+    title2 = y_column.replace('_',' ').capitalize()
+    
+    
+    layout = {'xaxis':{'title': title1}, 'yaxis':{'title':title2}}
+    fig = {'data':data, 'layout':layout}
+    return fig 
+ 
+    
+def get_field_wells_snapshot( crm_dataset, filters = None ):
+    
+    WATER_PROD = find_column( crm_dataset.producers_df.columns, WATER_PRODUCTION_KEYS )
+    OIL_PROD = find_column( crm_dataset.producers_df.columns, OIL_PRODUCTION_KEYS )
+    GAS_PROD = find_column( crm_dataset.producers_df.columns, GAS_PRODUCTION_KEYS )
+    LIQUID_PROD = find_column( crm_dataset.producers_df.columns, LIQUID_PRODUCTION_KEYS )
+    data1,x1  = get_field_wells_snapshot_helper(1, crm_dataset,  x_column=WATER_PROD, y_column= GAS_PROD, filters = filters )
+    data2,x2  = get_field_wells_snapshot_helper(2, crm_dataset,  x_column=WATER_PROD, y_column= OIL_PROD, filters = filters ) 
+    data3,x3  = get_field_wells_snapshot_helper(3,crm_dataset,  x_column=WATER_PROD, y_column= LIQUID_PROD, filters = filters ) 
+    xmax =max( x1,x2,x3 )
+  
+    line1 = {'legendgroup': 'y=x','x':[0,xmax], 'y':[0.0001,xmax],   'xaxis': 'x1','showlegend': True,'yaxis': 'y1','mode':'lines', 'line':{'width':1, 'color':'lightgrey', 'dash':'dashdot', 'color':'black'},'type':'scatter', 'name':'y=x'}
+    line2 = {'legendgroup': 'y=x','showlegend':False,'x':[0,xmax], 'y':[0.0001,xmax],   'xaxis': 'x2','yaxis': 'y2','mode':'lines', 'line':{'width':1, 'color':'lightgrey', 'dash':'dashdot', 'color':'black'},'type':'scatter', 'name':'y=x'}
+    line3 = {'legendgroup': 'y=x','showlegend':False, 'x':[0,xmax], 'y':[0.0001,xmax],   'xaxis': 'x3','yaxis': 'y3','mode':'lines', 'line':{'width':1, 'color':'lightgrey', 'dash':'dashdot', 'color':'black'},'type':'scatter', 'name':'y=x'}
+    
+    data1.append( line1 )
+    data2.append( line2 )
+    data3.append( line3 )
+    data = data1 + data2 + data3
+   
+
+    oldlayout = {
+        'height': 400, #'width':700,
+        #'title': {'text':'Plotly Subplots with Shared X-axis'},
+        #'xaxis': { 'title':{'text': 'Water production'},'domain': [0, 1]},
+        #'xaxis1': { 'title':{'text': 'Water production'}},
+        #'xaxis2': { 'title':{'text': 'Water production'}},
+        
+        'grid': {'rows': 1, 'columns': 3, 'pattern': 'independent'},
+        'xaxis1': {'domain': [0, 0.28], 'title': {'text':'Water production'}},
+        'yaxis1': { 'title':{'text': 'Gas production'}},
+        
+        'xaxis2': {'domain': [0.37, 0.65], 'title': {'text':'Water production'}},
+        'yaxis2': { 'title':{'text': 'Oil production'}},
+
+        'xaxis3': {'domain': [0.72, 1], 'title': 'Water production'},
+        'yaxis3': { 'title':{'text': 'Liquid production'}},
+
+        'legend': {
+            'orientation': "v",
+            'x': -0.05,   # Move legend to the left
+            'y': 1,      # Align legend to the top
+            'xanchor': "right", 
+            'yanchor': "top"
+        },
+        'margin': {'l': 50},  #// Increase left margin to accommodate the legend
+    }
+    
+    
+    layout = {
+            'height': 800, 
+            'grid': {'rows': 3, 'columns': 1, 'pattern': 'independent'},
+            'autosize': True,
+            #'margin': {'l': 50, 'r': 10, 't': 10, 'b': 10},
+            'xaxis':  {'matches': 'x'},
+            'xaxis2': {'matches': 'x'},
+            'xaxis3': {'matches': 'x'},
+            'xaxis4': {'matches': 'x'},
+            
+            'yaxis1': {'title':{'text': 'Gas production'}},
+            'yaxis2': {'title':{'text': 'Oil production'}},
+            'yaxis3': {'title':{'text': 'Liquid production'}},
+            'xaxis1': {'title':{'text': 'Water production'}},
+            'xaxis2': {'title':{'text': 'Water production'}},
+            'xaxis3': {'title':{'text': 'Water production'}},
+            'legend': {
+            'orientation': "v",
+            'x': 1.25,   # Move legend to the left
+            'y': 1,      # Align legend to the top
+            'xanchor': "right", 
+            'yanchor': "top"
+        },
+            
+            
+            
+        }
+            
+    
+    return {'data':data ,'layout':layout, 'config':{'responsive':True },
+            'raise_events': ['selected_well_name'] 
+           }
+     
+        
+    '''annotations: [
+            {
+                text: "Subtitle 1",
+                x: 0.1, y: 1.15,  // Position above first subplot
+                xref: "paper", yref: "paper",
+                showarrow: false,
+                font: {size: 14, color: "gray"}
+            },
+            {
+                text: "Subtitle 1",
+                x: 0.5, y: 1.15,  // Position above first subplot
+                xref: "paper", yref: "paper",
+                showarrow: false,
+                font: {size: 14, color: "gray"}
+            },
+            {
+                text: "Subtitle 1",
+                x: 0.9, y: 1.15,  // Position above first subplot
+                xref: "paper", yref: "paper",
+                showarrow: false,
+                font: {size: 14, color: "gray"}
+            }]'''
+

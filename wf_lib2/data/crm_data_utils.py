@@ -11,32 +11,55 @@ def check_if_time_gaps( df:pd.DataFrame,sampling_frequency ='D' )->bool:
         
     col = find_column( df, DATE_KEYS )
     day_range = None 
+    
     if not col is None:
         min_date, max_date = min(df[col]),max(df[col])
-        day_range = pd.date_range( min_date, max_date, freq = sampling_frequency)
-
+        #day_range = pd.date_range( min_date, max_date, freq = sampling_frequency)
+        dates = df[col].values
     elif df.index.name in DATE_KEYS:  
 
         min_date, max_date = min(df.index),max(df.index)
-        day_range = pd.date_range( min_date, max_date, freq = sampling_frequency)
-    
+        #day_range = pd.date_range( min_date, max_date, freq = sampling_frequency)
+        dates = df.index.values
+        
     else:
         return False 
     
+    
+    #monthly needs to be processed slightly different. MS = month start  
+    if sampling_frequency == 'M':
+        
+        #num_remove = 2  
+        #remove_indices = np.random.choice(len(dates), num_remove, replace=False)
+        #dates = np.delete(dates, remove_indices)
 
+        day_range = pd.date_range(start=min_date, end=max_date, freq='MS')
+        if dates.shape[0] == day_range.shape[0]:
+            return False 
+        else:
+            return True
+    
+    #daily 
+    day_range = pd.date_range( min_date, max_date, freq = sampling_frequency)
     if len(day_range) != df.shape[0]: 
         return True 
          
         
     return False
 
-def fix_index_time_gaps_in_pattern( pattern:dict )->None:
+def fix_index_time_gaps_in_pattern( pattern:dict, frequency = 'D' )->None:
          
-    def fill_index_time_gaps( df1 ): 
+    def fill_index_time_gaps_monthly( df1, frequency = 'M' )->pd.DataFrame:
+        pass 
+            
+            
+    def fill_index_time_gaps_daily( df1, frequency = 'D' )->pd.DataFrame: 
         DATE = DATE_KEYS[0]
         DAYS = 'DAYS'
         ### Lets fix the time gaps 
         min_date, max_date = min(df1.index),max(df1.index)
+        
+           
         day_range = pd.date_range( min_date, max_date, freq = 'D')
 
         #make the index a column so it is a bit easier to work with 
@@ -64,6 +87,7 @@ def fix_index_time_gaps_in_pattern( pattern:dict )->None:
         return table 
 
 
+
     for key in pattern.keys():
 
         df  = pattern[key]
@@ -72,9 +96,23 @@ def fix_index_time_gaps_in_pattern( pattern:dict )->None:
 
         if df.index.name is not None and  DATE_KEYS[0].lower() == df.index.name.lower():
 
-            if check_if_time_gaps(df):
-                pattern[key] = fill_index_time_gaps( df )
+            if check_if_time_gaps(df, frequency):
+ 
+                #debugging     
+                #dates_plus_5 = df.index + np.timedelta64(5, 'D')
+                #print(df, df.shape, dates_plus_5.shape)
+                #df.index = dates_plus_5
+                #num_remove = 3  
+                #rows_to_remove = df.sample(n=num_remove, random_state=42).index
+                #df = df.drop(rows_to_remove)
+
+                if frequency=='D':
+                    pattern[key] = fill_index_time_gaps_daily( df, frequency )
+                else: #if frequency=='M':
+                    pattern[key] = fill_index_time_gaps_monthly( df, frequency )
+  
     
+  
 def find_columns(cols, keys):
     """
     Returns a list of the columns in cols that

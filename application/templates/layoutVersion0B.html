@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Custom Main Layout Component</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
      <!-- Add Plotly CDN -->
@@ -19,12 +20,45 @@
      
      <link href ="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
 
+     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 
 </head>
 
 <body>
+
+    <!-- spinning indicator of a long operation -->
+    <div id="loading" class="loader hidden"><div class="spinner"></div>Loading...</div>
+    <script>function toggleLoading(show) {
+        let message = document.getElementById("loading");//.style.display = show ? "block" : "none";
+
+        if (show) {
+            message.classList.remove('hidden');// .style.display = "block"; // Show message
+        } else {
+            message.classList.add('hidden');// .style.display = "none"; // Hide message
+        }
+      
+
+    }</script>
     <script>function Id(id){return document.getElementById(id)}</script>
+
+
+    <div id='projects-component-container' class="hidden pane projects-component-container">
+
+   
+        <div class="projects-component-left">
+            <h1 style="font-size: 46px;">Waterflood Insights</h1>
+            <h2>Open project</h2>
+        </div>
+    
+        <div class="projects-component-divider"></div>
+    
+        <div class="projects-component-right">
+            <project-list-component id="project-list-component"></project-list-component> <!-- Custom Component -->
+        </div>
+    </div>
 
 
     <div id="top-right-pagination">
@@ -37,16 +71,23 @@
             <a id='sector-tab-button' class="field-tab btn-sm  page-link">Sector </a>
           </li>
           <li class="page-item">
-            <a id='activity-tab-button'class="field-tab btn-sm page-link">Activity</a>
+            <a id='wells-tab-button'class="field-tab btn-sm page-link">Wells</a>
+          </li>
+          <li class="page-item">
+            <a id='workflows-tab-button'class="field-tab btn-sm page-link">Workflows</a>
           </li>
         </ul>
      
-        <div id="field-charts-container" class="card field-chart-container">
+        <div id="field-charts-container" class="field-chart-container">
         <p>Field charts go here...</p></div>
-        <div id="sector-charts-container" class="card field-chart-container">
+        <div id="sector-charts-container" class="field-chart-container">
         <p>Sector charts go here...</p></div>
-        <div id="activity-charts-container" class="card field-chart-container">
-        <p>Activity charts go here...</p></div>        
+        <div id="wells-charts-container" class="field-chart-container">
+        <p>Wells charts go here...</p></div>        
+        <div id="workflows-charts-container" class="field-chart-container">
+            <p>workflows go here...</p></div>        
+    
+
         <script>
             let items = document.querySelectorAll('.field-tab');
             items.forEach((item) => {
@@ -54,10 +95,10 @@
                     
                     let tabs = document.querySelectorAll('.field-chart-container'); 
                     tabs.forEach((tab) => {
-                        tab.style.display = 'none';
+                        tab.classList.add('hidden');// .style.display = 'none';
                     });
                     let tab_id = this.id.split('-')[0]+'-charts-container';
-                    document.getElementById(tab_id).style.display = 'block';
+                    document.getElementById(tab_id).classList.remove('hidden');// .style.display = 'block';
                     
 
                 });
@@ -65,7 +106,7 @@
         </script>
     </div>
 
-    <div id='side-bar-top' class="abg-secondary h50  p-3">
+    <div id='side-bar-top' class="h50  p-3">
           
         <button id='data-tab1' class="btn btn-sm" onclick="showCard('data-selection-card',this)">Data</button>
         <button class="btn btn-sm" onclick="showCard('studies-selector-card',this)">Studies</button>
@@ -91,7 +132,7 @@
                 <label for="end-date" class="form-label">End:</label>
                 <input type="date" id="end-date" name="end-date" class="form-control">
         
-        
+                <double-range-component></double-range-component>
                 <p></p>
                 Displace time frame and load data 
                 <div class="d-flex align-items-center gap-2">
@@ -107,27 +148,31 @@
         
             </div>
             <hr>
-            <button id='data-selection-button' class="btn btn-primary">Select</button>
-        
-        
+            <button id='apply-data-selection-button' class="btn btn-primary">Apply</button>        
         </div>
+
         <div class="card" id="studies-selector-card">
             <stringlist-component  
             checkboxes=true 
             selection_mode='single' 
             id='study-selector'>
         </stringlist-component>
-            <button class="btn btn-primary">Load</button>
+            <button id='study-selector-button' class="btn btn-primary">Load</button>
         </div> 
      
         <div class="card" id="views-selector-card">
-            Other views card goes here....
+            <span>Text on charts <input type="checkbox" id="display-text-on-chart-button" name="display-option" value="text"></span>
+            <script>Id('display-text-on-chart-button').addEventListener('click',(evt)=>{
+
+                //let text_on_charts = evt.target.checked;
+                //alert('changed',  text_on_charts);
+            });</script>
         </div>
           
 
     </div>
 
-    <div id='side-bar-bottom'  class="h50 p-3 abg-secondary" astyle="top: 50%;">
+    <div id='side-bar-bottom'  class="h50 p-3" astyle="top: 50%;">
         
         <p class="subtitle">Workflows</p>
         <div class="card" id="workflows-selector-card">
@@ -137,8 +182,10 @@
         </div>
     </div>
 
-        <!-- Sticky Navbar -->
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+    <!-- Sticky Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+
+            <button id="fetch-crm-input-data">Fetch data for CRM modelling</button>
 
             <div class="container-fluid">
                 <a class="navbar-brand" href="#">Waterflood insights</a>
@@ -146,7 +193,7 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
     
-         
+          
          
     
                 <div class="collapse navbar-collapse" id="navbarNav">
@@ -154,10 +201,13 @@
                         <li class="nav-item">
                             <a id='initialize-app-button'class="nav-link active" aria-current="page">Initialize</a>
                         </li>
-                    
+
+                      
                     </ul>
-    
-                    <button style='float:right' id="check">dsdasdf</button>
+ 
+                    <button style='float:right' id="projects-list-button">Projects</button>
+             
+                    <button style='float:right' id="check">Debug</button>
                     <script>
                         Id('check').addEventListener('click', function(){
             
@@ -169,16 +219,16 @@
                             
                             if(extra_stuff.classList.contains('hidden')){
                                 extra_stuff.classList.remove('hidden');
-                                field_stuff.classList.add('hidden');
+                                //field_stuff.classList.add('hidden');
                             }else{  
                                 extra_stuff.classList.add('hidden');
-                                field_stuff.classList.remove('hidden');
+                                //field_stuff.classList.remove('hidden');
                             }
                                 
                         });
                     </script>
     
-                    <button style='margin-left:20%'class="warning-button" 
+                    <button style='aamargin-left:20%'class="warning-button" 
                     id="well-selection-indicator">
                         <span class="warning-icon">&#9888;
                           Well selection active
@@ -196,9 +246,13 @@
     
           
     
-        </nav>
+    </nav>
 
-    <div id='all-app-wrapper' class="container-fluid">
+    <div id="liquid-production-rates-container" style="width:100%; background-color: aqua; min-height:500px;"></div>
+    <div id="water-injection-rates-container" style="width:100%; background-color: aqua; min-height:500px;"></div>
+    
+
+    <div id='all-app-wrapper' class="container-fluid hidden">
 
 
     <div style="position: relative;top: 57px;" >
@@ -211,13 +265,12 @@
             <three-column-main-layout id = "main-layout"></three-column-main-layout>
             </div>
 
-            <div id='extra-stuff' class="col-12 hidden">
+            <div id='extaara-stuff' class="col-12 hidden" style="height: 100vh;">
                 <div id = "extra-layout">  I am hidden </div>
             </div>
     
 
-            <div class="hidden row bg-primary" style="height: calc(100vh - 57
-            px);">
+            <div id='extra-stuff'  class="col-12 hidden row bg-primary" style="height:calc(100vh - 57px);">
                 <tabs-component id="bottom-tabs"></tabs-component>
                 <script>
                     Id('bottom-tabs').addNewTab('tab1', 'sdfgsdgdfg');
@@ -244,220 +297,53 @@
  
 
 <script id="initialize-app">
+
     let layout = Id('main-layout');
+    let project_description; 
 
     function Id( id ) { return document.getElementById(id); }    
-
-
-
-    /*
-    const data = [{
-                        x: [1, 2, 3, 4, 5],
-                        y: [10, 11, 12, 13, 14],
-                        mode: 'markers',
-                        type: 'scatter'
-                    }];
-
-    let inner_offset = 60;
-    const chart_layout = {
-                        title: 'Scatter Plot Example',
-                        
-                        //width: layout_placeholder.offsetWidth ,
-                        //height: layout_placeholder.offsetHeight,
-                        autosize: true,
-                        margin: {
-                        l: inner_offset,
-                        r: inner_offset,
-                        b: inner_offset,
-                        t: inner_offset   
-                    },
-                        xaxis: { title: 'X Axis' },
-                        yaxis: { title: 'Y Axis' },
-                        responsive: true
-                    };
-    const config = {responsive: true};
-
-
-   
-    document.getElementById('add-studies').addEventListener('click', ()=>{updateStudyList();});
-    document.getElementById('add-chart1').addEventListener('click', ()=>{
-        let where = 'middle-top'; 
-        const layoutComponent = document.getElementById('main-layout');
-        let layout_placeholder =   layoutComponent.get_pane(where)
-        
-        let lay = {
-            width: layout_placeholder.offsetWidth ,
-            height: layout_placeholder.offsetHeight
-        }
-        lay = Object.assign(lay, chart_layout);  
-    
-
-        addDynamicPlotlyChart('middle','top', data, lay, config );
-    });
-    document.getElementById('add-chart2').addEventListener('click', ()=>{
-    
-        let where = 'middle-bottom'; 
-        const layoutComponent = document.getElementById('main-layout');
-        let layout_placeholder =   layoutComponent.get_pane(where)
-        
-        let lay = {
-            width: layout_placeholder.offsetWidth ,
-            height: layout_placeholder.offsetHeight
-        }
-        lay = Object.assign(lay, chart_layout);  
-    
-
-        addDynamicPlotlyChart('middle','bottom', data, lay, config );
-    });
-    document.getElementById('add-locs-chart').addEventListener('click', ()=>{
-    
-
-        let lat = [ 28.952776  , 29.152776  , 28.84913887,28.891386 ];
-        let lon = [ 47.82002664, 47.82002664, 47.93671361,47.9867127 ];
-        let locations_data = [
-                {
-                name:'Injectors',
-                type: "scattermap", mode: 'markers+text', 
-                text: ['AABG-0739-1_I', 'BBBG-0739B_I', 'CCBG-0757-1_I', 'DDBG-0757-1_I' ],
-                lon: [47.92373148, 47.6673148, 47.97478712, 47.9481827 ],
-                lat: [28.8484854 , 28.55384854 , 28.8856267 , 28.757285  ],
-                marker: { color: 'blue',//['black', 'blue', 'orange','cyan'],
-                        size: 10 , 
-                        //symbol: 'square'
-                        }, 
-                },
-                    {
-                name:'Producers',
-                type: "scattermap", mode: 'markers+text', 
-                text: ['AABG-0739-1_I', 'BBBG-0739B_I', 'CCBG-0757-1_I', 'DDBG-0757-1_I' ],
-                lon: [47.94373148, 47.64373148, 47.93478712, 47.94351827 ],
-                lat: [28.8384854 , 28.56384854 , 28.8456267 , 28.8503285  ],
-                marker: { color: 'red',//['black', 'blue', 'orange','cyan'],
-                        size: 14 , 
-                        //symbol: 'square'
-                        }, 
-                }
-            ];
-        let locations_layout = {
-
-            shapes : [{
-                type: 'line',    
-                //xref: 'map',
-                //yref: 'map',
-                lat0: 28.952776,
-                lon0:  47.82002664,
-                lat1: 29.152776,
-                lon1: 47.82002664,
-                line: {
-                    color: 'rgb(128, 0, 128)',
-                    width: 4,
-                    dash: 'dot'
-                }
-                }
-            ], 
-
-        //dragmode: "zoom",              
-        fitbounds:"locations",     
-        map: {'bounds': {'east': 48.14373147920834,
-                            'north': 29.253362328845775,
-                            'south': 28.138454875171064,
-                            'west': 47.62002664049844},
-                        'center': {'lat': 28.846461299452603,
-                                    'lon': 47.9361300152004},
-                        'domain': {'x': [0.0, 1.0], 'y': [0.0, 1.0]},
-                        'style': 'open-street-map',
-                        'zoom': 8},
-                margin: { r: 0, t: 0, b: 0, l: 0 }
-            };
-    
-        let div_id = 'right-top'//example1';
-        //Plotly.newPlot(div_id, data11, layout11);
-            addDynamicPlotlyChart('right','top', locations_data, locations_layout,config ); 
-
-        
-    });
-    */
-    /*layout.addEventListener('pane-resized', (evt) =>{
-
-        console.log( evt.detail );
-    }); */
-
-
-    Id('initialize-app-button').addEventListener('click', function(){
   
-   
-            let iurl = 'get_project_description'
-            get_server(iurl, 'GET', {})
-            .then( (resp) =>{
-                console.log('get_project_description returned', resp);
-                populate_project_description(resp.data);
-
-
-            })
-            .catch ((error) =>{
-                console.log(error);
-            });
+    function load_empty_app(){
         
-
-        Id('field-tab-button').click()
-        Id('data-tab1').click()
         layout.set('left-top',Id('side-bar-top'));
         layout.set('left-bottom',Id('side-bar-bottom'));
         layout.set('right-top',Id('top-right-pagination'));
      
 
-        return 
+        iurl = 'get_list_of_projects';
+        get_server(iurl, 'GET' )
+            .then( (resp) =>{
+                console.log('get_list_of_projects returned', resp);
+                let projects = resp.data['projects'];
+                let project_list = Id('project-list-component');
+                project_list.projects = projects;
+            })
+            .then( ()=>{
+                display_projects_page(true);
+            } )
+            .catch ((error) =>{
+                console.log(error);
+            });
+    }
+    
+    function load_project( project_name){
+    
+        return new Promise((resolve, reject) => {
+            let iurl = 'get_project_description'
+            let message = JSON.stringify( {project_name:project_name} )
 
-        //let studies = new QuickJS_Stringlist();
-        //let container = Id('side-bar-top');
-        //container.innerHTML = '';
-        //container.appendChild(studies);
-        //studies.set_data( data['studies'] );
-        //studies.set_title('Studies');
-        //Id('reservoir-unit-selector').setData(['Unit 1', 'Unit 2', 'Unit 3', 'Unit 4']);
-        //Id('sector-selector').setItems('Sector ', 7 );
-        //Id('end-date').value = new Date('2022-02-16')//.toISOString().slice(0, 16);
-        //Id('start-date').value = new Date('2017-12-26')//.toISOString().slice(0, 16);
-        //Id('reservoir-unit-selector').setValue('Unit 2');
-        //Id('study-selector').set_data(data['studies']);
-        //Id('workflow-selector').set_data(data['workflows']);
-        //Id('field-tab-button').addEventListener('click', function(){alert('Field tab clicked');});
-        //container = Id('side-bar-bottom');
-        
-
-    });
-
-    Id('data-selection-button').addEventListener('click', function(){
-            //alert('Getting field charts...');
-            let read_data = get_project_data_selection();
-            
-            if(read_data!=undefined){
-                console.log('Data read:', read_data);
-
-                get_server('get_locations_chart','POST', JSON.stringify(read_data))
-                .then( (resp) =>{
-                    populate_locations_plot(resp.data);
-                    return resp;
-                })  
-                .catch ((error) =>{
-                    console.log(error);alert('Error getting data for locations');
-                }); 
-
-                get_server('get_field_charts','POST', JSON.stringify(read_data))
-                .then( (resp) =>{
-                    console.log('get_field_charts returned', resp);
-                    populate_field_plots(resp.data);
-                })
-                .catch ((error) =>{
-                    console.log(error);alert('Error getting data for field data');
-                }); 
-
-
-                dummy();
-            }
-
-
-        }); 
+            get_server(iurl, 'GET', message )
+            .then( (resp) =>{
+            console.log('get_project_description returned', resp);
+            project_description = resp.data;
+            resolve(resp.data);
+            })
+        .catch ((error) =>{
+            console.log(error);
+            });
+        });
+    }
+ 
 
     let resizePending = false;
     window.addEventListener('resize', () => {resizePending = true;});
@@ -508,146 +394,313 @@
    
 <script id='ui_events'>
 
-    function old_showDialog(element, title) {
-  return new Promise((resolve) => {
-    const dialog = document.createElement('dialog');
-    dialog.innerHTML = `
-      <form method="dialog" class="p-4 border rounded shadow-sm">
-          <h5 class="mb-3">${title}</h5>
-          <div class="dialog-content mb-3"></div>
-          <div class="mb-3">
-              <label for="inputText" class="form-label">Enter text:</label>
-              <input type="text" id="inputText" name="inputText" class="form-control">
-          </div>
-          <div class="d-flex justify-content-end">
-              <button id="cancelButton" value="cancel" class="btn btn-secondary me-2">Cancel</button>
-              <button id="applyButton" value="apply" class="btn btn-primary">Apply</button>
-          </div>
-      </form>
-    `;
+    function display_projects_page( value ){
 
-    dialog.querySelector('.dialog-content').appendChild(element);
-    document.body.appendChild(dialog);
-    dialog.showModal();
-
-    dialog.addEventListener('close', () => {
-      resolve({
-        action: dialog.returnValue,
-        text: document.getElementById('inputText').value
-      });
-      dialog.remove();
-    });
-  });
-}
-
-function showDialog(element, title) {
-  return new Promise((resolve) => {
-    const dialog = document.createElement('div');
-    dialog.classList.add('dialog');
-    dialog.setAttribute('role', 'dialog');
-    dialog.setAttribute('aria-labelledby', 'dialog-title');
-    dialog.setAttribute('tabindex', '-1');
-    dialog.style.zIndex = '9999';
-
-    dialog.innerHTML = `
-      <div id="dialog-title" class='drag-handle'>
-          ${title}
-          <button class="close-btn" aria-label="Close">&times;</button>
-      </div>
-      <div class="dialog-body">
-          <div class="dialog-content"></div>
-      </div>
-      <div class="dialog-footer">
-          <button data-action="cancel" type="button" class="btn btn-secondary">Cancel</button>
-          <button data-action="apply" type="button" class="btn btn-primary">Apply</button>
-      </div>
-    `;
-
-    dialog.querySelector('.dialog-content').appendChild(element);
-    document.body.appendChild(dialog);
-
-    // Center the dialog initially
-    dialog.style.left = `${(window.innerWidth - dialog.offsetWidth) / 2}px`;
-    dialog.style.top = `${(window.innerHeight - dialog.offsetHeight) / 2}px`;
-    dialog.focus();
-
-    const handle = dialog.querySelector('.drag-handle');
-    let offsetX, offsetY, isDragging = false;
-
-    handle.addEventListener('mousedown', (e) => {
-      isDragging = true;
-      offsetX = e.clientX - dialog.offsetLeft;
-      offsetY = e.clientY - dialog.offsetTop;
-      document.body.style.userSelect = 'none';
-
-      const onMouseMove = (e) => {
-        if (isDragging) {
-          dialog.style.left = `${e.clientX - offsetX}px`;
-          dialog.style.top = `${e.clientY - offsetY}px`;
+        if(value == true){
+            Id('projects-component-container').classList.remove('hidden');
+            Id('all-app-wrapper').classList.add('hidden');
         }
-      };
+        else{
+            Id('projects-component-container').classList.add('hidden');
+            Id('all-app-wrapper').classList.remove('hidden');
+        }
+    }
 
-      const onMouseUp = () => {
-        isDragging = false;
-        document.body.style.userSelect = 'auto';
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
-      };
+    function load_and_display_study(study_name){
 
-      document.addEventListener('mousemove', onMouseMove);
-      document.addEventListener('mouseup', onMouseUp, { once: true });
-    });
+        console.log('loading and displaying a study named ', study_name);
+        toggleLoading(true);
+        setTimeout(()=>{
+            toggleLoading(false);
+        }, 2000);
+        
 
-    dialog.addEventListener('click', (e) => {
-      if (e.target.dataset.action === 'cancel' || e.target.classList.contains('close-btn')) {
-        resolve({ action: 'cancel', text: '' });
-        dialog.remove();
-      } else if (e.target.dataset.action === 'apply') {
-        const inputText = element.value || element.textContent || '';
-        resolve({ action: 'apply', text: inputText });
-        dialog.remove();
-      }
-    });
-  });
-}
+    }
 
-
+    /*when the user double-clicks in one workflow item*/
     Id('workflow-selector').addEventListener('dclicked',(evt)=>{
-        console.log('Workflow double-clicked:', evt.detail);
+        //console.log('Workflow double-clicked:', evt.detail);
+        console.log('workflow name double-clicked:', evt.detail.cell_text);
 
-        let w = new CRMSetupElement();//crm-setup-element
-        Id('activity-charts-container').appendChild(w);
+        /*let w = new CRMSetupElement();//crm-setup-element
+        Id('workflows-charts-container').innerHTML = '';
+        Id('workflows-charts-container').appendChild(w);
+        Id('workflows-tab-button').click();
+        */
+    });
+
+    /* Trigerred when the user clicks on a study in the list.*/
+    Id('study-selector-button').addEventListener('click',(evt)=>{
+
+        //the study name is fetched from the list 
+        let study_name = Id('study-selector').selected()[0]['cell_text'];
+        console.log('**Study name clicked:', study_name);
+
+        load_and_display_study(study_name);
+    });
+
+    /*When the user selects a project in the projects list page*/
+    Id('project-list-component').addEventListener('clicked', event => {
+        console.log("Project clicked:", event.detail.projectName);
+        //alert(`Opening project: ${event.detail.projectName}`);
+
+
+        toggleLoading(true);
+        load_project(event.detail.projectName).then( (data)=>{
+
+            populate_project_description(data);
+            display_projects_page(false);
+            Id('field-tab-button').click()
+            Id('data-tab1').click();
+            toggleLoading(false);
+        })
+        .catch ((error) =>{
+            console.log(error);
+            toggleLoading(false);
+        });
+        ;
+    });
+
+    //navbar debug button
+    Id('projects-list-button').addEventListener('click', function(){
+        display_projects_page(true);
+    });
+    
+    /* Trigerred when the user clicks "Apply" data selection in the left-top sidebar */
+    Id('apply-data-selection-button').addEventListener('click', function(){
+        
+
+        function validateProjectDataSelection(read_data) {
+            message = ""
+
+            if(read_data['subzone']==undefined) return "\nInvalid RMU selection\n";
+            if(read_data['subzone']=='Select option') return "\nInvalid RMU selection\n";
+
+            
+            if(!isValidDate( read_data['date'][0])) message = "\nInvalid start date\n";
+            if(!isValidDate( read_data['date'][1])) message += "\nInvalid end date\n";
+
+            return message;
+        }
+
+        let read_data = get_project_data_selection();
+        let result  = validateProjectDataSelection( read_data );
+        if( isEmptyOrWhitespace(result) == false){
+            
+            Swal.fire({
+            title: "Error in selection",
+            html: result.replaceAll("\n", "<br>"), 
+            icon: "error"
+             });
+            return
+        }
 
         
-        /*let p  = showDialog(w, 'Data-driven model setup');
-        p.then ( (resp) =>{
-            console.log( resp ); 
-        });*/
+        if(read_data!=undefined){
+
+            toggleLoading(true);
+            get_server('get_locations_chart','POST', JSON.stringify(read_data))
+            .then( (resp) =>{
+                populate_locations_plot(resp.data);
+                toggleLoading(false);
+            })  
+            .catch ((error) =>{
+                console.log(error);alert('Error getting data for locations');
+                toggleLoading(false);
+            }); 
+            
+            get_server('get_field_charts','POST', JSON.stringify(read_data))
+            .then( (resp) =>{
+                console.log('get_field_charts returned', resp);
+                populate_field_plots(resp.data);
+            })
+            .catch ((error) =>{
+                console.log(error);alert('Error getting data for field data');
+            }); 
+
+            
+            ////////////////
+            get_server('get_field_wells','POST', JSON.stringify(read_data))
+            .then( (resp) =>{
+                console.log('get_field_wells_snapshot returned', resp);
+                populate_field_wells_snapshot(resp.data);
+
+                //dummy();
+            })
+            .catch ((error) =>{
+                console.log(error);alert('Error getting data for field data');
+            }); 
 
 
-        /*
-        let te = document.createElement('textarea');
-        te.innerHTML = 'This is a test element';
-        let p  = showDialog(te, evt.detail.text);
-        p.then ( (resp) =>{
-            console.log( resp, te.value); 
-        });*/
+            ///////////////
+
+
+
+        }
+    }); 
+
+
+    Id('fetch-crm-input-data').addEventListener('click', (evt)=>{
+
+        function formatString(str) {
+            if (!str) return '';
+            const noUnderscores = str.replace(/_/g, ' ');
+            return noUnderscores.charAt(0).toUpperCase() + noUnderscores.slice(1);
+            }
+
+        console.log('fetch-crm-input-data clicked');
+        toggleLoading(true);
+
+        //get the filters. Zone, subzone, wells_selected if any.
+        //time slice. 
+        let read_data = undefined;//get_project_data_selection();
+            read_data = { 'a': 1, 'b': 2, 'c': 3 };
+
+            get_server('get_crm_input_data','POST',JSON.stringify(read_data))
+            .then( (resp) =>{
+                
+                console.log('get_crm_input_data returned');
+                let crm_component = document.querySelector('crm-setup-element');
+                let distances_data = resp['distances'];
+                console.log('data received from server', resp );//distances_data);
+                /*Example of data received from the server
+                {
+                    "dates": [
+                        "2023-01-01",
+                        "2023-02-01",
+                        "2023-03-01",
+                        "2023-04-01",
+                        "2023-05-01",
+
+                    ],
+                    "distances": [
+                        {
+                            "distance": 26724.086917357108,
+                            "injector": "BG-0604-1_I",
+                            "producer": "AH-0191-2_P"
+                        },
+                            "distance": 3278.951071158391,
+                            "injector": "BG-0757-1_I",
+                            "producer": "BG-1766-2_P"
+                        },
+                        {
+                            "distance": 4096.706186426527,
+                            "injector": "BG-0758-1_I",
+                            "producer": "BG-1766-2_P"
+                        },
+                        {
+                            "distance": 6207.797163274271,
+                            "injector": "BG-0759-1_I",
+                            "producer": "BG-1766-2_P"
+                        },
+
+                            "distance": 3497.938905346225,
+                            "injector": "BG-0604-1_I",
+                            "producer": "BG-2203-1_P"
+                        },
+                        {
+                            "distance": 5340.539927885718,
+                            "injector": "BG-0721-1_I",
+                            "producer": "BG-2203-1_P"
+                        },
+                        {
+                            "distance": 4398.491484930774,
+                            "injector": "BG-0722-1_I",
+                            "producer": "BG-2203-1_P"
+                        },
+                    ],
+                    "liquid_production": {
+                        "data": {
+                            "AH-0191-2_P": [
+                                407.61655,
+                                450.985,
+                                451.67915,
+                                456.0019
+                
+                            ],
+                            "BG-0052-6_P": [
+                                0,
+                                1431.2434999999996,
+                                2778.53845,
+                                2907.1412
+                            ],
+                            "BG-0234-1_P": [
+                                289.47475,
+                                310.58589999999987,
+                                306.7277,
+                                300.5669000000001,
+                                326.1468,
+                                341.34515
+                            ]  
+                        },
+                        "dates": [
+                            "2023-01-01",
+                            "2023-02-01"
+                        ]
+                    },
+
+                    "water_injection": .... ther same 
+                }
+                */
+
+                let n = -1
+                let keys = ['liquid_production','water_injection']
+                let containers = [ Id('liquid-production-rates-container'), Id('water-injection-rates-container')]
+                for(let key of keys){
+                    n = n + 1 
+                    
+                    let rates = resp[key]['data']
+                    let dates =  resp[key]['dates']
+                    const traces = [];
+                    for (const well in rates) {
+                    traces.push({
+                        //works extra_stuff: dates, 
+                        x: dates, y: rates[well], mode: 'lines', name: well,
+                        type: 'scatter'
+                    });
+                    }
+
+                    series_name = formatString( key )
+                    let chart = containers[n];
+                    chart.innerHTML = "";
+                    Plotly.newPlot( chart, traces, {
+                    title: {'text':series_name, font: {size:20}},
+                    xaxis: { text: 'Date' },yaxis: { text: 'Value' }}, {'responsive': true});
+                }
+
+                
+
+
+                //crm_component.setData( distances_data, resp['rates']);
+                //let pairs = crm_component.extractPairs( 750 );
+                //crm_component.setData( data['distances'], data['rates'] );
+                //crm_component.extractPairs( 1750 );
+
+                toggleLoading(false);
+            })  
+            .catch( (err) => {
+
+                console.log('error', err);
+                toggleLoading(false);
+            });
 
 
     });
+
 
 </script>
 
 <script id="load-empty-app">
-    function load_empty_app(){
-        
-        Id('initialize-app-button').click();
 
-        
-    }
+    
     window.onload = function() {
         load_empty_app();
     };
+
+
+
+
+
 </script>
 
 </body>

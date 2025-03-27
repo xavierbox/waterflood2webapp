@@ -1,4 +1,273 @@
 
+class QuickJS_DoubleRangeTrack extends HTMLElement {
+    /*
+    Example of use: 
+    <body>
+    <h3>Date slice</h3>
+    <double-range-component id="double-track"></double-range-component>
+    <br><div>Dates: <span id='date1'></span> → <span id='date2'></span></div>
+    
+    <script>
+        document.getElementById('double-track').addEventListener('clicked', (e) => {
+        //console.log('Handle 1:', e.detail.handle1, 'Handle 2:', e.detail.handle2);
+
+            const dates = [];
+            const start = new Date(1989, 11, 15); // months are 0-indexed
+            const end = new Date(2026, 3, 24);
+
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            dates.push(`${day}-${month}-${year}`);
+            }
+
+
+            let percent1 = e.detail.handle1;
+            let percent2 = e.detail.handle2;
+
+            const index1 = Math.round((percent1 / 100) * (dates.length - 1));
+            const index2 = Math.round((percent2 / 100) * (dates.length - 1));
+            console.log(index1,index2)
+
+            const date1 = dates[Math.min(index1, index2)];
+            const date2 = dates[Math.max(index1, index2)];
+            console.log(`Selected range: ${date1} → ${date2}`);
+
+            document.getElementById('date1').textContent = date1;
+            document.getElementById('date2').textContent = date2;
+
+
+        });
+        </script>
+    </body>
+    */
+    constructor() {
+      super();
+
+    
+    }
+
+    getTemplate(){
+
+        return `
+        <div class="double-range-track">
+          <div class="double-range-ticks"></div>
+          <div class="double-range-fill"></div>
+          <div class="double-range-handle" id="handle1" style="left: 10%;"></div>
+          <div class="double-range-handle" id="handle2" style="left: 20%;"></div>
+        </div>
+      `;
+
+    }
+
+    getValues(){
+        const handle1 = this.querySelector('.handle1');
+        const handle2 = this.querySelector('.handle2');
+        const val1 = parseFloat(handle1.style.left);
+        const val2 = parseFloat(handle2.style.left);
+        return [val1,val2];//{handle1: parseFloat(handle1.style.left), handle2: parseFloat(handle2.style.left)};
+    }
+
+    connectedCallback() {
+
+        this.innerHTML = `
+        <div class="double-range-track">
+          <div class="double-range-ticks"></div>
+          <div class="double-range-fill"></div>
+          <div class="double-range-handle handle1" style="left: 0%;"></div>
+          <div class="double-range-handle handle2" style="left: 100%;"></div>
+        </div>
+      `;
+
+      let this_object = this;
+      const track = this.querySelector('.double-range-track');
+      const handle1 = this.querySelector('.handle1');
+      const handle2 = this.querySelector('.handle2');
+      const fill = this.querySelector('.double-range-fill');
+
+      let dragging = null;
+
+      const updateFill = () => {
+        const val1 = parseFloat(handle1.style.left);
+        const val2 = parseFloat(handle2.style.left);
+        const left = Math.min(val1, val2);
+        const right = Math.max(val1, val2);
+        fill.style.left = `${left}%`;
+        fill.style.width = `${right - left}%`;
+
+        this.dispatchEvent(new CustomEvent('clicked', {
+          detail: {
+            handle1: val1,
+            handle2: val2
+          },
+          bubbles: true
+        }));
+      };
+
+      const onMouseMove = (e) => {
+        if (!dragging) return;
+
+        const trackRect = track.getBoundingClientRect();
+        const x = e.clientX - trackRect.left;
+        const percent = Math.max(0, Math.min(100, (x / trackRect.width) * 100));
+        dragging.style.left = `${percent}%`;
+        updateFill();
+      };
+
+      const onMouseUp = () => {
+        dragging = null;
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+
+        
+        this_object.dispatchEvent(new CustomEvent('mouse-up', {bubbles: true}));
+          
+      };
+
+      const onMouseDown = (e, handle) => {
+        dragging = handle;
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+      };
+
+      handle1.addEventListener('mousedown', (e) => onMouseDown(e, handle1));
+      handle2.addEventListener('mousedown', (e) => onMouseDown(e, handle2));
+
+      updateFill(); // Initial setup
+
+      const tickCount = 20;
+      const ticksContainer = this.querySelector('.double-range-ticks');
+
+      for (let i = 0; i <= tickCount; i++) {
+        const tick = document.createElement('div');
+        ticksContainer.appendChild(tick);
+      }
+    }
+
+    setRanges(minPercent, maxPercent) {
+        const handle1 = this.querySelector('.handle1');
+        const handle2 = this.querySelector('.handle2');
+        const fill = this.querySelector('.double-range-fill');
+      
+        // Clamp values between 0 and 100
+        minPercent = Math.max(0, Math.min(100, minPercent));
+        maxPercent = Math.max(0, Math.min(100, maxPercent));
+      
+        handle1.style.left = `${minPercent}%`;
+        handle2.style.left = `${maxPercent}%`;
+      
+        // Update the fill bar and emit event
+        const left = Math.min(minPercent, maxPercent);
+        const right = Math.max(minPercent, maxPercent);
+        fill.style.left = `${left}%`;
+        fill.style.width = `${right - left}%`;
+      
+        this.dispatchEvent(new CustomEvent('clicked', {
+          detail: {
+            handle1: minPercent,
+            handle2: maxPercent
+          },
+          bubbles: true
+        }));
+    }
+}
+customElements.define('double-range-component', QuickJS_DoubleRangeTrack);
+
+
+class xxxQuickJS_ConnectDatasetComponent extends HTMLElement {
+    /*
+    <script>
+        // Example usage
+        const connectComp = document.querySelector("connect-dataset-component");
+
+        connectComp.setData(["TeamA", "TeamB", "Results", "Backups", "TeamA", "TeamB", "Results", "Backups",]);
+
+        connectComp.addEventListener("clicked", (e) => {
+        const folder = e.detail.folder;
+        console.log("Connected to:", folder);
+        alert("Connected to folder: " + folder);
+
+        let ele = document.getElementById("xx");
+        console.log( ele.getData(), ele.getSelected() );
+
+        });
+    </script>
+    */ 
+
+
+    constructor() {
+      super();
+      this.folders = [];
+      this.selectedFolder = null;
+    }
+
+    connectedCallback() {
+      this.render();
+    }
+
+    setData(foldersArray) {
+      if (Array.isArray(foldersArray)) {
+        this.folders = foldersArray;
+        this.selectedFolder = null;
+        this.render();
+      }
+    }
+
+    getData(){
+    return this.folders ;
+    }
+
+    
+
+    getSelected() {
+    return this.selectedFolder;
+  }
+
+    render() {
+      this.innerHTML = `
+        <div class="connect-dataset-grid connect-dataset-folder-grid"></div>
+        <button class="connect-dataset-button">Connect</button>
+      `;
+
+      const grid = this.querySelector(".connect-dataset-folder-grid");
+
+      this.folders.forEach(folderName => {
+        const folderEl = document.createElement("div");
+        folderEl.classList.add("connect-dataset-folder");
+        folderEl.dataset.folder = folderName;
+        folderEl.innerHTML = `
+          <div class="connect-dataset-folder-icon"></div>
+          <div class="connect-dataset-folder-label">${folderName}</div>
+        `;
+
+        folderEl.addEventListener("click", () => this.selectFolder(folderName));
+        grid.appendChild(folderEl);
+      });
+
+      const button = this.querySelector(".connect-dataset-button");
+      button.addEventListener("click", () => {
+        if (this.selectedFolder) {
+          this.dispatchEvent(new CustomEvent("clicked", {
+            detail: { folder: this.selectedFolder }
+          }));
+        } else {
+          alert("Please select a folder before connecting.");
+        }
+      });
+    }
+
+    selectFolder(folderName) {
+      this.selectedFolder = folderName;
+      const allFolders = this.querySelectorAll(".connect-dataset-folder");
+
+      allFolders.forEach(folderEl => {
+        folderEl.classList.toggle("open", folderEl.dataset.folder === folderName);
+      });
+    }
+}
+customElements.define("xxxconnect-dataset-component", xxxQuickJS_ConnectDatasetComponent);
+
 class QuickJS_ComboBoxSelector extends HTMLElement {
     constructor() {
         super();
@@ -33,6 +302,7 @@ class QuickJS_ComboBoxSelector extends HTMLElement {
         option.setAttribute('disabled', true);
         option.setAttribute('selected', true);
         option.textContent = "Select option";
+        //option.value = undefined;
         this.selectElement.appendChild(option);
 
         items.forEach(item => {
@@ -64,94 +334,10 @@ class QuickJS_ComboBoxSelector extends HTMLElement {
       }  
 
 }
-
 if (!customElements.get("combobox-component")) {
     customElements.define("combobox-component", QuickJS_ComboBoxSelector);
 }
 
-
-
-
-class oldComboBoxSelector extends HTMLElement {  
-    
-    selector = undefined;  
-  
-    constructor() {  
-      super();  
-   
-    }
-    
-    connectedCallback() {
-              
-      // Create the select element and add it to the component  
-      const select = document.createElement('select');  
-      select.classList.add('form-control','combobox');  
-      this.selector = select;
-      select.id = 'my-select';  
-      this.appendChild(select);  
-    
-      // Add the default option that can't be selected  
-      const defaultOption = document.createElement('option');  
-      defaultOption.disabled = true;  
-      defaultOption.selected = true;  
-      defaultOption.textContent = 'Select an option...';  
-      select.appendChild(defaultOption);  
-    
-      // Bind methods to this object  
-      this.populateSelect = this.populateSelect.bind(this);  
-      this.onSelectChanged = this.onSelectChanged.bind(this);  
-      this.getOptions = this.getOptions.bind(this);  
-    
-      // Add event listener for select changes  
-      select.addEventListener('change', this.onSelectChanged);  
-    }  
-    
-    populateSelect(options) {  
-      // Clear the select options  
-      const select = this.querySelector('select');  
-      select.innerHTML = '';  
-    
-      // Add the default option that can't be selected  
-      const defaultOption = document.createElement('option');  
-      defaultOption.disabled = true;  
-      defaultOption.selected = true;  
-      defaultOption.textContent = 'Select an option...';  
-      select.appendChild(defaultOption);  
-    
-      // Add the new options to the select  
-      options.forEach((option) => {  
-        const optionElem = document.createElement('option');  
-        optionElem.value = option;  
-        optionElem.textContent = option;  
-        select.appendChild(optionElem);  
-      });  
-    }  
-    
-    onSelectChanged(event) {  
-      // Dispatch the selection_changed event with the selected value  
-      this.dispatchEvent(new CustomEvent('selection_changed', { detail: event.target.value }));  
-    }  
-      
-   set_value( value ){
-     this.querySelector('select').value = value;  
-   }
-    
-    getOptions() {  
-      const select = this.querySelector('select');  
-      const options = [];  
-      select.querySelectorAll('option').forEach((option) => {  
-        if (!option.disabled) {  
-          options.push(option.value);  
-        }  
-      });  
-      return options;  
-    }  
-  }  
-  // Register the custom element  
-  if( customElements.get('combobox-component') == undefined){
-  customElements.define('combobox-component', ComboBoxSelector);  
-  }
-  
 class QuickJS_Stringlist extends HTMLElement { 
       
       static observedAttributes = ["selection_mode","checkboxes", "title"];
@@ -531,13 +717,10 @@ class QuickJS_Stringlist extends HTMLElement {
               tr.appendChild(th);	
       }
   
-      };  
-
-
+};  
 if( customElements.get('stringlist-component') == undefined){
 customElements.define('stringlist-component', QuickJS_Stringlist);
 }
-
 
 class QuickJS_Table extends QuickJS_Stringlist { 
      
@@ -659,9 +842,7 @@ class QuickJS_Table extends QuickJS_Stringlist {
       set_title( title ){;}
    
       
-  };
-
-      
+};     
 if( customElements.get('table-component') == undefined){
 customElements.define('table-component', QuickJS_Table);
 }
@@ -734,17 +915,11 @@ class QuickJS_ScrollableList extends HTMLElement {
 
 
 
-    }
-
-    
-
-    if( customElements.get('scrollable-component') == undefined){
-            customElements.define('scrollable-component', QuickJS_ScrollableList);
-            console.log('Added custom element scrollable-component');
-        }
- 
-
- 
+}
+if( customElements.get('scrollable-component') == undefined){
+    customElements.define('scrollable-component', QuickJS_ScrollableList);
+    console.log('Added custom element scrollable-component');
+}
 
 
 class QuickJS_TwoColumnMainLayout extends HTMLElement {
@@ -1407,7 +1582,7 @@ class QuickJS_TwoColumnCheckboxList extends HTMLElement {
 
             const checkbox = document.createElement("input");
             checkbox.type = "checkbox";
-            checkbox.classList.add("form-check-input");
+            //checkbox.classList.add("xxform-check-input");
             checkbox.addEventListener("change", () => {
                 this.dispatchEvent(new CustomEvent("clicked", {
                     detail: { text: item, checked: checkbox.checked }
@@ -1416,7 +1591,7 @@ class QuickJS_TwoColumnCheckboxList extends HTMLElement {
 
             const label = document.createElement("label");
             label.textContent = item;
-            label.classList.add("form-check-label", "ms-2", "checkbox-label");
+            label.classList.add("form-check-label", "ms-2");//, "checkbox-label");
             row.addEventListener("click", () => {
                 checkbox.checked = !checkbox.checked;
                 checkbox.dispatchEvent(new Event("change"));

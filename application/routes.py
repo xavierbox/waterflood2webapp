@@ -28,12 +28,22 @@ class Storage:
         locs['LAT'], locs['LONG'] = utm_to_latlon( locs['X'], locs['Y'] )
         inj =  pd.read_csv( 'example_datasets/injectors_example1.csv')
         prd =  pd.read_csv( 'example_datasets/producers_example1.csv')
+        
 
-        time_format = DATE_FORMAT  #21/07/2024
+        #locs = pd.read_csv( 'C:/Work/2025/waterflood/webapp/application/example_datasets/koc_DATASET_LocationsSynthetic.csv').fillna(111.0)
+        #inj = pd.read_csv(  'C:/Work/2025/waterflood/webapp/application/example_datasets/koc_DATASET_InjectorsSynthetic.csv').fillna(110.0)
+        #prd = pd.read_csv(  'C:/Work/2025/waterflood/webapp/application/example_datasets/koc_DATASET_ProducersSynthetic.csv').fillna(101.0)
+        
+        print('done')
+        
+        
+     
+        time_format =  "%d/%m/%Y" # DATE_FORMAT  #21/07/2024
         crm_dataset = CRMDataset.instance( inj, prd, locs, time_format=time_format ) 
+        crm_dataset.check_dataset()
         
         if not filters is None:
-
+                
             if 'name'in filters:
                 names = filters['name']
                 if not isinstance(names, list):
@@ -114,7 +124,14 @@ class Storage:
 
         return backend_data
             
+@app.route('/get_list_of_projects',methods=['GET'])
+def get_list_of_projects():
 
+    data = {'projects': ['Project 1', 'Project 2', 'Project 3'] }
+    return {'data':data }, 200 
+  
+  
+  
 @app.route('/get_project_description',methods=['GET','POST'])
 def get_project_description():
 
@@ -124,6 +141,18 @@ def get_project_description():
     return {'data':data }, 200 
   
   
+@app.route('/get_field_wells',methods=['GET','POST'])
+def get_field_wells():
+    
+    filters = request.get_json()
+    print('Request for /**************************get_field_wells_snapshot received', filters)
+
+    crm_dataset = Storage( None ).get_dataset( filters )
+    chart = get_field_wells_snapshot( crm_dataset )#, filters  )
+
+    return jsonify( {'message':'Data loaded', 'data' : chart }), 200  
+
+
 @app.route('/get_field_charts',methods=['GET','POST'])
 def get_field_charts():
 
@@ -219,13 +248,53 @@ def layout():
        
 @app.route('/crm')
 def crm():
-     #return render_template('layoutVersion1B.html')
-     #return render_template('FixedColumnLeftSide.html')
-     
      return render_template('crm_setup_page0.html')
  
+@app.route('/get_crm_input_data', methods=['GET','POST'])
+def get_crm_input_data():
+   
+    def get_time_series( dates, df  ):
+    
+        rates = {'dates': dates,'data': {col: df[col].tolist() for col in df.columns} }
+    
+        return rates 
+    
+   
+    filters = request.get_json()
+    filters['date'] = ['21-12-2022', '21-12-2024' ]
+    filters.update({'sector': [1,4,7],'subzone':'LW'})
+    print('Request for /get_crm_data received', filters)
+    
+    crm_dataset = Storage(None).get_dataset(filters)
+    
+    #we need the distances to pass to the UI so wecan filter pairs 
+    distances = crm_dataset.get_distances_flat()
+    
+    #now we also need the rates to display and guide the user 
+    pattern = crm_dataset.get_pattern( fix_time_gaps = True, fill_nan = 0.0 )
+    #print( pattern.liquid_production.head(5) )
  
+    
+    df = pattern.liquid_production
+    dates = df.index.strftime('%Y-%m-%d').tolist()
+    #print( dates[0:10])
+    
+    df = pattern.liquid_production
+    liquid_production = get_time_series( dates, df  )
  
+    df = pattern.water_injection 
+    water_injection = get_time_series( dates, df  )
+    
+    
+    data = {
+        'distances':distances,
+        'dates':dates,
+        'water_injection':water_injection,
+        'liquid_production': liquid_production
+    } 
+    
+    return jsonify( data ), 200   
+  
       
 
 @app.route('/users')

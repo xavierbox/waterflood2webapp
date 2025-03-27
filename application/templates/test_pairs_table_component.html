@@ -6,11 +6,6 @@
     <title>Producers & Injectors</title>
     
  <style>
-         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            font-size: 10px;
-        }
 		
 		.xx{
 		float:right;
@@ -153,7 +148,7 @@
 <body>
 
 	<details><summary>Producer-injector pairs</summary>
-    <injector-producer-table></injector-producer-table>
+    <injector-producer-table-component></injector-producer-table-component>
 	</details>
 
     <script>
@@ -298,29 +293,30 @@
             }
         }
 
-        customElements.define("injector-producer-table", InjectorProducerTable);
+        customElements.define("injector-producer-table-component", InjectorProducerTable);
+    </script>
 
+    <script>
         // Example usage
 		function generateDemoData() {
-    let data = {};
-    const injectorsPool = Array.from({ length: 20 }, (_, i) => `injector${i + 1}`);
+            let data = {};
+            const injectorsPool = Array.from({ length: 20 }, (_, i) => `injector${i + 1}`);
 
-    for (let i = 1; i <= 12; i++) {
-        const numInjectors = Math.floor(Math.random() * 3) + 1; // Random between 3 and 7
-        const selectedInjectors = injectorsPool
-            .sort(() => 0.5 - Math.random()) // Shuffle injectors
-            .slice(0, numInjectors); // Take random injectors
-        data[`producer${i}`] = selectedInjectors;
-    }
-    return data;
+            for (let i = 1; i <= 12; i++) {
+                const numInjectors = Math.floor(Math.random() * 3) + 1; // Random between 3 and 7
+                const selectedInjectors = injectorsPool
+                    .sort(() => 0.5 - Math.random()) // Shuffle injectors
+                    .slice(0, numInjectors); // Take random injectors
+                data[`producer${i}`] = selectedInjectors;
+            }
+            return data;
 }
 
-let data = generateDemoData();
-
-        const tableComponent = document.querySelector("injector-producer-table");
+        let data = generateDemoData();
+        const tableComponent = document.querySelector("injector-producer-table-component");
         tableComponent.setData( data);
-
         console.log("Current Data:", tableComponent.getData());
+    
     </script>
 
 </body>

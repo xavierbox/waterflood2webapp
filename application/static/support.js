@@ -1,3 +1,13 @@
+function isEmptyOrWhitespace(str) {
+    return str.trim() === "";
+}
+
+function isValidDate(date1) {
+    const date = new Date(date1);
+    return !isNaN(date.getTime()); // Checks if it's a valid date
+}
+
+
 const resizeObserver = new ResizeObserver(entries => {
     for (let entry of entries) {
     //console.log('entry:', entry.target.id);
@@ -13,18 +23,19 @@ function relayout( container){
 
     //container.style.padding = '20px';
     let inner_offset = 30; 
-    let pad = 50;
+    let pad = 45;
 
     let body = document.getElementsByTagName('body')[0];
     const styles = getComputedStyle(body);
-    let color = styles.getPropertyValue('--tint-color')
+    //let color = styles.getPropertyValue('--tint-color')
 
     const update = {
         //title: {text: 'some new title'}, // updates the title
         'width':   (parseInt( container.offsetWidth ) - pad).toString(),   // updates the xaxis range
-        'height':  (parseInt(container.offsetHeight ) - pad).toString(),   // updates the end of the yaxis range
+        'height':  ( parseInt(container.offsetHeight ) - pad).toString(),   // updates the end of the yaxis range
         
-        'paper_bgcolor': color,
+        //'paper_bgcolor': color,
+        'textposition':  'top center',
         //'plot_bgcolor':  'darkblue',
 
         //'x': inner_offset,
@@ -132,6 +143,14 @@ function populate_field_plots( data ){
     container.appendChild(xplot);
     for( let key of chart_keys){
 
+        console.log(key + 'keys are');
+        for( let x in data[key]){
+            console.log(key);
+        }
+
+
+
+
         //xdata.push(data[key]['data']);
         let plot = document.createElement('div');
         container.appendChild(plot);
@@ -155,6 +174,14 @@ function populate_field_plots( data ){
     let activity_container = container;//Id('activity-charts-container');
     //activity_container.innerHTML = '';
     let activity_data = data['activity'];
+
+    console.log('Activity keys are');
+    for( let key in activity_data){
+        console.log(key);
+    }
+
+
+
     let plot = document.createElement('div');
     activity_container.appendChild(plot);
     plot.id = 'activity-plot';
@@ -168,12 +195,18 @@ function populate_field_plots( data ){
 
 
 
-    let sector_container = container;//Id('sector-charts-container');
-    //sector_container.innerHTML = '';
+    let sector_container = Id('sector-charts-container');
+    sector_container.innerHTML = '';
     plot = document.createElement('div');
     sector_container.appendChild(plot);
     plot.id = 'sector-plot-volumes';
-    Plotly.newPlot(plot, data['sector_volumes']['data'], data['sector_volumes']['layout'], {responsive: true});
+    Plotly.newPlot(plot, data['sector_volumes']['data'], data['sector_volumes']['layout'], {responsive: true})
+    //.then ((p)=>{
+    //    //resizeObserver.observe( plot );
+    //    relayout( plot );
+    //    }); 
+
+
     //field_plots.push(plot);
 
     /*for( let observed in field_plots ){
@@ -185,6 +218,57 @@ function populate_field_plots( data ){
     
 
 }
+
+function populate_field_wells_snapshot( data ){
+
+    let container = Id('wells-charts-container');
+    container.innerHTML = '';
+    let plot = document.createElement('div');
+    container.appendChild(plot);
+    plot.id = 'sector-plot-wells';
+
+    console.log('***************Data keys are**************');
+    for( let key in data){
+        console.log(key);
+    }
+
+
+    const layout = {
+        grid: {rows: 3, columns: 1, pattern: 'independent'},
+        title: { text:' Volumes produced vs water production per well'},
+        margin: {l: 70, r: 40, t: 40, b: 30},
+        xaxis1:  {matches: 'x'},
+        xaxis2: {matches: 'x'},
+        xaxis3: {matches: 'x'},
+        xaxis4: {matches: 'x'},
+        yaxis1: { title:{text: 'Gas production'}},
+        yaxis2: { title:{text: 'Oil production'}},
+        yaxis3: { title:{text: 'Liquid production'}},
+
+        //xaxis1: { title:{text:  'Water production'}},
+        //xaxis2: { title:{text:  'Water production'}},
+        //xaxis3: { title:{text:  'Water production'}},
+        
+        /*
+        xaxis2: { title:{text: 'Water production'}},
+        xaxis3: { title:{text: 'Water production'}},*/
+        height: 1000,  autosize: true,
+        width: 1000
+    };
+
+    Plotly.newPlot(plot, data['data'], layout, {responsive: true})
+    .then ((p)=>{
+        //resizeObserver.observe( plot );
+        //relayout( plot );
+        }); 
+
+    // /resizeObserver.observe( plot );
+
+
+
+}
+
+
     /*for( let svg_container of svg_containers){
         svg_container.style.height = '100%';
         //svg_container.style.width = '100%';

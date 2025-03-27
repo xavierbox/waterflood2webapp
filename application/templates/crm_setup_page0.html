@@ -12,6 +12,7 @@
      <!--script src = "components.js"></script-->
      <!--script src= "app_components.js"></script-->
 
+     <script src="{{ url_for('static', filename='globals.js') }}"></script>
      <script src="{{ url_for('static', filename='components.js') }}"></script>
      <script src="{{ url_for('static', filename='app_components.js') }}"></script>
      <script src="{{ url_for('static', filename='support.js') }}"></script>
@@ -23,67 +24,345 @@
 
 </head>
 
+<style>
+    body{padding: 20px;}
+</style>
 <script>
+            class InjectorProducerTable extends HTMLElement {
+            constructor() {
+                super();
+                this.data = {};
+                this.originalInjectors = [];
+
+                this.something_changed = false;
+            }
+
+            connectedCallback() {
+                this.innerHTML = `
+                    <table class="injector-producer-table">
+                        <thead>
+                            <tr>
+                                <th>Producer</th>
+                                <th>Injectors</th>
+                                <th class="injector-producer-actions">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+
+                    <div class="injector-producer-overlay"></div>
+
+                    <div class="injector-producer-dialog" id="addInjectorDialog">
+                        <div class="injector-producer-dialog-header">
+                            <h3>Add Injectors</h3>
+                            <button class="injector-producer-close-btn">X</button>
+                        </div>
+                        <div class="injector-producer-list"></div>
+                    </div>
+
+                    <div class="injector-producer-dialog" id="removeInjectorDialog">
+                        <div class="injector-producer-dialog-header">
+                            <h3>Remove Injectors</h3>
+                            <button class="injector-producer-close-btn">X</button>
+                        </div>
+                        <div class="injector-producer-list"></div>
+                    </div>
+                `;
+                this.renderTable();
+                this.querySelectorAll(".injector-producer-close-btn").forEach(btn => 
+                    btn.addEventListener("click", () => this.closeDialog()));
+            }
+
+            setData(data) {
+
+                console.log('setData called in the component');
+                /*
+                this.data = JSON.parse(JSON.stringify(data)); // Deep copy
+                this.originalInjectors = [...new Set(Object.values(this.data).flat())];
+                */
+                this.data = data;
+                this.originalInjectors = [...new Set(Object.values(this.data).flat())];
+                this.renderTable();
+            }
+
+            getData() {
+                return JSON.parse(JSON.stringify(this.data)); // Deep copy
+            }
+
+            producersInTable(){
+                return  Object.keys(this.data);
+            }
+
+            injectorsInTable(){
+
+                let uniqueValues = [...new Set(Object.values(this.data).flat())];
+                return uniqueValues;
+            }
+
+            
+
+            renderTable() {
+                
+                //this.something_changed = false;
+
+                const tableBody = this.querySelector("tbody");
+                tableBody.innerHTML = "";
+                Object.keys(this.data).forEach(producer => {
+                    const row = document.createElement("tr");
+
+                    const producerCell = document.createElement("td");
+                    producerCell.innerHTML = `${producer} <button class="injector-producer-trash-btn" onclick="this.closest('injector-producer-table-component').deleteProducer('${producer}')">x</button>`;
+                    row.appendChild(producerCell);
+
+                    const injectorsCell = document.createElement("td");
+                    injectorsCell.textContent = this.data[producer].join(", ");
+                    row.appendChild(injectorsCell);
+
+                    const actionsCell = document.createElement("td");
+                    actionsCell.classList.add("injector-producer-actions");
+
+                    const addButton = document.createElement("button");
+                    addButton.innerHTML = "+";
+					addButton.classList.add(['injector-producer-add-btn','injector-producer-actions-button']);
+                    addButton.onclick = () => this.showAddDialog(producer);
+                    actionsCell.appendChild(addButton);
+
+                    const removeButton = document.createElement("button");
+                    removeButton.innerHTML = "-";
+					removeButton.classList.add(['injector-producer-remove-btn','injector-producer-actions-button']);
+                    removeButton.onclick = () => this.showRemoveDialog(producer);
+                    actionsCell.appendChild(removeButton);
+
+                    row.appendChild(actionsCell);
+                    tableBody.appendChild(row);
+                });
+
+                //alert('rendering the rates charts ')
+
+                this.render_charts();
+            }//'injector-producer-actions-button'        
+
+
+            render_charts(){
+                this.dispatchEvent(new CustomEvent('table-changed'));
+            }
+
+            showAddDialog(producer) {
+                
+                this.something_changed = false;
+
+                const dialog = this.querySelector("#addInjectorDialog");
+                const list = dialog.querySelector(".injector-producer-list");
+                list.innerHTML = "";
+
+                const unusedInjectors = this.originalInjectors.filter(inj => !this.data[producer].includes(inj)).sort();
+                unusedInjectors.forEach(injector => {
+                    const item = document.createElement("div");
+                    item.innerHTML = `<span class='xx'> ${injector} <button class='injector-producer-add-btn injector-producer-actions-button' onclick="this.closest('injector-producer-table-component').addInjector('${producer}', '${injector}')">+</button></span>`;
+                    list.appendChild(item);
+                });
+
+                this.querySelector(".injector-producer-overlay").style.display = "block";
+                dialog.style.display = "block";
+            }
+
+            showRemoveDialog(producer) {
+                
+                this.something_changed = false;
+
+                const dialog = this.querySelector("#removeInjectorDialog");
+                const list = dialog.querySelector(".injector-producer-list");
+                list.innerHTML = "";
+
+                this.data[producer].forEach(injector => {
+                    const item = document.createElement("div");
+				 
+                    item.innerHTML = `<span class='xx'>  ${injector} <button class='injector-producer-remove-btn injector-producer-actions-button' onclick="this.closest('injector-producer-table-component').removeInjector('${producer}', '${injector}')">-</button></span>`;
+                    list.appendChild(item);
+                });
+
+                this.querySelector(".injector-producer-overlay").style.display = "block";
+                dialog.style.display = "block";
+            }
+
+            closeDialog() {
+                
+                this.querySelectorAll(".injector-producer-dialog, .injector-producer-overlay").forEach(el => el.style.display = "none");
+            
+                if(this.something_changed==true){
+                    alert('something changed');
+                }
+
+                this.something_changed = false;
+            
+            }
+
+            addInjector(producer, injector) {
+                
+                this.something_changed = true;
+                console.log('addInjector called');
+
+                this.data[producer].push(injector);
+                this.renderTable();
+                this.showAddDialog(producer);
+            }
+
+            removeInjector(producer, injector) {
+
+                this.something_changed = true;
+                //console.log('removeInjector called');
+
+                this.data[producer] = this.data[producer].filter(item => item !== injector);
+                this.renderTable();
+                this.showRemoveDialog(producer);
+            }
+
+            deleteInjector( injector_name ){
+
+                this.something_changed = true;
+                console.log('deleteInjector called');
+
+                for (const producer in this.data) {
+                    this.data[producer] = this.data[producer].filter(item => item !== injector_name);
+
+                    if(this.data[producer].length==0){
+                        delete this.data[producer];
+                    }
+                }
+
+                this.renderTable(); 
+            }
+
+            deleteProducer(producer) {
+
+                this.something_changed = true;
+                //console.log('deleteProducer called');
+
+                delete this.data[producer];
+                this.renderTable();
+            }
+
+
+
+        }
+
+        customElements.define("injector-producer-table-component", InjectorProducerTable);
+
 class CRMSetupElement extends HTMLElement {
     constructor() {
         super();
     }
 
-    connectedCallback() {
-        this.innerHTML = this.getTemplate();
-        this.initializeChart();
+    distances_table;
+    extracted_pairs;
+    well_rates; 
+    date1
+    date2 
+    
+    _getMeanAndStdDistance( data ){
+// Step 1: Group by producer
+const groups = {};
+for (const item of data) {
+  if (!groups[item.producer]) groups[item.producer] = [];
+  groups[item.producer].push(item.distance);
+}
 
-      
+// Step 2: Collect up to 3 closest distances per producer
+let filteredDistances = [];
+for (const distances of Object.values(groups)) {
+  const top3 = distances.sort((a, b) => a - b).slice(0, 1);
+  filteredDistances.push(...top3);
+}
+
+// Step 3: Compute mean and std over all selected distances
+const mean = filteredDistances.reduce((sum, val) => sum + val, 0) / filteredDistances.length;
+
+const std = filteredDistances.length === 1? 0: Math.sqrt(filteredDistances.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / filteredDistances.length);
+
+
+    return { mean, std }
     }
+    _old_getMeanAndStdDistance( data ){
 
-    getTemplate() {
-        return `
-            <div id='modelling-page' class='page'>
-                <div class="container-fluid chart-container">
-                    <div id="chart-grid" style="height: 500px;"></div>
-                </div>
-                <h5>Well selection</h5>
-                <div id='lasso-selected-indicator' style="line-height: 60px; vertical-align: middle;" class="hidden blue-indicator">Lasso selection active</div>
-                <div id='all-selected-indicator' style="line-height: 60px; vertical-align: middle;" class="white-indicator">Applied filters in chart</div>
-                <p></p>
-                <h5>Apply distance filter</h5>
-                <div>
-                    <input id='model-distance' type="number" step="250" value='1750' name="quantity" class='form-control form-control-sm' min="500" max="15000">
-                    <p></p>
-                    <div>
-                        <label>Generate simulations table</label><br>
-                        <button id='extract-pairs-button' class='btn btn-primary'>Apply</button>
-                    </div>
-                </div>
-                <p></p>
-                <table-component id='simulations-table'></table-component>
-                <p></p>
-                <h5>Simulation name</h5>
-                <input id='model-name' class="form-control form-control-sm" type="text" value="TestModel1">
-                <p></p>
-                <div>
-                    <hr>
-                    Export only? <input id='export-only' type="checkbox" checked>
-                    <button id='history-match-save-and-run' style='margin:5px' class="btn btn-success">Run</button>
-                </div>
-            </div>
-        `;
+        //This gives you the mean and std for the 3 closest injectors per producer.
+
+        const groups = {};
+        for (const item of data) {
+        if (!groups[item.producer]) groups[item.producer] = [];
+        groups[item.producer].push(item.distance);
+        }
+
+        // Step 2: For each group, pick the 3 smallest distances
+        const stats = {};
+        let sum  = 0.0; 
+        for (const [producer, distances] of Object.entries(groups)) {
+        const top3 = distances.sort((a, b) => a - b).slice(0, 3);
+
+
+        
+        const mean = top3.reduce((sum, val) => sum + val, 0) / top3.length;
+
+        const std = Math.sqrt(
+            top3.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / top3.length
+        );
+
+        stats[producer] = { mean, std };
+        console.log(stats);
+        }
     }
+    
+    setData( input_distances_table, input_well_rates ) {
 
-    initializeChart() {
-        const subplots = [
-            {x: [1, 2, 3], y: [2, 6, 3]},
-            {x: [1, 2, 3], y: [5, 2, 7]},
-            {x: [1, 2, 3], y: [3, 4, 1]},
-            {x: [1, 2, 3], y: [4, 1, 5]}
-        ];
+        this.distances_table = input_distances_table;
+        this.well_rates = input_well_rates;
+        
+        const { mean, std } = this._getMeanAndStdDistance(input_distances_table);
+        const threshold = Math.round( mean + 0.000000025*std );
+        this.getElementsByClassName('model-distance-button')[0].value = threshold;
+        this.getElementsByClassName('extract-pairs-button')[0].click();// = threshold;
+        let track = this.getElementsByTagName('double-range-component')[0]
+        
+        track.setRanges(60.0, 90.0);// = threshold;
 
-        const data = subplots.map((trace, idx) => ({
-            ...trace,
-            type: 'scatter',
-            xaxis: `x${idx + 1}`,
-            yaxis: `y${idx + 1}`
-        }));
+        
+        //this.plotRates();
+
+
+        return
+
+/*
+        let n = -1
+        let keys = ['liquid_production','water_injection']
+        let containers = [ Id('liquid-production-rates-container'), Id('water-injection-rates-container')]
+        for(let key of keys){
+                    n = n + 1 
+                    
+                    
+                    /*
+                    let rates = resp[key]['data']
+                    let dates =  resp[key]['dates']
+                    const traces = [];
+                    for (const well in rates) {
+                    traces.push({
+                        //works extra_stuff: dates, 
+                        x: dates, y: rates[well], mode: 'lines', name: well,
+                        type: 'scatter'
+                    });
+                    }
+
+                    series_name = formatString( key )
+                    let chart = containers[n];
+                    chart.innerHTML = "";
+                    Plotly.newPlot( chart, traces, {
+                    title: {'text':series_name, font: {size:20}},
+                    xaxis: { text: 'Date' },yaxis: { text: 'Value' }}, {'responsive': true});
+                    *//*
+                }
+
+                
+
+
+
 
         const layout = {
             grid: {rows: 2, columns: 2, pattern: 'independent'},
@@ -96,7 +375,715 @@ class CRMSetupElement extends HTMLElement {
         };
 
         Plotly.newPlot('chart-grid', data, layout, {responsive: true});
+*/
+
     }
+
+    initPlots(){
+        return;
+        let ele1 = this.querySelector('.crm-chart-grid');
+        let div1 = this.querySelector('#dd1');div1.innerHTML = '';
+        let div2 = this.querySelector('#dd2');div2.innerHTML = '';
+        div1.style.minHeight = '800px';  // can also use % or vh
+        div2.style.minHeight = '800px';  // can also use % or vh
+        Plotly.newPlot( div1, [], {}, {responsive: true})
+        //let layout2 = structuredClone(layout);
+        //layout['title'] = { text:'Liquid production', font: {size:24}}
+        Plotly.newPlot( div2, [], {}, {responsive: true})
+
+
+    }
+
+    plotRates(){
+ 
+        console.log('plotting rates...')
+        let ele1 = this.querySelector('.crm-chart-grid');
+        //ele1.innerHTML = '';
+
+        let theTable = this.getElementsByTagName('injector-producer-table-component')[0]
+        let visibleProducers = theTable.producersInTable();
+        let visibleInjectors = theTable.injectorsInTable();
+        let well_rates = this.well_rates;
+        if((well_rates == undefined) || ( visibleInjectors.length < 1 ) || (visibleProducers.length < 1)) {
+            this.initPlots();
+            return;
+        }
+        let allNames = [...visibleProducers, ...visibleInjectors];
+        function formatString(str) {
+            if (!str) return '';
+            const noUnderscores = str.replace(/_/g, ' ');
+            return noUnderscores.charAt(0).toUpperCase() + noUnderscores.slice(1);
+            }
+  
+        
+        
+
+        
+        /*lets build the traces groups*/
+        let n = 0
+        let keys = ['liquid_production','water_injection']
+        //const allTraces = [];
+        let traces1 = [];
+        let traces2 = [];
+
+        let traces_ptr = undefined;
+        for(let key of keys){
+                    n = n + 1 
+                    let x_= 'x' //+ n.toString();
+                    traces_ptr  = traces1;
+                    let y_ = 'y' //+ n.toString();
+                    if( n == 1 ){
+                        //x_ = 'x2';
+                        //y_ = 'y2';
+                        traces_ptr = traces2;
+                    }
+                
+                    let rates = well_rates[key]['data']
+                    let dates =  well_rates[key]['dates']
+                    
+                    let kk = 1;
+                    for (const well in rates) {
+
+
+                        kk = kk + 1;
+                        let visibility = allNames.includes(well);
+                        //if( kk > 10)
+                        //visibility = false;
+
+                        traces_ptr.push({
+                        //works extra_stuff: dates, 
+                        xaxis : x_,yaxis:y_,
+                        x: dates, y: rates[well], mode: 'lines', name: well,
+                        type: 'scatter',
+                        visible: visibility
+                        //legendgroup: 'group'+n.toString(),
+                    });
+                    }
+
+        }
+
+        const layout = {
+            autosize: true,
+            automargin: true,
+            //height: 500,
+            //margin: {l: 40, r: 40, t: 20, b: 30},
+            //autosize: true 
+        };
+
+
+        //create brand-new charts 
+        //let div1 = document.createElement('div');
+        //div1.classList.add('col-6');
+        //let div2 = document.createElement('div');
+        //div2.classList.add('col-6');
+        //ele1.appendChild(div1)
+        //ele1.appendChild(div2)
+
+        console.log(ele1)
+        let div1 = this.querySelector('#dd1');div1.innerHTML = '';
+        let div2 = this.querySelector('#dd2');div2.innerHTML = '';
+        div1.style.minHeight = '800px';  // can also use % or vh
+        div2.style.minHeight = '800px';  // can also use % or vh
+        //div1.style.backgroundColor = 'lightblue'; // just to visualize it
+ 
+        // Sync zoom/pan
+        let isSyncing = false;
+        function drelayout( e, target ){
+            if (isSyncing) return;
+
+            let x0 = e['xaxis.range[0]'];
+            const x1 = e['xaxis.range[1]'];
+
+            if (x0 !== undefined && x1 !== undefined) {
+            isSyncing = true;
+            Plotly.relayout(target, { 'xaxis.range': [x0, x1] }).then(() => {
+                isSyncing = false;
+            });
+
+            return;
+            }
+
+
+            x0 = e['xaxis.autorange'];
+            if(x0!==undefined){
+                isSyncing = true;
+                console.log('it was an autoaxes? ', e)
+                Plotly.relayout(target, {
+                    'xaxis.autorange': true,
+                    'yaxis.autorange': true
+                }).then(() => {
+                    isSyncing = false;
+                });
+            }
+
+ 
+
+        }
+
+        
+
+        layout['title'] = { text:'Water injection ', font: {size:chart_title_font_size}}
+        Plotly.newPlot( div1, traces1, layout, {responsive: true}).then ((plt)=>{
+
+
+        let layout2 = structuredClone(layout);
+        layout2['title'] = { text:'Liquid production', font: {size:chart_title_font_size}}
+
+        Plotly.newPlot( div2, traces2, layout2, {responsive: true}). then(()=>{
+            div1.on('plotly_relayout', (e) => {drelayout(e, div2)});
+            div2.on('plotly_relayout', (e) => {drelayout(e, div1)});
+            })
+
+        })
+    
+
+        
+        //div2.style.height = '500px';  // can also use % or vh
+        //div2.style.backgroundColor = 'lightblue'; // just to visualize it
+       
+
+        
+
+       
+        
+
+
+    return  
+/*
+         layout = {
+            grid: {rows: 2, columns: 2, pattern: 'independent'},
+            autosize: true,
+            margin: {l: 40, r: 40, t: 20, b: 30},
+
+            /*xaxis: {title: 'X Axis'},
+            yaxis: {title: 'Y Axis'},
+            xaxis2: {title: 'X Axis (Right)', matches: 'x'},
+            yaxis2: {title: 'Y Axis (Right)'}
+            xaxis:  {matches: 'x'},
+            xaxis2: {matches: 'x'},
+            xaxis3: {matches: 'x'},
+            xaxis4: {matches: 'x'}
+        };
+
+        layout = {
+                grid: {rows: 1, columns: 2, pattern: 'independent'},
+
+                xaxis: {domain: [0, 0.4]},
+                yaxis: {domain: [0, 1]},
+                xaxis2: {domain: [0.5, 0.9]},
+                yaxis2: {domain: [0, 1]},
+
+                title: {text: 'Two Subplots with "Separate" Legends'},
+
+                // Simulate multiple legends by positioning text manually
+                legend: {
+                    x: 0.42, y: 1,
+                    bgcolor: 'rgba(255,255,255,0.8)',
+                    borderwidth: 1
+                },
+
+                annotations: [
+                    {
+                    x: 0.92, y: 1,
+                    xref: 'paper', yref: 'paper',
+                    text: '<b>Group 2</b><br>▇ A<br>▇ B',
+                    showarrow: false,
+                    align: 'left'
+                    }
+                ]
+                };
+
+        
+        let ele = this.querySelector('.crm-chart-grid');
+        ele.innerHTML = '';
+        
+        Plotly.newPlot( ele, allTraces, layout);
+
+        
+        
+        
+        
+        
+        
+        return 
+        
+         div1 = document.createElement('div');
+         div2 = document.createElement('div');
+        ele.appendChild(div1)
+        Plotly.newPlot( div1, traces1, {}, {responsive: true}).then( (gd)=>{
+
+
+            function f (eventData) {
+                if (eventData['xaxis.range[0]'] && eventData['xaxis.range[1]']) {
+                    const update = {
+                        'xaxis.range': [eventData['xaxis.range[0]'], eventData['xaxis.range[1]']],
+                        //'xaxis2.range': [eventData['xaxis.range[0]'], eventData['xaxis.range[1]']],
+                        //'xaxis3.range': [eventData['xaxis.range[0]'], eventData['xaxis.range[1]']]
+                    };
+
+                    Plotly.relayout(div2, update);
+                }
+            }
+
+            gd.on('plotly_relayout', (eventData) =>{ f(eventData) });
+            gd.on('plotly_restyle', (eventData) =>{ f(eventData) });    
+
+            //Plotly.relayout(div1, update);
+            //Plotly.relayout(div2, update);
+
+        });
+
+        
+        ele.appendChild(div2)
+        Plotly.newPlot( div2, traces2, {}, {responsive: true});
+
+
+
+
+
+        let isSyncing = false;
+
+function syncZoom(sourceDiv, targetDiv, eventData) {
+  // Only act on actual zoom events with x-axis range
+  if (
+    eventData['xaxis.range[0]'] !== undefined &&
+    eventData['xaxis.range[1]'] !== undefined
+  ) {
+    const update = {
+      'xaxis.range[0]': eventData['xaxis.range[0]'],
+      'xaxis.range[1]': eventData['xaxis.range[1]']
+    };
+
+    isSyncing = true;
+    Plotly.relayout(targetDiv, update).then(() => {
+      isSyncing = false;
+    });
+  }
+}*/
+
+// div1 → div2
+/*
+div1.on('plotly_relayout', (eventData) => {
+    
+    let x1 = eventData['xaxis.range[0]'];// !== undefined &&
+    let x2 = eventData['xaxis.range[1]'];// !== undefined
+    if ( (x1==undefined) || (x2==undefined) ) return; 
+
+    const update = {
+      'xaxis.range[0]': eventData['xaxis.range[0]'],
+      'xaxis.range[1]': eventData['xaxis.range[1]']
+    };
+
+    Plotly.relayout(div2, update).then( (err)=>{
+        ;
+
+    })
+
+
+
+    console.log('syncing 1', x1, x2)
+  if (!isSyncing) {
+    console.log('syncing 1')
+    //syncZoom(div1, div2, eventData);
+  }
+});
+
+// div2 → div1
+div2.on('plotly_relayout', (eventData) => {
+ 
+    let x1 = eventData['xaxis2.range[0]'];// !== undefined &&
+    let x2 = eventData['xaxis2.range[1]'];// !== undefined
+    if ( (x1==undefined) || (x2==undefined) ) return; 
+    console.log('syncing 2', x1, x2)
+
+    const update = {
+      'xaxis2.range[0]': eventData['xaxis2.range[0]'],
+      'xaxis2.range[1]': eventData['xaxis2.range[1]']
+    };
+
+    //Plotly.relayout(div1, update)
+
+    
+  if (!isSyncing) {
+    console.log('syncing 2')
+    //syncZoom(div2, div1, eventData);
+  }
+});*/
+
+
+
+
+    }
+
+    groupByProducer(filteredPairs) {
+    const grouped = {};
+
+    filteredPairs.forEach(({ producer, injector }) => {
+        if (!grouped[producer]) {
+            grouped[producer] = [];
+        }
+        grouped[producer].push(injector);
+    });
+
+    return grouped; // Returns an object instead of an array
+} 
+    
+    extractPairs( threshold ) {
+
+        if(threshold==undefined) threshold = 1750;
+
+    
+        let extracted_pairs = this.distances_table.filter(entry => entry.distance <= threshold);
+        
+        let filtered_for_visualization = this.groupByProducer(extracted_pairs);
+   
+        let table = this.getElementsByTagName('injector-producer-table-component')[0]
+        
+        table.setData(filtered_for_visualization);
+        table.classList.remove('hidden');
+
+
+        //this.plotRates();
+        return; 
+
+
+        //console.log( 'extracted_pairs----------2-------------' );
+        //console.log( extracted_pairs );
+        //console.log( 'extracted_pairs----------3-------------' );
+        /*
+        const groupedPairs = this.groupByProducer(extracted_pairs);
+        console.log( 'groupedPairs----------2-------------' );
+        console.log( groupedPairs );
+        console.log( 'groupedPairs----------3-------------' );
+
+        const tableBody = this.getElementsByTagName("injector-producer-table-component")[0];
+        console.log( 'tableBody----------2-------------' );
+        console.log( tableBody );
+        console.log( 'tableBody----------3-------------' );
+        tableBody.setData( groupedPairs );*/
+
+
+    }
+
+    setState( state ){
+
+        ;
+    }
+
+    getState(){
+
+        ; 
+    }
+    
+    deleteInjector( injector_name ){
+
+        this.getElementsByTagName('injector-producer-table-component')[0].deleteInjector( injector_name );
+    }
+
+    deleteProducer( producer_name ){
+
+        this.getElementsByTagName('injector-producer-table-component')[0].deleteProducer( producer_name );
+    }   
+
+    validateDistanceEntry(){
+        let distance_entry = this.querySelector('.model-distance-button');
+        let errorMessage = this.querySelector('.distance-entry-error-message');
+
+           // Convert input value to a number
+
+           let result = true;
+                        // Convert input value to a number
+                        const value = parseFloat(distance_entry.value);
+                        const min = parseFloat(distance_entry.min);
+                        const max = parseFloat(distance_entry.max);
+
+                        // Check if the value is out of range
+                        if ( isNaN(value) ||  value < min || value > max) {
+                            errorMessage.textContent = 'Please enter a number between 250 and 5000.';
+                            distance_entry.style.borderColor = "red"; // Highlight input field
+                            result = false;
+                        } else {
+                            errorMessage.textContent = ""; // Clear error message
+                            distance_entry.style.borderColor = ""; // Reset input border
+                            result = true;
+                        }
+
+                        return result;
+    }
+
+    connectEvents(){
+
+        this.querySelector('.extract-pairs-button').addEventListener('click',()=>{
+
+            if( !this.validateDistanceEntry() ) {
+                alert('Enter a valid distance threshold')
+                return;
+            }
+
+
+            /*extract-pairs-button*/
+            if(this.distances_table==undefined){
+                alert('No data available');
+                return;
+            }   
+
+
+            try{
+            let distance_threshold  = this.querySelector('.model-distance-button').value;
+            this.extractPairs( distance_threshold );
+            }
+            catch(err){
+                console.log('error', err);
+                alert('unexpected error occured when extracting pairs data')
+            }
+
+            /*const event = new CustomEvent("clicked", {
+            detail: { projectName },
+            bubbles: true,
+            composed: true
+            });
+            this.dispatchEvent(event);*/
+
+
+        });
+
+
+        let distance_entry = this.querySelector('.model-distance-button');
+        let errorMessage = this.querySelector('.distance-entry-error-message');
+        let this_object = this; 
+        distance_entry.addEventListener('input', function () {
+   
+            this_object.validateDistanceEntry();
+                        // Convert input value to a number
+                        /*const value = parseFloat(distance_entry.value);
+                        const min = parseFloat(distance_entry.min);
+                        const max = parseFloat(distance_entry.max);
+
+                        // Check if the value is out of range
+                        if (value < min || value > max) {
+                            errorMessage.textContent = 'Please enter a number between 250 and 5000.';
+                            distance_entry.style.borderColor = "red"; // Highlight input field
+                        } else {
+                            errorMessage.textContent = ""; // Clear error message
+                            distance_entry.style.borderColor = ""; // Reset input border
+                        }*/
+                    });
+       
+        this.querySelector('injector-producer-table-component').addEventListener('table-changed', ()=>{
+            this.plotRates();
+        });
+       
+        function setDatesFromTrackbar(){
+            const [percent1,percent2] = track.getValues();
+
+
+            const dates = this_object.well_rates['dates'];
+            const start = dates[0]; // months are 0-indexed
+            const end   = dates[ dates.length - 1 ];
+            const index1 = Math.round((percent1 / 100) * (dates.length - 1));
+            const index2 = Math.round((percent2 / 100) * (dates.length - 1));
+            //console.log(index1,index2)
+
+            this_object.date1 = dates[Math.min(index1, index2)];
+            this_object.date2 = dates[Math.max(index1, index2)];
+            this_object.getElementsByClassName('date1-text')[0].textContent = `Selected range: ${this_object.date1} → ${this_object.date2}`;
+             
+            
+        }
+
+        let track = this.getElementsByTagName('double-range-component')[0];
+        track.addEventListener('clicked', (evt)=>{
+            setDatesFromTrackbar();
+        });
+
+        /*show the time indicator*/
+        track.addEventListener('mouse-up',()=>{
+        //    track.addEventListener('clicked',()=>{
+           
+            setDatesFromTrackbar();
+            console.log('update dates shown in charts', this_object.date1, this_object.date2);
+
+            let shape = {
+            type: 'rect',xref: 'x',yref: 'paper',
+            x0: this_object.date1,y0: 0.005,
+            x1: this_object.date2,y1: 1,
+            fillcolor: "green",
+            opacity: 0.2,
+            line: {width: 1,dash: 'dashdot', color:'green'},
+            name:"TimeControlIndicator"
+            }
+
+            let chart1 = this_object.querySelector('#dd1');
+            let layout = chart1.layout;
+            let shapes =undefined;
+            shapes = 'shapes' in layout ? layout['shapes'] : []; 
+            shapes = shapes.filter( (item) => !item.name.includes('TimeControlIndicator'));
+            shapes.push( shape )
+            layout['shapes'] = shapes;
+            Plotly.relayout(chart1, layout);
+      
+
+            let chart2 = this_object.querySelector('#dd2');
+            let layout2 = chart2.layout;
+            shapes = 'shapes' in layout2 ? layout2['shapes'] : []; 
+            shapes = shapes.filter( (item) => !item.name.includes('TimeControlIndicator'));
+            shapes.push( shape )
+            layout2['shapes'] = shapes;
+            Plotly.relayout(chart2, layout2);
+
+
+        });
+    }
+
+    connectedCallback() {
+        this.innerHTML = this.getTemplate();
+        this.connectEvents();
+        this.initPlots();
+      
+    }
+
+    getTemplate() {
+        return `
+            <div id='modelling-page' class='page'>
+
+                <!-- h5>Well selection</h5>
+                <div id='lasso-selected-indicator' style="line-height: 60px; vertical-align: middle;" class="hidden blue-indicator">Lasso selection active</div>
+                <div id='all-selected-indicator' style="line-height: 60px; vertical-align: middle;" class="white-indicator">Applied filters in chart</div>
+                <p></p -->
+
+          
+                <span class='subtitle'>Apply distance screener</span>
+                <div>
+                    <div  class="input-group">
+                    <input type="number" step="250" value='1750' name="distance_threshold" 
+                    placeholder = 'Enter a number (250-5000)'  
+                    class='model-distance-button form-control form-control-sm' min="250" max="5000" required>
+                    <button id='extract-pairs-button' class='extract-pairs-button btn btn-primary'>Apply</button>
+                    </div>
+                     <p class="distance-entry-error-message" style="color: red; margin-left: 10px;"></p> 
+                </div>
+            
+                <br>
+
+                <details open><summary>Well pairs</summary>
+                <div>
+                <injector-producer-table-component class='hidden'></injector-producer-table-component>
+                </div>
+                </details>
+
+                <p></p>
+                <!-- h5>Injetion/production signals</h5 -->
+                <div class="chart-container" style='min-height:815px; display:flex; justify-content: space-evenly;'>
+           
+                        <div id= 'dd1' style="width:49%" class='sscol-6'></div>
+                        <div id= 'dd2' style="width:50%"  class='sscol-6'></div>
+                        
+                    <!-- div class="crm-chart-grid"></div -->
+        
+                </div>
+                <p></p>
+
+
+                <span class='subtitle'>Training time frame</span>          
+                <div>
+                    <div style="margin:30px">
+                    <span class='date1-text'>Date1</span><double-range-component></double-range-component>                    
+                    </div>
+                </div>
+
+
+                <p></p>
+            
+                <!-- *********************************************** -->
+                <details><summary>Advanced parameters</summary> 
+    <p></p>
+    <div class='row'>
+        <div class='col-3 text-end'><b>Parameter</b></div>
+        <div class='col-3 text-center'>Initial</div>
+        <div class='col-3 text-center'>Min</div>
+        <div class='col-3 text-center'>Max</div>
+        <hr>
+    </div>
+
+    <div class='row'>
+        <div class='col-3 text-end'><b>Tau</b></div>
+        <div class='col-3'><input class='form-control form-control-sm tau-initial' id=  'tau-initial' type="number" min="0.1" max="100" value="1" decimals="1" step="1"></div>
+        <div class='col-3'><input class='form-control form-control-sm tau-min'     id = 'tau-min' type="number"     min="0.1" max="100" value="0.5" decimals="1" step="1"></div>
+        <div class='col-3'><input class='form-control form-control-sm tau-max'     id = 'tau-max' type="number"     min="0.2" max="100" value="50"  decimals="1" step="1"></div>
+    </div>
+
+    <div class='row'>
+        <div class='col-3 text-end'><b>Taup</b></div>
+        <div class='col-3'><input class='form-control form-control-sm taup-initial' id='taup-initial' type="number" min="0.1" max="100" value="1" decimals="1" step="1"></div>
+        <div class='col-3'><input class='form-control form-control-sm taup-min' id='taup-min' type="number" min="0.1" max="100" value="0.5"   decimals="1" step="1"></div>
+        <div class='col-3'><input class='form-control form-control-sm taup-max' id='taup-max'  type="number" min="0.2" max="100" value="50" decimals="1" step="1"></div>
+    </div>
+
+    <div class='row'>
+        <div class='col-3 text-end'><b>Lambda</b></div>
+        <div class='col-3'><input class='form-control form-control-sm lambda-initial' id = 'lambda-initial' type="number" min="0.1" max="1.0" value="0.1"
+                decimals="1" step="0.1">
+        </div>
+
+        <div class='col-3'><input class='form-control form-control-sm lambda-min' id = 'lambda-min' type="number" min="0.0" max="2" value="0.0"
+                decimals="1" step="0.1"></div>
+        <div class='col-3'><input class='form-control form-control-sm lambda-max' id = 'lambda-max' type="number" min="0.0" max="2.0" value="1.0"
+                decimals="1" step="0.1"></div>
+    </div>
+
+    <div class='row'>
+        <div class='col-3 text-end'><b>Primary coefficient</b></div>
+        <div class='col-3'><input class='form-control form-control-sm primary-initial' id='primary-initial' type="number" min="0.1" max="1" value="1.0"
+                decimals="1" step="0.1"></div>
+        <div class='col-3'><input class='form-control form-control-sm primary-min' id='primary-min' type="number" min="0.0" max="2" value="0"
+                decimals="1" step="0.1"></div>
+        <div class='col-3'><input class='form-control form-control-sm primary-max'  id='primary-max' type="number" min="0.0" max="2.0" value="1.0"
+                decimals="1" step="0.1"></div>
+    </div>
+
+    <div class='row'>
+        <div class='col-3 text-end'><b>Productivity index</b></div>
+        <div class='col-3'><input class='form-control form-control-sm productivity-initial' id='productivity-initial' type="number" min="0.1" max="1" value="0.0"
+                decimals="1" step="0.1"></div>
+        <div class='col-3'><input class='form-control form-control-sm productivity-min' id='productivity-min' type="number" min="0.0" max="2" value="0"
+                decimals="1" step="0.1"></div>
+        <div class='col-3'><input class='form-control form-control-sm productivity-max' id='productivity-max' type="number" min="0.0" max="2.0" value="1.0"
+                decimals="1" step="0.1"></div>
+    </div>
+
+    <div class='hidden row'>
+        <div class='col-3 text-end'><b>Regularization</b></div>
+        <div class='col-3'>
+            <input class='form-control form-control-sm regularization' id='regularization' type="number" min="0.0" max="0.5" value="0.0" decimals="2"
+                step="0.01">
+        </div>
+
+    </div>
+</details>
+   <!-- *********************************************** -->
+
+   <br>
+   <br>
+
+                 <span class='subtitle'>Simulation name</span>
+                <input id='model-name' class="form-control form-control-sm" type="text" value="TestModel1">
+                <p></p>
+                <div>
+                    <hr>
+                    Export only? <input id='export-only' type="checkbox" checked>
+                    <button id='history-match-save-and-run' style='margin:5px' class="btn btn-success">Run</button>
+                </div>
+            </div>
+        `;
+    }
+
+    setWellPairs( data ){
+
+        alert('setWellPairs called');
+        this.querySelector('injector-producer-table-component').setData( data );
+    }
+  
+
 }
 
 customElements.define('crm-setup-element', CRMSetupElement);
@@ -104,216 +1091,585 @@ customElements.define('crm-setup-element', CRMSetupElement);
 
 </script>
 
+<style>
+		
+    .xx{
+    float:right;
+    }
+    .injector-producer-table {
+        width: 100%;
+        border-collapse: collapse;
+        xxfont-size: 10px;
+        table-layout: auto;
+    }
+    .injector-producer-table th, 
+    .injector-producer-table td {
+        border: 1px solid #ddd;
+        padding: 3px;
+        text-align: left;
+        white-space: nowrap;
+        xxfont-size: 9px;
+    }
+    .injector-producer-table th {
+        background: #f4f4f4;
+        font-weight: bold;
+        text-align: center;
+    }
+    .injector-producer-actions {
+        text-align: center;
+        width: 90px;
+    }
+    .injectors-producers-table-button {
+        cursor: pointer;
+        border: none;
+        padding: 2px 4px;
+        margin: 1px;
+        font-size: 9px;
+        border-radius: 4px;
+        background: none;
+    }
+    .injector-producer-add-btn {
+        color: green;
+    }
+    .injector-producer-remove-btn {
+        color: red;
+    }
+    .injector-producer-trash-btn {
+        color: black;
+        float: right;
+        background: none;
+        border: none;
+        cursor: pointer;
+        xxfont-size: 10px;
+        font-weight: bold;
+    }
+    .injector-producer-dialog {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 8px;
+        border-radius: 6px;
+        box-shadow: 0px 3px 5px rgba(0, 0, 0, 0.2);
+        z-index: 10;
+        min-width: 450px;
+        max-width: 550px;
+        xxfont-size: 19px;
+    }
+    .injector-producer-dialog-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 10px;
+        font-weight: bold;
+    }
+    .injector-producer-close-btn {
+        background: #ccc;
+        padding: 2px 5px;
+        border-radius: 50%;
+        font-size: 9px;
+        cursor: pointer;
+        border: none;
+    }
+    .injector-producer-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 5;
+    }
+  
+   
+.injector-producer-list {
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 8px;
+max-height: 300px;
+overflow-y: auto;
+padding: 5px;
+}
+
+.injector-producer-table-injector-item {
+display: flex;
+align-items: center;
+justify-content: space-between;
+background: #f9f9f9;
+padding: 4px 8px;
+border-radius: 4px;
+font-size: 10px;
+border: 1px solid #ddd;
+min-width: 100px;
+ 
+}
+
+.injector-producer-table-injector-item span {
+flex-grow: 1;
+text-align: right;
+white-space: nowrap;
+padding-right: 10px; /* Adds space between text and button */
+}
+
+.injector-producer-table-injector-item button {
+padding: 2px 6px;
+font-size: 10px;
+min-width: 24px;
+text-align: center;
+background-color:red;
+float:right;
+}
+
+   
+   
+</style>
 
 
 <body>
+
     <script>function Id(id){return document.getElementById(id)}</script>
 
 
-<crm-setup-element></crm-setup-element>
+    <button id="test-distances"> Fetch Distances </button>
+    <button id="test-delete-injector"> Delete useless injector Distances </button>
+    <input type="text" id="injector-to-delete">
+
+    <button id="fetch-crm-input-data"> Fetch CRM input data </button>
+
+
+    <crm-setup-element></crm-setup-element>
 
                 
-<div id='modelling-page' class='page'>
+    <!-- div id='modelling-page' class='hidden page'>
 
-    <div class="container-fluid">
+        <div class="container-fluid">
 
-        <div class="row">
-            <div class="col-6 chart-container" id="crm-workstep-chart1" >
-            </div>
-            <div class="col-6 chart-container" id="crm-workstep-chart2" >
-          
-            </div>
-        </div>
-        <hr>
-        <div class="row">
-            <div class="col-6 chart-container" id="crm-workstep-chart3" >
-          
-            </div>
-            <div class="col-6 chart-container" id="crm-workstep-chart3" >
-            </div>
-        </div>
-    </div>
-
-    <h5> Well selection </h5>
-    <div id='lasso-selected-indicator' style="line-height:  60px; vertical-align: middle;"
-        class="hidden blue-indicator">
-        Lasso selection active
-    </div>
-
-    <div id='all-selected-indicator' style="line-height:  60px; vertical-align: middle;" class="white-indicator">
-        Applied filters in chart
-    </div>
-
-    <p></p>
-    <h5> Apply distance filter</h5>
-    <div>
-        <input id='model-distance' type="number" id="quantity" step="250" value='1750' name="quantity"
-            class='form-control form-control-sm' min="500" max="15000">
-        <p></p>
-        <div>
-            <label>Generate simulations table</label><br>
-            <button id='extract-pairs-button' class='btn btn-primary'>Apply </button>
-        </div>
+            <div class="row">
+                <div class="col-6 chart-container" id="crm-workstep-chart1" >
+                </div>
+                <div class="col-6 chart-container" id="crm-workstep-chart2" >
             
-            <!-- div>
-                <table id='simulations-table' style='font-size:0.8em' class="table">
-                <thead><tr><th>Producer</th><th>Injectors</th></tr></thead>
-                <tbody></tbody>
-                </table>                
-            </div -->   
-            
-    </div>
-    <p></p>    
-    <table-component id='simulations-table'></table-component>
-    <p></p>
-    <h5> Training period </h5>
-    <div>
-        <input type='checkbox' class='hidden' id="injector-producer-distance-checkbox">
-        <div>Start<input value='2016-05-01' id='model-date1' class='btn  date-entry' type="date"></div>
-        <div>End<input value='2024-09-01' id='model-date2' class='btn  date-entry' type="date"></div>
-        <div><button class='btn btn-primary' id="apply-dates-button">Apply </button> </div>
-    </div>
-
-
-    <div class="container-fluid">
-        <div class="row">
-            <div class='col-6'>
-                <chart-placeholder-component id="chart1"
-                    layout='{ "showlegend": true, "showgrid": true, "height":"400", "margin": {"l":"50", "r":"40","t":"30","b":"30"}  }'></chart-placeholder-component>
+                </div>
             </div>
-            <div class='col-6'>
-                <chart-placeholder-component id="chart2"
-                    layout='{ "showlegend": true,"showgrid": true,  "height":"400", "margin": {"l":"50", "r":"40","t":"30","b":"30"}  }'></chart-placeholder-component>
-            </div>
-        </div>
-
-
-        <div class="row">
-            <div class='col-6'>
-                <chart-placeholder-component id="chart3"
-                    layout='{ "showlegend": true, "showgrid": true, "height":"400", "margin": {"l":"50", "r":"40","t":"30","b":"30"}  }'></chart-placeholder-component>
-            </div>
-            <div class='col-6'>
-                <chart-placeholder-component id="chart4"
-                    layout='{ "showlegend": true,"showgrid": true, "height":"400", "margin": {"l":"50", "r":"40","t":"30","b":"30"}  }'></chart-placeholder-component>
-            </div>
-        </div>
-
-    </div>
-    <p></p>
-    <h5> Simulation name </h5>
-    <input id='model-name' class="form-control form-control-sm" type="text" value="TestModel1">
-    <p></p>
-    <h5>Model type:</h5>
-    <select id='model-type' name="balance" class="form-select" onchange="function s()
-                    {  
-                                                        
-                        let model = document.getElementById('model-type').value
-                        let disabled = (model=='crm_tank') || (model=='crmip')
-                        console.log('here, model = ', model,' disabled ', disabled )  
-                                                                         
-                        if( disabled==true)                                   
-                        document.getElementById('model-balance-placeholder').classList.add('hidden')
-                        else
-                        document.getElementById('model-balance-placeholder').classList.remove('hidden')
-                                                           
-                    }; 
-                    s()">
-        
-        <option value="crm_tank">CRMT</option>
-        <option value="crm_p">CRMP</option>
-        <option value="crmip">CRMIP</option>
-        <option value="crmp_constrained">CRMP Constrained</option>
-        <option selected value="crmid_constrained">CRMID Constrained</option>
-        
-
-    </select>
-        <div id='model-balance-placeholder'><label class='mt-3'>Balanced </label>
-            <select class='form-control form-control-sm' name="balance" id='model-balance'>
-                <option value="none">No</option>
-                <option selected value="quick">Quick</option>
-                <option value="full">Full</option>
-            </select>
-        </div>
-    <p></p>
-    <h5>Advanced parameters</h5>
-    <details>
-        <p></p>
-        <div class='row'>
-            <div class='col-3 text-end'><b>Parameter</b></div>
-            <div class='col-3 text-center'>Initial</div>
-            <div class='col-3 text-center'>Min</div>
-            <div class='col-3 text-center'>Max</div>
             <hr>
+            <div class="row">
+                <div class="col-6 chart-container" id="crm-workstep-chart3" >
+            
+                </div>
+                <div class="col-6 chart-container" id="crm-workstep-chart3" >
+                </div>
+            </div>
         </div>
 
-        <div class='row'>
-            <div class='col-3 text-end'><b>Tau</b></div>
-            <div class='col-3'><input class='form-control form-control-sm tau-initial' id=  'tau-initial' type="number" min="0.1" max="100" value="1" decimals="1" step="1"></div>
-            <div class='col-3'><input class='form-control form-control-sm tau-min'     id = 'tau-min' type="number"     min="0.1" max="100" value="0.5" decimals="1" step="1"></div>
-            <div class='col-3'><input class='form-control form-control-sm tau-max'     id = 'tau-max' type="number"     min="0.2" max="100" value="50"  decimals="1" step="1"></div>
+        <h5> Well selection </h5>
+        <div id='lasso-selected-indicator' style="line-height:  60px; vertical-align: middle;"
+            class="hidden blue-indicator">
+            Lasso selection active
         </div>
 
-        <div class='row'>
-            <div class='col-3 text-end'><b>Taup</b></div>
-            <div class='col-3'><input class='form-control form-control-sm taup-initial' id='taup-initial' type="number" min="0.1" max="100" value="1" decimals="1" step="1"></div>
-            <div class='col-3'><input class='form-control form-control-sm taup-min' id='taup-min' type="number" min="0.1" max="100" value="0.5"   decimals="1" step="1"></div>
-            <div class='col-3'><input class='form-control form-control-sm taup-max' id='taup-max'  type="number" min="0.2" max="100" value="50" decimals="1" step="1"></div>
+        <div id='all-selected-indicator' style="line-height:  60px; vertical-align: middle;" class="white-indicator">
+            Applied filters in chart
         </div>
 
-        <div class='row'>
-            <div class='col-3 text-end'><b>Lambda</b></div>
-            <div class='col-3'><input class='form-control form-control-sm lambda-initial' id = 'lambda-initial' type="number" min="0.1" max="1.0" value="0.1"
-                    decimals="1" step="0.1">
+        <p></p>
+        <h5> Apply distance filter</h5>
+        <div>
+            <input id='model-distance' type="number" id="quantity" step="250" value='1750' name="quantity"
+                class='form-control form-control-sm' min="500" max="15000">
+            <p></p>
+            <div>
+                <label>Generate simulations table</label><br>
+                <button id='extract-pairs-button' class='btn btn-primary'>Apply </button>
+            </div>
+                
+
+                
+        </div>
+        <p></p>    
+        <table-component id='simulations-table'></table-component>
+        <p></p>
+        <h5> Training period </h5>
+        <div>
+            <input type='checkbox' class='hidden' id="injector-producer-distance-checkbox">
+            <div>Start<input value='2016-05-01' id='model-date1' class='btn  date-entry' type="date"></div>
+            <div>End<input value='2024-09-01' id='model-date2' class='btn  date-entry' type="date"></div>
+            <div><button class='btn btn-primary' id="apply-dates-button">Apply </button> </div>
+        </div>
+
+
+        <div class="container-fluid">
+            <div class="row">
+                <div class='col-6'>
+                    <chart-placeholder-component id="chart1"
+                        layout='{ "showlegend": true, "showgrid": true, "height":"400", "margin": {"l":"50", "r":"40","t":"30","b":"30"}  }'></chart-placeholder-component>
+                </div>
+                <div class='col-6'>
+                    <chart-placeholder-component id="chart2"
+                        layout='{ "showlegend": true,"showgrid": true,  "height":"400", "margin": {"l":"50", "r":"40","t":"30","b":"30"}  }'></chart-placeholder-component>
+                </div>
             </div>
 
-            <div class='col-3'><input class='form-control form-control-sm lambda-min' id = 'lambda-min' type="number" min="0.0" max="2" value="0.0"
-                    decimals="1" step="0.1"></div>
-            <div class='col-3'><input class='form-control form-control-sm lambda-max' id = 'lambda-max' type="number" min="0.0" max="2.0" value="1.0"
-                    decimals="1" step="0.1"></div>
-        </div>
 
-        <div class='row'>
-            <div class='col-3 text-end'><b>Primary coefficient</b></div>
-            <div class='col-3'><input class='form-control form-control-sm primary-initial' id='primary-initial' type="number" min="0.1" max="1" value="1.0"
-                    decimals="1" step="0.1"></div>
-            <div class='col-3'><input class='form-control form-control-sm primary-min' id='primary-min' type="number" min="0.0" max="2" value="0"
-                    decimals="1" step="0.1"></div>
-            <div class='col-3'><input class='form-control form-control-sm primary-max'  id='primary-max' type="number" min="0.0" max="2.0" value="1.0"
-                    decimals="1" step="0.1"></div>
-        </div>
-
-        <div class='row'>
-            <div class='col-3 text-end'><b>Productivity index</b></div>
-            <div class='col-3'><input class='form-control form-control-sm productivity-initial' id='productivity-initial' type="number" min="0.1" max="1" value="0.0"
-                    decimals="1" step="0.1"></div>
-            <div class='col-3'><input class='form-control form-control-sm productivity-min' id='productivity-min' type="number" min="0.0" max="2" value="0"
-                    decimals="1" step="0.1"></div>
-            <div class='col-3'><input class='form-control form-control-sm productivity-max' id='productivity-max' type="number" min="0.0" max="2.0" value="1.0"
-                    decimals="1" step="0.1"></div>
-        </div>
-
-        <div class='hidden row'>
-            <div class='col-3 text-end'><b>Regularization</b></div>
-            <div class='col-3'>
-                <input class='form-control form-control-sm regularization' id='regularization' type="number" min="0.0" max="0.5" value="0.0" decimals="2"
-                    step="0.01">
+            <div class="row">
+                <div class='col-6'>
+                    <chart-placeholder-component id="chart3"
+                        layout='{ "showlegend": true, "showgrid": true, "height":"400", "margin": {"l":"50", "r":"40","t":"30","b":"30"}  }'></chart-placeholder-component>
+                </div>
+                <div class='col-6'>
+                    <chart-placeholder-component id="chart4"
+                        layout='{ "showlegend": true,"showgrid": true, "height":"400", "margin": {"l":"50", "r":"40","t":"30","b":"30"}  }'></chart-placeholder-component>
+                </div>
             </div>
 
         </div>
+        <p></p>
+        <h5> Simulation name </h5>
+        <input id='model-name' class="form-control form-control-sm" type="text" value="TestModel1">
+        <p></p>
+        <h5>Model type:</h5>
+        <select id='model-type' name="balance" class="form-select" onchange="function s()
+                        {  
+                                                            
+                            let model = document.getElementById('model-type').value
+                            let disabled = (model=='crm_tank') || (model=='crmip')
+                            console.log('here, model = ', model,' disabled ', disabled )  
+                                                                            
+                            if( disabled==true)                                   
+                            document.getElementById('model-balance-placeholder').classList.add('hidden')
+                            else
+                            document.getElementById('model-balance-placeholder').classList.remove('hidden')
+                                                            
+                        }; 
+                        s()">
+            
+            <option value="crm_tank">CRMT</option>
+            <option value="crm_p">CRMP</option>
+            <option value="crmip">CRMIP</option>
+            <option value="crmp_constrained">CRMP Constrained</option>
+            <option selected value="crmid_constrained">CRMID Constrained</option>
+            
+
+        </select>
+            <div id='model-balance-placeholder'><label class='mt-3'>Balanced </label>
+                <select class='form-control form-control-sm' name="balance" id='model-balance'>
+                    <option value="none">No</option>
+                    <option selected value="quick">Quick</option>
+                    <option value="full">Full</option>
+                </select>
+            </div>
+        <p></p>
+        <h5>Advanced parameters</h5>
+        <details>
+            <p></p>
+            <div class='row'>
+                <div class='col-3 text-end'><b>Parameter</b></div>
+                <div class='col-3 text-center'>Initial</div>
+                <div class='col-3 text-center'>Min</div>
+                <div class='col-3 text-center'>Max</div>
+                <hr>
+            </div>
+
+            <div class='row'>
+                <div class='col-3 text-end'><b>Tau</b></div>
+                <div class='col-3'><input class='form-control form-control-sm tau-initial' id=  'tau-initial' type="number" min="0.1" max="100" value="1" decimals="1" step="1"></div>
+                <div class='col-3'><input class='form-control form-control-sm tau-min'     id = 'tau-min' type="number"     min="0.1" max="100" value="0.5" decimals="1" step="1"></div>
+                <div class='col-3'><input class='form-control form-control-sm tau-max'     id = 'tau-max' type="number"     min="0.2" max="100" value="50"  decimals="1" step="1"></div>
+            </div>
+
+            <div class='row'>
+                <div class='col-3 text-end'><b>Taup</b></div>
+                <div class='col-3'><input class='form-control form-control-sm taup-initial' id='taup-initial' type="number" min="0.1" max="100" value="1" decimals="1" step="1"></div>
+                <div class='col-3'><input class='form-control form-control-sm taup-min' id='taup-min' type="number" min="0.1" max="100" value="0.5"   decimals="1" step="1"></div>
+                <div class='col-3'><input class='form-control form-control-sm taup-max' id='taup-max'  type="number" min="0.2" max="100" value="50" decimals="1" step="1"></div>
+            </div>
+
+            <div class='row'>
+                <div class='col-3 text-end'><b>Lambda</b></div>
+                <div class='col-3'><input class='form-control form-control-sm lambda-initial' id = 'lambda-initial' type="number" min="0.1" max="1.0" value="0.1"
+                        decimals="1" step="0.1">
+                </div>
+
+                <div class='col-3'><input class='form-control form-control-sm lambda-min' id = 'lambda-min' type="number" min="0.0" max="2" value="0.0"
+                        decimals="1" step="0.1"></div>
+                <div class='col-3'><input class='form-control form-control-sm lambda-max' id = 'lambda-max' type="number" min="0.0" max="2.0" value="1.0"
+                        decimals="1" step="0.1"></div>
+            </div>
+
+            <div class='row'>
+                <div class='col-3 text-end'><b>Primary coefficient</b></div>
+                <div class='col-3'><input class='form-control form-control-sm primary-initial' id='primary-initial' type="number" min="0.1" max="1" value="1.0"
+                        decimals="1" step="0.1"></div>
+                <div class='col-3'><input class='form-control form-control-sm primary-min' id='primary-min' type="number" min="0.0" max="2" value="0"
+                        decimals="1" step="0.1"></div>
+                <div class='col-3'><input class='form-control form-control-sm primary-max'  id='primary-max' type="number" min="0.0" max="2.0" value="1.0"
+                        decimals="1" step="0.1"></div>
+            </div>
+
+            <div class='row'>
+                <div class='col-3 text-end'><b>Productivity index</b></div>
+                <div class='col-3'><input class='form-control form-control-sm productivity-initial' id='productivity-initial' type="number" min="0.1" max="1" value="0.0"
+                        decimals="1" step="0.1"></div>
+                <div class='col-3'><input class='form-control form-control-sm productivity-min' id='productivity-min' type="number" min="0.0" max="2" value="0"
+                        decimals="1" step="0.1"></div>
+                <div class='col-3'><input class='form-control form-control-sm productivity-max' id='productivity-max' type="number" min="0.0" max="2.0" value="1.0"
+                        decimals="1" step="0.1"></div>
+            </div>
+
+            <div class='hidden row'>
+                <div class='col-3 text-end'><b>Regularization</b></div>
+                <div class='col-3'>
+                    <input class='form-control form-control-sm regularization' id='regularization' type="number" min="0.0" max="0.5" value="0.0" decimals="2"
+                        step="0.01">
+                </div>
+
+            </div>
 
 
 
 
 
-    </details>
-    <div>
-        <hr>
-        </hr>
-        Export only? <input id='export-only' type="checkbox" id="myCheck" checked> 
-        <button id='history-match-save-and-run' style='margin:5px' class="btn btn-success"> Run</button>
-    </div>
-</div>
+        </details>
+        <div>
+            <hr>
+            </hr>
+            Export only? <input id='export-only' type="checkbox" id="myCheck" checked> 
+            <button id='history-match-save-and-run' style='margin:5px' class="btn btn-success"> Run</button>
+        </div>
+    </div -->
+
+    <script>
+
+        Id('test-delete-injector').addEventListener('click', function(){
+            
+            let crm_component = document.querySelector('crm-setup-element');
+            let name = Id('injector-to-delete').value;
+            crm_component.deleteInjector( name );
+        });
+
+        
+        Id('test-distances').addEventListener('click', function(){
+            
+            return 
+            //fetch from the UI
+            //zone, subzone,selected_well_names (if any, it is a global variable) and the dates range
+            //receives: the distances table and a rates table.
+            //producer_rates: {
+            // {
+            //}
+
+            let read_data = undefined;//get_project_data_selection();
+            read_data = { 'a': 1, 'b': 2, 'c': 3 };
+
+            get_server('get_crm_data','POST',JSON.stringify(read_data))
+            .then( (resp) =>{
+                
+                let crm_component = document.querySelector('crm-setup-element');
+                //let data = JSON.parse(resp);
+                let distances_data = resp['distances'];
+                console.log('data received from server', resp );//distances_data);
+                /*Example of data received from the server
+                [
+                    {
+                        "distance": 26724.086917357108,
+                        "injector": "BG-0604-1_I",
+                        "producer": "AH-0191-2_P"
+                    },
+                    {
+                        "distance": 24437.634766939882,
+                        "injector": "BG-0721-1_I",
+                        "producer": "AH-0191-2_P"
+                    },
+                ]
+                */
+
+                crm_component.setData( distances_data, resp['rates']);
+
+                //let pairs = crm_component.extractPairs( 750 );
+
+
+
+
+                //crm_component.setData( data['distances'], data['rates'] );
+                //crm_component.extractPairs( 1750 );
+            })  
+            .catch( (err) => {
+
+                console.log('error', err);
+            });
+
+        });
+
+
+
+        Id('fetch-crm-input-data').addEventListener('click', (evt)=>{
+
+            function formatString(str) {
+                if (!str) return '';
+                const noUnderscores = str.replace(/_/g, ' ');
+                return noUnderscores.charAt(0).toUpperCase() + noUnderscores.slice(1);
+                }
+
+            console.log('fetch-crm-input-data clicked');
+            //toggleLoading(true);
+
+            //get the filters. Zone, subzone, wells_selected if any.
+            //time slice. 
+            let read_data = undefined;//get_project_data_selection();
+                read_data = { 'a': 1, 'b': 2, 'c': 3 };
+                
+                let component = document.getElementsByTagName('crm-setup-element')[0];
+
+
+                get_server('get_crm_input_data','POST',JSON.stringify(read_data))
+                .then( (resp) =>{
+
+                console.log('data received from server', resp );//distances_data);
+                /*Example of data received from the server
+                {
+                    "dates": [
+                        "2023-01-01",
+                        "2023-02-01",
+                        "2023-03-01",
+                        "2023-04-01",
+                        "2023-05-01",
+
+                    ],
+                    "distances": [
+                        {
+                            "distance": 26724.086917357108,
+                            "injector": "BG-0604-1_I",
+                            "producer": "AH-0191-2_P"
+                        },
+                            "distance": 3278.951071158391,
+                            "injector": "BG-0757-1_I",
+                            "producer": "BG-1766-2_P"
+                        },
+                        {
+                            "distance": 4096.706186426527,
+                            "injector": "BG-0758-1_I",
+                            "producer": "BG-1766-2_P"
+                        },
+                        {
+                            "distance": 6207.797163274271,
+                            "injector": "BG-0759-1_I",
+                            "producer": "BG-1766-2_P"
+                        },
+
+                            "distance": 3497.938905346225,
+                            "injector": "BG-0604-1_I",
+                            "producer": "BG-2203-1_P"
+                        },
+                        {
+                            "distance": 5340.539927885718,
+                            "injector": "BG-0721-1_I",
+                            "producer": "BG-2203-1_P"
+                        },
+                        {
+                            "distance": 4398.491484930774,
+                            "injector": "BG-0722-1_I",
+                            "producer": "BG-2203-1_P"
+                        },
+                    ],
+                    "liquid_production": {
+                        "data": {
+                            "AH-0191-2_P": [
+                                407.61655,
+                                450.985,
+                                451.67915,
+                                456.0019
+                
+                            ],
+                            "BG-0052-6_P": [
+                                0,
+                                1431.2434999999996,
+                                2778.53845,
+                                2907.1412
+                            ],
+                            "BG-0234-1_P": [
+                                289.47475,
+                                310.58589999999987,
+                                306.7277,
+                                300.5669000000001,
+                                326.1468,
+                                341.34515
+                            ]  
+                        },
+                        "dates": [
+                            "2023-01-01",
+                            "2023-02-01"
+                        ]
+                    },
+
+                    "water_injection": .... ther same 
+                }
+                */
+
+                let rates = {
+                    liquid_production: resp['liquid_production'],
+                    water_injection: resp['water_injection'],
+                    dates :resp['dates']
+                }
+                component.setData( resp['distances'], rates )
+                })
+                .catch( (error) =>{
+
+                    console.log(error)
+                });
+
+            });
+
+
+
+        function generateDemoData() {
+            let data = {};
+            const injectorsPool = Array.from({ length: 20 }, (_, i) => `injector${i + 1}`);
+
+            for (let i = 1; i <= 12; i++) {
+                const numInjectors = Math.floor(Math.random() * 3) + 1; // Random between 3 and 7
+                const selectedInjectors = injectorsPool
+                    .sort(() => 0.5 - Math.random()) // Shuffle injectors
+                    .slice(0, numInjectors); // Take random injectors
+                data[`producer${i}`] = selectedInjectors;
+            }
+            return data;
+}
+
+        
+        const data = generateDemoData();
+        console.log('generated data', data);
+
+
+        //const tableComponent = document.querySelector("injector-producer-table-component");
+        //tableComponent.setData( data);
+        //console.log("Current Data:", tableComponent.getData());
+
+
+        /*document.getElementById('test').addEventListener('click', function(){
+            alert('test clicked in main');
+            let data = generateDemoData();
+            document.querySelector('crm-setup-element').setWellPairs( data );
+        })*/
+
+
+        document.getElementById('history-match-save-and-run').addEventListener('click', function(){
+            alert('history-match-save-and-run clicked');
+
+            window.dispatchEvent(new CustomEvent('simulation-launched', {
+            detail: { name: 'Data-driven model' }
+            }));
+
+        });
+
+        /*window.addEventListener('my-global-event', (event) => {
+        console.log('Global event received!', event.detail);
+        });*/
+
+
+
+    </script>
 
 
 </body>

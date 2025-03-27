@@ -1,0 +1,5 @@
+
+
+DEBUG = False
+PLATFORM = 'LAPTOP'  #DATAIKU, LAPTOP
+

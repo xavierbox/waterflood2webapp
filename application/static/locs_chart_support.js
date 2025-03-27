@@ -1,14 +1,26 @@
 let selected_well_names = undefined;
 let locs_chart_initialized = false; 
 
+/*called when the user selects some wells with the lasso in the locations chart
+  the window also emits an event that other component can subscribe to
+*/
 function set_selected_well_names( names ){
     selected_well_names = names != undefined ? Array.from(names) : undefined;   
     console.log('Selected well names', selected_well_names!=undefined);
 
     if( names!=undefined)
-        Id('well-selection-indicator').classList.add('active');
+        {Id('well-selection-indicator').classList.add('active');
+        console.log('Selected well names', names);
+        }
+    
     else 
     Id('well-selection-indicator').classList.remove('active');
+
+
+    window.dispatchEvent(new CustomEvent('wells-names-selected', {
+        detail: { names: selected_well_names }
+    }));
+
     
 
 }
@@ -17,48 +29,72 @@ function populate_locations_plot( data ){
     let app_layout = Id('main-layout');
     let where = 'middle-top';
     let locs_container = app_layout.get_pane(where);// Id('locs-chart');
-    //locs_container.innerHTML = '';   
-    key = 'locations';
-    l = data[key]['layout'];
-    l['height'] = locs_container.offsetHeight;
-    l['autosize'] = true;
 
-    if( locs_chart_initialized == true){
-    let layout = locs_container.layout;
-    console.log( '-------------------------',layout )
-    }
-
-    Plotly.react(locs_container, data[key]['data'], l, {responsive: true})
-    .then((p)=>{
-        locs_chart_initialized = true;
-        relayout( locs_container );
-        set_selected_well_names( undefined );
-
-        p.on('plotly_selected', function(eventData) {
-            if (eventData) {
-                console.log("Selection type:", eventData.range ? "box" : "lasso");
-                console.log("Selected data points:", eventData.points);
-
-                let local_selected_well_names = [];
-                for( let point of eventData.points){
-                    let index = point.pointIndex;
-                    let well_name = point.data.text[index];
-                    local_selected_well_names.push(well_name);
-                }
-
-                set_selected_well_names( local_selected_well_names );
-                //console.log('Selected well names:', selected_well_names);
-            }
-            else{
-                console.log('No data selected');
-                set_selected_well_names( undefined );
-            }
+    if(locs_chart_initialized == true){
+        let layout = locs_container.layout;
+        Plotly.react(locs_container, data[key]['data'], layout )//, config )
+        .then((p)=>{
+            locs_chart_initialized = true;
+            set_selected_well_names( undefined );
+            resizeObserver.observe(locs_container);
         });
+    }
+    else{
+        key = 'locations';
+        l = data[key]['layout'];
+        l['height'] = locs_container.offsetHeight;
+        l['autosize'] = true;
+        locs_chart_initialized = true;
+        let config = {
 
-        resizeObserver.observe(locs_container);
+            responsive: true,
+            modeBarButtonsToAdd: [
+                {
+                    name: 'Custom Button',
+                    icon: Plotly.Icons.camera,  // You can use a built-in icon or a custom SVG
+                    click: function(gd) {
+                        alert('Custom button clicked!');
+                        console.log(gd); // Access the plot div if needed
+                    }
+                }
+            ]
+        };
+
+        Plotly.react(locs_container, data[key]['data'], l, config )
+        .then((p)=>{
+            locs_chart_initialized = true;
+            relayout( locs_container );
+            set_selected_well_names( undefined );
+            p.on('plotly_selected', function(eventData) {
+                if (eventData) {
+                    console.log("Selection type:", eventData.range ? "box" : "lasso");
+                    console.log("Selected data points:", eventData.points);
+    
+                    let local_selected_well_names = [];
+                    for( let point of eventData.points){
+                        let index = point.pointIndex;
+                        let well_name = point.data.text[index];
+                        local_selected_well_names.push(well_name);
+                    }
+    
+                    set_selected_well_names( local_selected_well_names );
+                    //console.log('Selected well names:', selected_well_names);
+                }
+                else{
+                    console.log('No data selected');
+                    set_selected_well_names( undefined );
+                }
+            });
+            resizeObserver.observe(locs_container);
+        }); 
+    
+
+    }
+    
 
 
-    }); 
+
+
 
     // this works !!
     // Plotly chart initialization
@@ -100,7 +136,8 @@ function dummy( data ){
         mode: 'lines+markers',
         name: 'Plot 1',
         xaxis: 'x1',
-        yaxis: 'y1',name: 'Sector2',legendgroup: 'group2' 
+        yaxis: 'y1',
+        name: 'Sector2',legendgroup: 'group2' 
     };
     const trace2 = {
         x: x,
@@ -140,16 +177,16 @@ function dummy( data ){
     };
 
 
-    const layout = {
+    const layout1 = {
         title: {text:'Plotly Subplots with Shared X-axis'},
-        grid: {rows: 1, columns: 3, pattern: 'independent'},
-        xaxis1: {domain: [0, 0.28], title: {text:'X Axis'}},
+        grid: {rows: 3, columns: 1, pattern: 'independent'},
+        xaxis1: {domain: [0, 1], title: {text:'X Axis'}},
         yaxis1: { title:{text: 'Y1'}},
         
-        xaxis2: {domain: [0.37, 0.65], title: {text:'X Axis'}},
+        xaxis2: {domain: [0., 1.0], title: {text:'X Axis'}},
         yaxis2: { title:{text: 'Y2'}},
 
-        xaxis3: {domain: [0.72, 1], title: 'X Axis'},
+        xaxis3: {domain: [0., 1], title: 'X Axis'},
         yaxis3: { title:{text: 'Y3'}},
 
         legend: {
@@ -186,6 +223,16 @@ function dummy( data ){
 
     };
 
+        const layout = {
+            grid: {rows: 1, columns: 3, pattern: 'independent'},
+            autosize: true,
+            margin: {l: 40, r: 40, t: 20, b: 30},
+            xaxis:  {matches: 'x'},
+            xaxis2: {matches: 'x'},
+            xaxis3: {matches: 'x'},
+            xaxis4: {matches: 'x'}
+        };
+
     // Render the plot
     //Plotly.newPlot('plot', [trace1,trace1b, trace2,trace2b, trace3, trace3b ], layout);
 
@@ -201,6 +248,7 @@ function dummy( data ){
     .then(function (gd) {
         // Listen for zoom events
         plots = gd ; 
+        
 
         function f (eventData) {
             if (eventData['xaxis.range[0]'] && eventData['xaxis.range[1]']) {
@@ -243,14 +291,9 @@ function dummy( data ){
 
         };
 
-        //let events = ['plotly_autosize', 'plotly_deselect', 'plotly_doubleclick', 'plotly_redraw']          gd.on('plotly_relayout', (eventData) =>{ f(eventData) });
-        //for( let e of events ){
-        //console.log(e);   
-        //    gd.on( e, (eventData) =>{ f(eventData,gd) });
-        //}
-        gd.on('plotly_relayout', (eventData) =>{ f(eventData) });
-        gd.on('plotly_restyle', (eventData) =>{ f(eventData) });        
-        gd.on('plotly_doubleclick', function() {
+        gd.on('wwplotly_relayout', (eventData) =>{ f(eventData) });
+        gd.on('wwplotly_restyle', (eventData) =>{ f(eventData) });        
+        gd.on('wwplotly_doubleclick', function() {
             Plotly.relayout(gd, {
                 'xaxis2.autorange': true,
                 'yaxis2.autorange': true,
@@ -263,14 +306,10 @@ function dummy( data ){
             });
         });
         
-
         //this works
         //app_layout.addEventListener('pane-resized', (evt)=>{
         //    if( evt.detail.id.includes(where) )
         //    {relayout( container );}}) ;
-
-
-
         resizeObserver.observe(container);
 
 
