@@ -1,33 +1,82 @@
-let selected_well_names = undefined;
-let locs_chart_initialized = false; 
 
-/*called when the user selects some wells with the lasso in the locations chart
-  the window also emits an event that other component can subscribe to
-*/
-function set_selected_well_names( names ){
-    selected_well_names = names != undefined ? Array.from(names) : undefined;   
-    console.log('Selected well names', selected_well_names!=undefined);
 
-    if( names!=undefined)
-        {Id('well-selection-indicator').classList.add('active');
-        console.log('Selected well names', names);
-        }
+
+/*find the well series and index in that series*/
+function findWellInLocationsChart( container, name ){
+
+            let index = -1;
+            let series = undefined 
     
-    else 
-    Id('well-selection-indicator').classList.remove('active');
-
-
-    window.dispatchEvent(new CustomEvent('wells-names-selected', {
-        detail: { names: selected_well_names }
-    }));
-
+            let data = container.data;
+            for(let aseries of data){
+                let well_names = aseries.text;
+                index = well_names.indexOf(name);
     
+                if (index !== -1) {
+                    series = aseries;
+                    break;
+                }
+            }
+        return [index, series];
+}
+    
+function highlightWellsInLocationsChart( locs_container, names, key ){
+    
+    
+                /*let highlightedTraces = locs_container.data.filter( (trace) => trace.name == key );
+                if( highlightedTraces.length > 0){
+                    for(let trace of highlightedTraces){
+                        let tindex = trace.index;
+                        console.log('Deleting trace:', tindex);
+                        Plotly.deleteTraces(locs_container, trace.index);
+                    }
+                }*/
+                let highlightedTraceIndexes = [];
 
+                locs_container.data.forEach((trace, index) => {
+                        if (trace.name === key) {
+                            highlightedTraceIndexes.push(index);
+                        }
+                });
+                if (highlightedTraceIndexes.length > 0) {
+                    console.log('Deleting traces at indexes:', highlightedTraceIndexes);
+                    Plotly.deleteTraces(locs_container, highlightedTraceIndexes);
+                }
+
+                if(names ==  undefined)
+                    return; 
+
+                let lats  = [] 
+                let longs = [] 
+                for( let name of names){
+                    const [index,series] = findWellInLocationsChart( locs_container, name );
+    
+                    if (index!=-1){
+                        const [lat,long] = [series['lat'][index], series['lon'][index]];
+                        lats.push(lat);
+                        longs.push(long);
+                    }
+                }
+                    
+                let newTrace = {
+                        name : 'Highlighted',
+                        type:"scattermap",
+                        mode: "markers",
+                        lat: lats,
+                        lon: longs,
+                        marker: { size: highlighted_marker_size, color:highlighted_marker_color, opacity: highlighted_marker_opacity  },
+                }
+         
+                
+                Plotly.addTraces(locs_container, newTrace);
 }
 
+
+
+              
 function populate_locations_plot( data ){
     let app_layout = Id('main-layout');
-    let where = 'middle-top';
+    let where = locations_chart_pane;
     let locs_container = app_layout.get_pane(where);// Id('locs-chart');
 
     if(locs_chart_initialized == true){

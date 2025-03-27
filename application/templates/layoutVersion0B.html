@@ -13,6 +13,7 @@
      <!--script src = "components.js"></script-->
      <!--script src= "app_components.js"></script-->
 
+     <script src="{{ url_for('static', filename='globals.js') }}"></script>
      <script src="{{ url_for('static', filename='components.js') }}"></script>
      <script src="{{ url_for('static', filename='app_components.js') }}"></script>
      <script src="{{ url_for('static', filename='support.js') }}"></script>
@@ -185,7 +186,7 @@
     <!-- Sticky Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
 
-            <button id="fetch-crm-input-data">Fetch data for CRM modelling</button>
+            <button id="debug-stuff1">Fetch data for CRM modelling</button>
 
             <div class="container-fluid">
                 <a class="navbar-brand" href="#">Waterflood insights</a>
@@ -248,9 +249,6 @@
     
     </nav>
 
-    <div id="liquid-production-rates-container" style="width:100%; background-color: aqua; min-height:500px;"></div>
-    <div id="water-injection-rates-container" style="width:100%; background-color: aqua; min-height:500px;"></div>
-    
 
     <div id='all-app-wrapper' class="container-fluid hidden">
 
@@ -324,6 +322,10 @@
             .catch ((error) =>{
                 console.log(error);
             });
+    
+    
+    //document.querySelector('.projects-component-button btn btn-primary').click();
+
     }
     
     function load_project( project_name){
@@ -540,7 +542,35 @@
     }); 
 
 
-    Id('fetch-crm-input-data').addEventListener('click', (evt)=>{
+    Id('debug-stuff1').addEventListener('click', (evt)=>{
+
+        /*marking stuff in the locations chart*/
+        let names = ['BG-1114-1_I','BG-1096-2_P'];
+        let app_layout = Id('main-layout');
+        let where = locations_chart_pane;
+        let locs_container = app_layout.get_pane(where);// Id('locs-chart');
+       
+
+        highlightWellsInLocationsChart( locs_container, names, 'Highlighted' );
+  
+        return 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         function formatString(str) {
             if (!str) return '';
@@ -548,7 +578,7 @@
             return noUnderscores.charAt(0).toUpperCase() + noUnderscores.slice(1);
             }
 
-        console.log('fetch-crm-input-data clicked');
+        console.log('debug-stuff1 clicked');
         toggleLoading(true);
 
         //get the filters. Zone, subzone, wells_selected if any.
@@ -556,6 +586,7 @@
         let read_data = undefined;//get_project_data_selection();
             read_data = { 'a': 1, 'b': 2, 'c': 3 };
 
+   
             get_server('get_crm_input_data','POST',JSON.stringify(read_data))
             .then( (resp) =>{
                 
@@ -683,10 +714,21 @@
                 console.log('error', err);
                 toggleLoading(false);
             });
-
+         
 
     });
 
+
+    window.addEventListener('wells-names-selected-in-scatter-chart', (evt)=>{
+        console.log('MAIN app: wells-names-selected-in-scatter-chart', evt.detail);
+        let names = evt.detail.names;
+        let key = 'Highlighted';
+        
+        let app_layout = Id('main-layout');
+        let where = locations_chart_pane;
+        let locs_container = app_layout.get_pane(where);
+        highlightWellsInLocationsChart( locs_container, names, key );
+    })
 
 </script>
 

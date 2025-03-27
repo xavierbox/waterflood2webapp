@@ -1,11 +1,3 @@
-function isEmptyOrWhitespace(str) {
-    return str.trim() === "";
-}
-
-function isValidDate(date1) {
-    const date = new Date(date1);
-    return !isNaN(date.getTime()); // Checks if it's a valid date
-}
 
 
 const resizeObserver = new ResizeObserver(entries => {
@@ -148,9 +140,6 @@ function populate_field_plots( data ){
             console.log(key);
         }
 
-
-
-
         //xdata.push(data[key]['data']);
         let plot = document.createElement('div');
         container.appendChild(plot);
@@ -191,10 +180,6 @@ function populate_field_plots( data ){
     //});
     //field_plots.push(plot);
      
-
-
-
-
     let sector_container = Id('sector-charts-container');
     sector_container.innerHTML = '';
     plot = document.createElement('div');
@@ -252,16 +237,41 @@ function populate_field_wells_snapshot( data ){
         /*
         xaxis2: { title:{text: 'Water production'}},
         xaxis3: { title:{text: 'Water production'}},*/
-        height: 1000,  autosize: true,
-        width: 1000
+        height: 1000,  width: 1000,
+        autosize: true,
+        
     };
 
-    Plotly.newPlot(plot, data['data'], layout, {responsive: true})
-    .then ((p)=>{
+    let p = Plotly.newPlot(plot, data['data'], layout, {responsive: true})
+    p.then ((p)=>{
         //resizeObserver.observe( plot );
         //relayout( plot );
-        }); 
 
+
+        p.on('plotly_selected', function(eventData) {
+            if (eventData) {
+                console.log("---------Selection type:", eventData.range ? "box" : "lasso");
+                console.log("Selected data points:", eventData.points);
+
+                let local_selected_well_names = [];
+                for( let point of eventData.points){
+                    let index = point.pointIndex;
+                    let well_name = point.data.text[index];
+                    local_selected_well_names.push(well_name);
+                }
+
+                set_selected_well_names_in_scatter_chart( local_selected_well_names );
+                //console.log('Selected well names:', selected_well_names);
+            }
+            else{
+                console.log('No data selected');
+                set_selected_well_names_in_scatter_chart( undefined );
+            }
+        });
+
+    }); 
+
+ 
     // /resizeObserver.observe( plot );
 
 
