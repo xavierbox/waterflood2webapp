@@ -28,7 +28,95 @@
 
 </head>
 
+<style>
+
+
+    .dell-detail-dialog-panel {
+      position: absolute;
+      top: 100px;
+      left: 100px;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 0.75rem;
+      width: 450px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+      display: none;
+      flex-direction: column;
+      gap: 0.75rem;
+      z-index: 999;
+    }
+
+    .dell-detail-dialog-header {
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: move;
+      user-select: none;
+    }
+
+    .dell-detail-dialog-close {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.75rem;
+      cursor: pointer;
+      font-size: 1.1rem;
+      color: #888;
+    }
+
+    .dell-detail-dialog-chart {
+      width: 100%;
+      height: 200px;
+    }
+
+    .dell-detail-dialog-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .dell-detail-dialog-table th,
+    .dell-detail-dialog-table td {
+      padding: 0.4rem;
+      border: 1px solid #ccc;
+      text-align: left;
+      font-size: 0.85rem;
+    }
+
+    .dell-detail-dialog-table th {
+      background-color: #f9f9f9;
+    }
+
+
+  
+
+  </style>
+
+
 <body>
+
+    <!-- floating well-detail-dialog -->
+    <div id="dell-detail-dialog" class="dell-detail-dialog-panel">
+        <div class="dell-detail-dialog-close" onclick="closeWellDetailDialog()">✖</div>
+        <div id="dell-detail-dialog-header" class="dell-detail-dialog-header">WELL NAME</div>
+        <div id="dell-detail-dialog-chart" class="dell-detail-dialog-chart"></div>
+        <h4>Closest neighbours</h4>
+        <table class="dell-detail-dialog-table">
+          <thead>
+            <tr>
+              <th>Well</th>
+              <th>Distance</th>
+              <th>Type</th>
+            </tr>
+          </thead>
+          <tbody id="dell-detail-dialog-table-body"></tbody>
+        </table>
+        Sector: 3<br>
+        Reservoir: Wara<br>
+        RMU: LW<br>
+        <hr>
+        <button class="well-detail-dialog-close-button btn btn-danger" onclick="closeWellDetailDialog()">Close</button>
+    </div>
+
+
 
     <!-- spinning indicator of a long operation -->
     <div id="loading" class="loader hidden"><div class="spinner"></div>Loading...</div>
@@ -78,6 +166,17 @@
             <a id='workflows-tab-button'class="field-tab btn-sm page-link">Workflows</a>
           </li>
         </ul>
+        <script>
+            let tabs = document.querySelectorAll('.field-tab');
+            tabs.forEach((tab) => {
+                tab.addEventListener('click', function(){
+                    tabs.forEach((t) => {
+                        t.classList.remove('selected');
+                    });
+                    this.classList.add('selected');
+                });
+            });
+        </script>
      
         <div id="field-charts-container" class="field-chart-container">
         <p>Field charts go here...</p></div>
@@ -138,11 +237,11 @@
                 Displace time frame and load data 
                 <div class="d-flex align-items-center gap-2">
                     
-                    <button class="btn btn-primary">
+                    <button class="btn btn-primary" id="time-frame-player-left-button">
                         <i class="fas fa-caret-left"></i>
                     </button>
                     <input type="number" id="range-value" name="range-value" class="form-control text-center" min="1" max="180" value="1" style="width: 80px;">
-                    <button class="btn btn-primary">
+                    <button class="btn btn-primary" id="time-frame-player-right-button">
                         <i class="fas fa-caret-right"></i>
                     </button>
                 </div>
@@ -385,12 +484,14 @@
     });
   
 
+
     /*let app_layout = Id('main-layout');
     app_layout.addEventListener('pane-resized', (evt)=>
     {
         console.log( evt.detail );
     });*/
 
+    
 
 </script>
    
@@ -423,11 +524,151 @@
     Id('workflow-selector').addEventListener('dclicked',(evt)=>{
         //console.log('Workflow double-clicked:', evt.detail);
         console.log('workflow name double-clicked:', evt.detail.cell_text);
+        if( evt.detail.cell_text.toLowerCase() != 'liquid history match')
+        {
+            Swal.fire({
+            title: "Sorry...not implemented yet",
+            html: "Only a few (maybe just one) workflow can be trigerred at the moment", 
+            icon: "info"
+            });
+
+        }
+        else{
+
+            let read_data = get_project_data_selection();
+            let result  = validateProjectDataSelection( read_data );
+            if( isEmptyOrWhitespace(result) == false){
+                Swal.fire({title: "Error data selection",html: result.replaceAll("\n", "<br>"),icon: "error"});
+                return
+            }
+
+           
+            toggleLoading(true);
+            get_server('get_crm_input_data','POST',JSON.stringify(read_data))
+                .then( (resp) =>{
+
+                console.log('data received from server', resp );//distances_data);
+                /*Example of data received from the server
+                {
+                    "dates": [
+                        "2023-01-01",
+                        "2023-02-01",
+                        "2023-03-01",
+                        "2023-04-01",
+                        "2023-05-01",
+
+                    ],
+                    "distances": [
+                        {
+                            "distance": 26724.086917357108,
+                            "injector": "BG-0604-1_I",
+                            "producer": "AH-0191-2_P"
+                        },
+                            "distance": 3278.951071158391,
+                            "injector": "BG-0757-1_I",
+                            "producer": "BG-1766-2_P"
+                        },
+                        {
+                            "distance": 4096.706186426527,
+                            "injector": "BG-0758-1_I",
+                            "producer": "BG-1766-2_P"
+                        },
+                        {
+                            "distance": 6207.797163274271,
+                            "injector": "BG-0759-1_I",
+                            "producer": "BG-1766-2_P"
+                        },
+
+                            "distance": 3497.938905346225,
+                            "injector": "BG-0604-1_I",
+                            "producer": "BG-2203-1_P"
+                        },
+                        {
+                            "distance": 5340.539927885718,
+                            "injector": "BG-0721-1_I",
+                            "producer": "BG-2203-1_P"
+                        },
+                        {
+                            "distance": 4398.491484930774,
+                            "injector": "BG-0722-1_I",
+                            "producer": "BG-2203-1_P"
+                        },
+                    ],
+                    "liquid_production": {
+                        "data": {
+                            "AH-0191-2_P": [
+                                407.61655,
+                                450.985,
+                                451.67915,
+                                456.0019
+                
+                            ],
+                            "BG-0052-6_P": [
+                                0,
+                                1431.2434999999996,
+                                2778.53845,
+                                2907.1412
+                            ],
+                            "BG-0234-1_P": [
+                                289.47475,
+                                310.58589999999987,
+                                306.7277,
+                                300.5669000000001,
+                                326.1468,
+                                341.34515
+                            ]  
+                        },
+                        "dates": [
+                            "2023-01-01",
+                            "2023-02-01"
+                        ]
+                    },
+
+                    "water_injection": .... ther same 
+                }
+                */
+
+                let rates = {
+                    liquid_production: resp['liquid_production'],
+                    water_injection: resp['water_injection'],
+                    dates :resp['dates']
+                }
+
+                let component = new CRMSetupElement();//crm-setup-element
+                Id('workflows-charts-container').innerHTML = '';
+                Id('workflows-charts-container').classList.remove('hidden');
+                Id('workflows-charts-container').appendChild(component);
+                Id('workflows-tab-button').click();
+
+                component.setData( resp['distances'], rates )
+
+                component.addEventListener('close-clicked', ()=>{
+                    Id('workflows-charts-container').innerHTML = '';
+                    Id('workflows-charts-container').classList.add('hidden');
+                    
+                    Id('field-tab-button').click();
+                });
+
+
+
+                toggleLoading(false);
+                })
+                .catch( (error) =>{
+
+                    console.log(error)
+                    toggleLoading(false);
+                });
+
+
+        }
 
         /*let w = new CRMSetupElement();//crm-setup-element
         Id('workflows-charts-container').innerHTML = '';
         Id('workflows-charts-container').appendChild(w);
         Id('workflows-tab-button').click();
+
+
+
         */
     });
 
@@ -471,20 +712,6 @@
     /* Trigerred when the user clicks "Apply" data selection in the left-top sidebar */
     Id('apply-data-selection-button').addEventListener('click', function(){
         
-
-        function validateProjectDataSelection(read_data) {
-            message = ""
-
-            if(read_data['subzone']==undefined) return "\nInvalid RMU selection\n";
-            if(read_data['subzone']=='Select option') return "\nInvalid RMU selection\n";
-
-            
-            if(!isValidDate( read_data['date'][0])) message = "\nInvalid start date\n";
-            if(!isValidDate( read_data['date'][1])) message += "\nInvalid end date\n";
-
-            return message;
-        }
-
         let read_data = get_project_data_selection();
         let result  = validateProjectDataSelection( read_data );
         if( isEmptyOrWhitespace(result) == false){
@@ -505,6 +732,8 @@
             .then( (resp) =>{
                 populate_locations_plot(resp.data);
                 toggleLoading(false);
+                all_well_names_visible = resp.data['all_names'];
+
             })  
             .catch ((error) =>{
                 console.log(error);alert('Error getting data for locations');
@@ -540,7 +769,6 @@
 
         }
     }); 
-
 
     Id('debug-stuff1').addEventListener('click', (evt)=>{
 
@@ -583,10 +811,17 @@
 
         //get the filters. Zone, subzone, wells_selected if any.
         //time slice. 
-        let read_data = undefined;//get_project_data_selection();
-            read_data = { 'a': 1, 'b': 2, 'c': 3 };
+        let read_data = get_project_data_selection();
+            
+        //if we dont have a precise selection, then send all that are visuble 
+        if( (read_data['name'].length == 0 ) || (read_data['name'] == undefined)) {
+            read_data['name'] = all_well_names_visible;
+        }
 
-   
+
+            
+
+            
             get_server('get_crm_input_data','POST',JSON.stringify(read_data))
             .then( (resp) =>{
                 
@@ -718,17 +953,18 @@
 
     });
 
+    Id('time-frame-player-left-button').addEventListener('click', (evt)=>{
+    
+        moveDates(-1);
+        Id('apply-data-selection-button').click();
+    });
 
-    window.addEventListener('wells-names-selected-in-scatter-chart', (evt)=>{
-        console.log('MAIN app: wells-names-selected-in-scatter-chart', evt.detail);
-        let names = evt.detail.names;
-        let key = 'Highlighted';
-        
-        let app_layout = Id('main-layout');
-        let where = locations_chart_pane;
-        let locs_container = app_layout.get_pane(where);
-        highlightWellsInLocationsChart( locs_container, names, key );
-    })
+    Id('time-frame-player-right-button').addEventListener('click', (evt)=>{
+        moveDates(1);
+        Id('apply-data-selection-button').click();
+    });
+    
+
 
 </script>
 
@@ -741,6 +977,206 @@
 
 
 
+
+
+</script>
+
+
+<script id="floating-well-dialog-stuff">
+    function openWellDetailDialog(wellName, chartData, tableData) {
+      const dialog = document.getElementById("dell-detail-dialog");
+      dialog.style.display = "flex";
+  
+      document.getElementById("dell-detail-dialog-header").textContent = wellName;
+  
+      Plotly.newPlot("dell-detail-dialog-chart", chartData, {
+        margin: { t: 20 },
+        responsive: true
+      });
+  
+      const tbody = document.getElementById("dell-detail-dialog-table-body");
+      tbody.innerHTML = "";
+      tableData.forEach(row => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${row.well}</td><td>${row.distance}</td><td>${row.type}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+  
+    function closeWellDetailDialog() {
+      document.getElementById("dell-detail-dialog").style.display = "none";
+    }
+  
+    function showSampleDialog() {
+      const sampleChartData = [{
+        x: ['2024-01', '2024-02', '2024-03', '2024-04'],
+        y: [100, 120, 110, 130],
+        type: 'scatter',
+        mode: 'lines+markers',
+        name: 'Production'
+      }];
+  
+      const sampleTableData = [
+        { well: 'INJ-001', distance: 145, type: 'Injector' },
+        { well: 'INJ-002', distance: 180, type: 'Injector' },
+        { well: 'OBS-001', distance: 90, type: 'Observer' }
+      ];
+  
+      openWellDetailDialog('WELL-ABC-101', sampleChartData, sampleTableData);
+    }
+  
+    // Make the dialog draggable
+    const dialog = document.getElementById("dell-detail-dialog");
+    const header = document.getElementById("dell-detail-dialog-header");
+    let offsetX = 0, offsetY = 0, isDragging = false;
+  
+    header.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      offsetX = e.clientX - dialog.offsetLeft;
+      offsetY = e.clientY - dialog.offsetTop;
+      document.body.style.userSelect = 'none';
+    });
+  
+    document.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        dialog.style.left = `${e.clientX - offsetX}px`;
+        dialog.style.top = `${e.clientY - offsetY}px`;
+      }
+    });
+  
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+      document.body.style.userSelect = '';
+    });
+</script>
+
+
+<script id="window-controller">
+
+
+
+    window.addEventListener('wells-names-selected-in-scatter-chart', (evt)=>{
+        console.log('MAIN app: wells-names-selected-in-scatter-chart', evt.detail);
+        let names = evt.detail.names;
+        let key = 'Highlighted';
+        
+        let app_layout = Id('main-layout');
+        let where = locations_chart_pane;
+        let locs_container = app_layout.get_pane(where);
+        highlightWellsInLocationsChart( locs_container, names, key );
+    })
+
+    window.addEventListener('wells-names-selected-in-locs-chart', (evt)=>{
+
+
+      /*Delete the traces added sometime before.*/
+      function deleteTracesInLegendGroup(plotDiv, legendGroup) {
+            let tracesToDelete = [];
+            plotDiv.data.forEach((trace, index) => {
+                if (trace.legendgroup == legendGroup){
+                    tracesToDelete.push(index);
+                }
+            });
+            if(tracesToDelete.length < 1 )
+                return new Promise((resolve, reject) => {resolve();});
+
+            
+            return Plotly.deleteTraces(plotDiv, tracesToDelete);
+            
+            
+        }
+
+      function highlightInWellChartsSelectedWells(names, data, groupName){
+
+            if( names == undefined ) return;
+            let traceIndex = -1;
+            let markersAdded = 0;
+            let points = [];
+
+            for(let trace of data){
+                
+                console.log('checking one trace named ', trace.name);
+                traceIndex = traceIndex + 1;
+                let text = trace.text;
+                if(text == undefined) continue;
+
+                for( let name of names ){
+                    
+                    let index = text.indexOf(name);
+                    if( index !=-1 ) {
+                        console.log('found well name', name, 'in trace', traceIndex, ' point index', index, 'axes',trace.xaxis,trace.yaxis  ); 
+                        points.push( {x:trace.x[index], y:trace.y[index],text:trace.text[index],xaxis:trace.xaxis,yaxis:trace.yaxis} )
+                        markersAdded+=1;
+                    }
+                }
+            }
+
+            /*now lets create a new trace*/
+            let traceMap = {};
+            let counter = 0;
+            let showlegend = true;
+
+            for (let pt of points) {
+                let key = `${pt.xaxis}-${pt.yaxis}`;
+                if (!traceMap[key]) {
+
+                    showlegend =  counter == 0 ? true : false
+                    counter+=1;
+
+                    traceMap[key] = {
+                        x: [],
+                        y: [],
+                        text: [],
+                        marker:{
+                            size: highlighted_marker_size,
+                            color: highlighted_marker_color
+                        },
+                        xaxis: pt.xaxis,
+                        yaxis: pt.yaxis,
+                        mode: 'markers+text',
+                        type: 'scatter',
+                        name: groupName,
+                        legendgroup: groupName,
+                        showlegend: showlegend
+                    };
+                }
+                traceMap[key].x.push(pt.x);
+                traceMap[key].y.push(pt.y);
+                traceMap[key].text.push(pt.text);
+            }
+
+            // Convert grouped traces into an array
+            let traces = Object.values(traceMap);
+            console.log( 'tracess to add')
+            console.log( traces )
+
+            return Plotly.addTraces(plot, traces );//, plot.layout, plot.config);
+        }
+
+
+        console.log('**MAIN app: wells-names-selected-in-locs-chart', evt.detail);
+        
+        //can i highlight the wells in the wells selected in the charts in the locs chart? 
+        let plot = Id('sector-plot-wells');
+
+        if(plot!=undefined){
+        
+            let data = plot.data;
+            let names = evt.detail.names;
+            deleteTracesInLegendGroup(plot, 'Selected loc.'). then( ()=>{
+            if( (names!=undefined) && (names.length > 0) ){
+                highlightInWellChartsSelectedWells(names, data, 'Selected loc.');
+            }
+        });
+        }
+
+    })
+
+    window.addEventListener('well-name-selected', (evt)=>{
+        
+        showSampleDialog();
+
+    });
 
 
 </script>

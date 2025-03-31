@@ -71,15 +71,13 @@ function highlightWellsInLocationsChart( locs_container, names, key ){
                 Plotly.addTraces(locs_container, newTrace);
 }
 
-
-
-              
+            
 function populate_locations_plot( data ){
     let app_layout = Id('main-layout');
     let where = locations_chart_pane;
     let locs_container = app_layout.get_pane(where);// Id('locs-chart');
 
-    if(locs_chart_initialized == true){
+    if(2<1){ //if(locs_chart_initialized == true){
         let layout = locs_container.layout;
         Plotly.react(locs_container, data[key]['data'], layout )//, config )
         .then((p)=>{
@@ -111,9 +109,13 @@ function populate_locations_plot( data ){
 
         Plotly.react(locs_container, data[key]['data'], l, config )
         .then((p)=>{
+
+            console.log('-------------------Locations chart initialized---------------------');
             locs_chart_initialized = true;
             relayout( locs_container );
             set_selected_well_names( undefined );
+
+            
             p.on('plotly_selected', function(eventData) {
                 if (eventData) {
                     console.log("Selection type:", eventData.range ? "box" : "lasso");
@@ -134,6 +136,23 @@ function populate_locations_plot( data ){
                     set_selected_well_names( undefined );
                 }
             });
+
+            p.on('plotly_click', function(data){
+                const point = data.points[0];
+                //alert(`You clicked on (${point.lat}, ${point.lon}) well name is ${point.text}`);
+                console.log('Clicked point:', point);
+
+
+                window.dispatchEvent(new CustomEvent('well-name-selected', {
+                    detail: { name: point.text }
+                }));
+
+
+
+            });
+
+
+
             resizeObserver.observe(locs_container);
         }); 
     

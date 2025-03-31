@@ -106,12 +106,15 @@ function get_project_data_selection( ){
     let data = {}
     data['subzone'] = Id('reservoir-unit-selector').getValue();
     data['date']   = [Id('start-date').value, Id('end-date').value];
-    data['sector'] = Id('sector-selector').getCheckedItems();
+    data['sector'] = Id('sector-selector').getCheckedItems().map(str => parseInt(str));
+ 
 
     if(selected_well_names != undefined)
         data['name']   = selected_well_names
+    //else
+    //    data['name']   = all_well_names_visible;
     
-
+ 
     return data;
     /*.setData( data['reservoir_management_units']);          
     Id('sector-selector').setItems('Sector ', data['sectors'] );
@@ -211,17 +214,21 @@ function populate_field_wells_snapshot( data ){
     let plot = document.createElement('div');
     container.appendChild(plot);
     plot.id = 'sector-plot-wells';
+    plot.style.height = '1000px';
+    plot.style.width = '100%';
 
-    console.log('***************Data keys are**************');
+    /*console.log('***************Data keys are**************');
     for( let key in data){
         console.log(key);
-    }
+    }*/
 
 
     const layout = {
         grid: {rows: 3, columns: 1, pattern: 'independent'},
-        title: { text:' Volumes produced vs water production per well'},
-        margin: {l: 70, r: 40, t: 40, b: 30},
+        title: { text:' Volumes vs water produced'},
+        autosize: true,
+        automargin: true,
+        //margin: {l: 70, r: 40, t: 40, b: 30},
         xaxis1:  {matches: 'x'},
         xaxis2: {matches: 'x'},
         xaxis3: {matches: 'x'},
@@ -237,8 +244,8 @@ function populate_field_wells_snapshot( data ){
         /*
         xaxis2: { title:{text: 'Water production'}},
         xaxis3: { title:{text: 'Water production'}},*/
-        height: 1000,  width: 1000,
-        autosize: true,
+        //height: 1000,//  width: 1000,
+        autosize: true
         
     };
 
@@ -248,10 +255,11 @@ function populate_field_wells_snapshot( data ){
         //relayout( plot );
 
 
+
         p.on('plotly_selected', function(eventData) {
             if (eventData) {
-                console.log("---------Selection type:", eventData.range ? "box" : "lasso");
-                console.log("Selected data points:", eventData.points);
+                //console.log("---------Selection type:", eventData.range ? "box" : "lasso");
+                //console.log("Selected data points:", eventData.points);
 
                 let local_selected_well_names = [];
                 for( let point of eventData.points){

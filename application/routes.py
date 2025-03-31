@@ -104,7 +104,8 @@ class Storage:
                     'Watercut history match', 
                     'Static pattern flow balancing',
                     'Lagged correlation analysis',
-                    'Genetic optimization' 
+                    'Genetic optimization',
+                    'GenAI-powered analytics ' 
                     ]
         studies = ['Field scale', 'Demo 1', 'Lasso-sector ']
         reservoir_management_units = ['RMU 1', 'RMU 2', 'RMU 3']
@@ -127,7 +128,7 @@ class Storage:
 @app.route('/get_list_of_projects',methods=['GET'])
 def get_list_of_projects():
 
-    data = {'projects': ['Project 1', 'Project 2', 'Project 3'] }
+    data = {'projects': ['Demo real data 2 Reservoirs', 'Synthetic 1', 'Soyapour'] }
     return {'data':data }, 200 
   
   
@@ -192,6 +193,8 @@ def get_locations_chart():
     locs_fig  = get_dataset_locations_plot( crm_dataset )#, filters  )
     
     locs_charts = dict(locations = locs_fig)
+    all_names = crm_dataset.injector_names + crm_dataset.producer_names
+    locs_charts['all_names'] = all_names
     return jsonify( {'message':'Data loaded', 'data' : locs_charts }), 200   
     
 
@@ -250,6 +253,12 @@ def layout():
 def crm():
      return render_template('crm_setup_page0.html')
  
+@app.route('/well_detail_dialog')
+def well_detail_dialog():
+     return render_template('well_detail_dialog.html')
+ 
+ 
+ 
 @app.route('/get_crm_input_data', methods=['GET','POST'])
 def get_crm_input_data():
    
@@ -260,9 +269,11 @@ def get_crm_input_data():
         return rates 
     
    
+    
     filters = request.get_json()
-    filters['date'] = ['21-12-2022', '21-12-2024' ]
-    filters.update({'sector': [1,4,7],'subzone':'LW'})
+    #filters['date'] = ['21-12-2022', '21-12-2024' ]
+    #filters.update({'sector': [1,4,7],'subzone':'LW'})
+    
     print('Request for /get_crm_data received', filters)
     
     crm_dataset = Storage(None).get_dataset(filters)

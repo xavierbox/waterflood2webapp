@@ -127,7 +127,7 @@ def apply_dataset_filters( input_dataset:CRMDataset, filters: dict = None ) -> C
     return d 
 
 #producer summaries, the producer names are the column names
-def get_dataset_field_summary( input_dataset:CRMDataset, cummulative=False, filters: dict = None ):
+def OOBSOLETE_get_dataset_field_summary( input_dataset:CRMDataset, cummulative=False, filters: dict = None ):
     
     ''' 
     all optional 
@@ -202,66 +202,114 @@ def get_dataset_field_summary( input_dataset:CRMDataset, cummulative=False, filt
         {'dataset':d},{'pattern':p}
             
             
-            
+    
 def get_dataset_field_summary_plots(input_dataset:CRMDataset, cummulative = False, filters: dict = None ):
-#def get_dataset_summary_plots(active_wells, production_summary, injection_summary, fractions):
- 
- 
-    active_wells, production_summary, injection_summary, fractions, dataset, pattern = get_dataset_field_summary( input_dataset, cummulative=cummulative,  filters = filters )
-    
-    #historical aggregates 
-    layout = default_plotly_layout_python()
-    colors = ['blue','grey','brown','green'] + default_colors #['green','cyan','grey','orange','blue','red','purple','yellow','brown','pink']
-    data = [ {'fillcolor': {'color':'light'+colors[n]}, 'line': {'color':colors[n]},
-            'name':key.replace('_',' ').capitalize(), 
-            'type':'scatter','mode':'lines','opacity': 0.99915,#'fill':  'tonexty', #'tonexty',
-            'stackgroup':'Aggregated', 
-            'x':value.index.astype(str).values.tolist(), 
-            'y':value.values.tolist()} for n, (key, value) in  enumerate(production_summary.items()) ]
-    
-    #round 2 decimals the production history  
-    layout['title']['text'] = 'Stacked historical volumes' + (' (cummulative)' if cummulative else '')   
-    producers_fig = { 'data': data,'layout': copy.deepcopy(layout),'config':default_plotly_config_python()}   
-    #add the water as a line 
-    inj_data = {'name':'Water injection', 'type':'scatter','mode':'lines', 'line':{'color':'black','dash':'dot'}}
-    inj_data['x'] = injection_summary['water_injection'].index.astype(str).values.tolist()
-    inj_data['y'] = [ round(i,2) for i in injection_summary['water_injection'].values.tolist()]
-    producers_fig['data'].append( inj_data )
-    for d in producers_fig['data']:d['y'] = [ round(i,2) for i in d['y']]
-        
-    
-    #pie chart with the fractions the last day (cummulative if selected)
-    #water-oil-gas and liquid fractions
-    labels = [ x.replace('_',' ').capitalize() for x in list(fractions.keys()) ]
-    values = [round(i,2) for i in list(fractions.values())]
-    fractions_data = [ {'values': values, 'labels': labels, 'type':'pie','marker':{'colors':['blue','lightgrey','brown','green']}, 'hole':0.4, 'name':'Fractions'}]   
-    layout['title']['text'] = 'Volume fractions at present-day' + "" if not cummulative else " (cummulative)"
-    layout['legend'] =dict(
-        orientation='h',   # Set legend to horizontal
-        yanchor='bottom',
-        y=-0.2,            # Position below the plot
-        xanchor='center',
-        x=0.5              # Center the legend
-    )
-    fractions_fig = {'data': fractions_data, 
-                     'layout': copy.deepcopy(layout),
-                     'config':default_plotly_config_python(),
-                
-                     }
-    
-    
-    # a bar chart with the active wells
-    active_data = [ { 'name': key.replace('_',' ').capitalize(), 
-                     #'type':'bar',
-                     #'mode':'bar', \
-                     'x':value.index.astype(str).tolist(), 'y':value.values.tolist()}\
-                     for key, value in active_wells.items() ] 
-    layout=default_plotly_layout_python()
-    layout['title']['text'] = 'Active wells'
 
+
+    def fractions_plot( pattern, cummulative = False ):
+        liquid_production_summary = pattern.liquid_production.sum(axis=1)
+        water_production_summary  = pattern.water_production.sum(axis=1)
+        oil_production_summary    = pattern.oil_production.sum(axis=1)
+        gas_production_summary    = pattern.gas_production.sum(axis=1)
+        liquid_production_summary
         
-    active_fig = {'data': active_data, 'layout': copy.deepcopy(layout),'config':default_plotly_config_python() }
+        fractions_dfs = [water_production_summary, oil_production_summary,gas_production_summary]
+        fractions_labels = ['Water', 'Oil','Gas']
+        fractions_data   = []
+        sum_values = 1.0 
+        last_date = water_production_summary.index.max() 
+
+        for n, w in enumerate(fractions_dfs):
+            if cummulative:
+                w = w.cumsum(axis = 0 )  
+                
+            last_date_value = w.loc[ w.index.max() ]
+            fractions_data.append(last_date_value)
+            sum_values = sum_values + last_date_value 
+            last_date = max( last_date, w.index.max() )
+        for n in range( len(fractions_data )):
+            fractions_data[n] = round( fractions_data[n] / sum_values, 2 ) 
+        
+        x = 'cummulative' if cummulative == True else '' 
+        layout = copy.deepcopy( default_plotly_layout_python() )
+        layout['title']['text'] = f'Volume fractions {x} present-day ({last_date.strftime("%d-%m-%Y")})'
+        layout['legend']= {'orientation': 'h', 'yanchor': 'bottom', 'y': -0.2, 'xanchor': 'center', 'x': 0.5}
+        fig_dict  = {'data' : [ {'values':fractions_data,'labels':fractions_labels, 'type':'pie','hole':0.4, 'name':'Fractions',
+                                'marker': {'colors': ['blue', 'lightgrey', 'brown']}
+                                }
+                            ],
+                    'layout': layout,
+                    'config': default_plotly_config_python()}
+        
+        return fig_dict
+
+
+    def stacked_historical_production_plot( pattern, cummulative = False ):
+        p = pattern 
+        liquid_production_summary = p.liquid_production.sum(axis=1)
+        water_production_summary  = p.water_production.sum(axis=1)
+        oil_production_summary    = p.oil_production.sum(axis=1)
+        gas_production_summary    = p.gas_production.sum(axis=1)
+        water_injection = p.water_injection.sum(axis=1)
+        
+        if cummulative:
+            liquid_production_summary = liquid_production_summary.cumsum()
+            water_production_summary  = water_production_summary.cumsum()
+            oil_production_summary    = oil_production_summary.cumsum()
+            gas_production_summary    = gas_production_summary.cumsum()
+            water_injection           = water_injection.cumsum()
+            
+        production_summary = {'water_production':water_production_summary,   
+            'oil_production':oil_production_summary,   
+            'gas_production':gas_production_summary,
+            'liquid_production':liquid_production_summary, 
+            }
+        injection_summary = {'water_injection': water_injection}
+        
+        #historical aggregates 
+        colors = ['blue','grey','brown','green'] + default_colors
+        producers_data = [ {'fillcolor': {'color':'light'+colors[n]}, 'line': {'color':colors[n]},
+                'name':key.replace('_',' ').capitalize(), 
+                'type':'scatter','mode':'lines','opacity': 0.99915,#'fill':  'tonexty', #'tonexty',
+                'stackgroup':'Aggregated', 
+                'x':value.index.astype(str).values.tolist(), 
+                'y':value.values.tolist()} for n, (key, value) in  enumerate(production_summary.items()) ]
+        
+        inj_data = {'name':'Water injection', 'type':'scatter','mode':'lines', 'line':{'color':'black','dash':'dot'},
+                    'x' : injection_summary['water_injection'].index.astype(str).values.tolist(),
+                    'y' : [ round(i,2) for i in injection_summary['water_injection'].values.tolist()]
+                    }
+        
+        producers_data.append( inj_data )
+        
+        #round 2 decimals the production history  
+        layout['title']['text'] = 'Stacked historical volumes' + (' (cummulative)' if cummulative else '')   
+        producers_fig = { 'data': producers_data,'layout': copy.deepcopy(layout),'config':default_plotly_config_python()}   
+        for d in producers_fig['data']:d['y'] = [ round(i,2) for i in d['y']]
+    
+        return producers_fig
+    
+       
+    d= apply_dataset_filters( input_dataset, filters )
+    pattern = d.get_pattern(fix_time_gaps=True, fill_nan=0.0)
+    
+    #pie chart 
+    fractions_fig = fractions_plot( pattern, cummulative )
+   
+    #activity in time chart 
+    active_producers = pattern.liquid_production.gt( MIN_PRODUCTION_LEVEL).sum(axis=1)
+    active_injectors = pattern.water_injection.gt(MIN_UPTICK_INJECTOR).sum(axis=1)
+    active_wells = {'active_producers':active_producers, 'active_injectors':active_injectors}
+    active_data = [ { 'name': key.replace('_',' ').capitalize(), 'x':value.index.astype(str).tolist(), 'y':value.values.tolist()} for key, value in active_wells.items() ] 
+    layout = copy.deepcopy( default_plotly_layout_python())
+    layout['title']['text'] = 'Historical completion activity'
+    active_fig = {'data': active_data, 'layout': layout,'config':default_plotly_config_python() }
+    
+    #historical stacked 
+    producers_fig = stacked_historical_production_plot( pattern, cummulative )
+    
     return producers_fig, fractions_fig, active_fig 
+       
        
        
 def get_dataset_locations_plot( crm_dataset, filters: dict = None ):
@@ -305,12 +353,19 @@ def get_dataset_locations_plot( crm_dataset, filters: dict = None ):
         
    
     f = d.locations_df[ d.locations_df['NAME'].isin( d.injector_names )]
+    custom_data = ['Sector:' + str(s) for s in f[SECTOR_COL].values.tolist()]
+
     injectors_data = {
         'name':'Injectors','type':"scattermap", 'mode': 'markers+text',
         'text': f['NAME'].unique().tolist(),
+          'customdata': custom_data,
         'lat': f['LAT'].values.tolist(),
         'lon': f['LONG'].values.tolist(),
         'textposition':  'top center',  
+        'hovertemplate': 
+            '%{text}<br>' + 
+            '%{customdata}<extra></extra>',
+            
         'marker': {
             'size': 10,'color': 'blue', 
             #'symbol': 'triangle'
@@ -330,7 +385,7 @@ def get_dataset_locations_plot( crm_dataset, filters: dict = None ):
             'hoverlabel': {
                 'font': {
                     'size': 16,      
-                    'color': 'black'
+                    'color': 'grey'
                 }},
                 
             #'fitbounds':"locations",  
@@ -741,6 +796,7 @@ def get_field_wells_snapshot( crm_dataset, filters = None ):
             'height': 800, 
             'grid': {'rows': 3, 'columns': 1, 'pattern': 'independent'},
             'autosize': True,
+            'automargin': True,
             #'margin': {'l': 50, 'r': 10, 't': 10, 'b': 10},
             'xaxis':  {'matches': 'x'},
             'xaxis2': {'matches': 'x'},
