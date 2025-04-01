@@ -349,7 +349,9 @@
         layout.set('left-bottom',Id('side-bar-bottom'));
         layout.set('right-top',Id('top-right-pagination'));
      
-
+        Id('data-tab1').click()
+        Id('field-tab-button').click()
+        
         iurl = 'get_list_of_projects';
         get_server(iurl, 'GET' )
             .then( (resp) =>{
@@ -369,6 +371,9 @@
     //document.querySelector('.projects-component-button btn btn-primary').click();
 
     }
+
+
+
     
     function load_project( project_name){
     
