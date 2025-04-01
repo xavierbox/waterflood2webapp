@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Simulation Dashboard</title>
+  <script src='https://cdn.plot.ly/plotly-3.0.0.min.js'></script>
+   
+
+
+  <style>
+.button-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+  gap: 4px;
+  margin-top: 1px;
+}
+.fit-button {
+  height: 30px;
+  width: 70px;
+  min-width: 70px;
+  max-width: 70px;
+  
+  border: none;
+  color: white;
+  xxfont-weight: bold;
+  border-radius: 4px;
+  cursor: default;
+}
+.fit-good { background-color: #4caf50; }
+.fit-medium { background-color: #ff9800; }
+.fit-poor { background-color: #f44336; }
+
+
+    .sim-results-component-top-bar {
+      display: flex;
+      justify-content: flex-start;
+      align-items: flex-start;
+      xxpadding: 10px 20px;
+      xxbackground-color: #f0f4f8;
+      border-bottom: 1px solid #ccc;
+      gap: 40px;
+      flex-wrap: nowrap; /* force horizontal layout */
+    }
+  
+    .sim-results-component-top-left {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+  
+    .sim-results-component-top-right {
+      display: flex;
+      flex-direction: column;
+    }
+  
+  
+  
+    #sim-results-component-fit-box {
+      width: 200px;
+      height: 50px;
+      border: 1px solid #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      xxfont-weight: bold;
+      color: white;
+      margin-top: 5px;
+    }
+  
+    .sim-results-component-pagination {
+      display: flex;
+      gap: 10px;
+      padding-top: 10px;
+      padding-bottom: 10px;
+      xxbackground-color: #fff8e1;
+      xxborder-bottom: 1px solid #ddd;
+    }
+  
+    .xxsim-results-component-pagination button {
+      padding: 8px 12px;
+      border: none;
+      background-color: #ccc;
+      cursor: pointer;
+      xxfont-weight: bold;
+      border-radius: 4px;
+    }
+  
+    .sim-results-component-pagination button.active {
+      background-color: #444;
+      color: white;
+    }
+  
+    .xxsim-results-component-main {
+      flex-grow: 1;
+      xxbackground-color: #fff8e1;
+      ddpadding: 20px;
+      box-sizing: border-box;
+    }
+  
+    .sim-results-component-page-content {
+      display: none;
+    }
+  
+    .sim-results-component-page-content.active {
+      display: block;
+    }
+  
+    .sim-results-component-well-support-container {
+      display: flex;
+      flex-direction: row; /* force horizontal layout always */
+      gap: 20px;
+      align-items: flex-start;
+    }
+ 
+  
+    .sim-results-component-well-list ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+  
+    .sim-results-component-well-list li {
+      margin: 4px 0;
+    }
+  
+    .xxsim-results-component-sim-results-component-well-tabs {
+      display: flex;
+      gap: 10px;
+      xxmargin-bottom: 10px;
+    }
+  
+    .xxsim-results-component-well-tab {
+      padding: 4px 8px;
+      border: none;
+      background-color: #cfdde5;
+      cursor: pointer;
+      xxfont-weight: bold;
+      border-radius: 4px;
+    }
+  
+    .xxsim-results-component-well-tab.active {
+      background-color: #007acc;
+      color: white;
+    }
+  
+    .sim-results-component-well-tab-content {
+      display: none;
+    }
+  
+    .sim-results-component-well-tab-content.active {
+      display: block;
+    }
+  
+ 
+  
+    #sim-results-component-fit-table td {
+      text-align: center;
+      xxfont-weight: bold;
+      color: white;
+      padding: 5px;
+      border: 1px solid #ccc;
+      xxborder-radius: 6px;
+      xxheight: 30px;
+      xxfont-size: 14px; /* optional: ensure it's readable */
+    }
+  
+    .fit-good {
+      background-color: #056308;
+    }
+  
+    .fit-medium {
+      background-color: #ff9800;
+    }
+  
+    .fit-poor {
+      background-color: #f44336;
+    }
+  
+    /* Plots full width and responsive */
+    .xxsim-results-component-plot-container {
+      width: 100%;
+      height: 100%;
+      min-height: 650px;
+      max-height: 100vh;
+    }
+  
+    @media (max-width: 768px) {
+      .sim-results-component-top-bar {
+        flex-direction: row; /* keep horizontal */
+        flex-wrap: nowrap;
+      }
+  
+      .sim-results-component-well-support-container {
+        flex-direction: row; /* force side-by-side */
+      }
+    }
+  </style>
+
+<script>
+    class CustomHTML extends HTMLElement {
+
+        _crmpData
+         //_lastSankeyData = null;
+         //_lastSankeyLayout = null;
+
+         lastWellSelected;// = { name: null, type: null };
+
+        /*
+        const sampleData = {
+  case_name: "TestModel1",
+  data: [
+    { INJECTOR: "I01", PRODUCER: "P1", ALLOCATION: 0.992909593, TAU: 0.349081711, TAUP: 49.99999996, PRODUCTIVITY: 0, Lo: 0, MODEL: "CRMP", R2: 0.991063231, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
+    { INJECTOR: "I02", PRODUCER: "P1", ALLOCATION: 0.474019881, TAU: 0.349081711, TAUP: 49.99999996, PRODUCTIVITY: 0, Lo: 0, MODEL: "CRMP", R2: 0.991063231, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
+    { INJECTOR: "I03", PRODUCER: "P1", ALLOCATION: 0.089225377, TAU: 0.349081711, TAUP: 49.99999996, PRODUCTIVITY: 0, Lo: 0, MODEL: "CRMP", R2: 0.991063231, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
+    { INJECTOR: "I04", PRODUCER: "P1", ALLOCATION: 0.217863424, TAU: 0.349081711, TAUP: 49.99999996, PRODUCTIVITY: 0, Lo: 0, MODEL: "CRMP", R2: 0.991063231, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
+    { INJECTOR: "I05", PRODUCER: "P1", ALLOCATION: 0.088541907, TAU: 0.349081711, TAUP: 49.99999996, PRODUCTIVITY: 0, Lo: 0, MODEL: "CRMP", R2: 0.991063231, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
+    { INJECTOR: "I01", PRODUCER: "P2", ALLOCATION: 0.013931884, TAU: 29.33999056, TAUP: 50, PRODUCTIVITY: 0, Lo: 0.959811962, MODEL: "CRMP", R2: 0.937868466, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
+    { INJECTOR: "I02", PRODUCER: "P2", ALLOCATION: 0, TAU: 29.33999056, TAUP: 50, PRODUCTIVITY: 0, Lo: 0.959811962, MODEL: "CRMP", R2: 0.937868466, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
+    { INJECTOR: "I03", PRODUCER: "P2", ALLOCATION: 0, TAU: 29.33999056, TAUP: 50, PRODUCTIVITY: 0, Lo: 0.959811962, MODEL: "CRMP", R2: 0.937868466, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
+    { INJECTOR: "I04", PRODUCER: "P2", ALLOCATION: 0.099183015, TAU: 29.33999056, TAUP: 50, PRODUCTIVITY: 0, Lo: 0.959811962, MODEL: "CRMP", R2: 0.937868466, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
+    { INJECTOR: "I05", PRODUCER: "P2", ALLOCATION: 0.102164928, TAU: 29.33999056, TAUP: 50, PRODUCTIVITY: 0, Lo: 0.959811962, MODEL: "CRMP", R2: 0.937868466, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" }
+    // ... add the rest of the rows similarly
+  ]
+};*/
+
+  connectedCallback() {
+    this._lastWellSelected = { name: null, type: null };
+    this.render();
+
+    this.connectEvents()
+
+  }
+
+      // Sankey Diagram
+    drawSankey() {
+      const data = {
+        type: "sankey",
+        orientation: "h",
+        node: {
+          pad: 15,
+          thickness: 20,
+          line: { color: "black", width: 0.5 },
+          label: ["Injector A", "Injector B", "Producer X", "Producer Y"],
+          color: ["blue", "blue", "green", "green"]
+        },
+        link: {
+          source: [0, 1, 0, 1],
+          target: [2, 2, 3, 3],
+          value: [5, 2, 3, 4]
+        }
+      };
+  
+      Plotly.react("sankey-diagram", [data], {
+  margin: { l:0, r: 0, t: 20, b: 20 },
+  autosize: true,
+  //height: 600, 
+  responsive: true
+}, {responsive: true});
+    }
+  
+    // Line Chart
+   drawLineChart() {
+      const x = Array.from({ length: 50 }, (_, i) => i);
+      const series = Array.from({ length: 5 }, (_, i) => ({
+        x,
+        y: x.map((xi) => Math.sin(xi / 5 + i)),
+        mode: "lines",
+        name: `Series ${i + 1}`
+      }));
+  
+      Plotly.react("history-match-chart", series, {
+  title: "History Match Chart",
+  legend: { orientation: "v" }, // vertical legend
+  margin: { t: 40 },
+  autosize: true,
+  responsive: true
+}, {responsive: true});
+
+    }
+    
+    drawSankeyInjector(injectorName) {
+  const data = this._crmpData;
+
+  const rows = data.filter(row => row.INJECTOR === injectorName && row.ALLOCATION > 0);
+  const producers = [...new Set(rows.map(r => r.PRODUCER))];
+
+  const nodeLabels = [injectorName, ...producers];
+  const sourceIndex = 0;
+  const sourceIndices = rows.map(_ => sourceIndex);
+  const targetIndices = rows.map(r => producers.indexOf(r.PRODUCER) + 1); // offset by 1
+  const values = rows.map(r => r.ALLOCATION);
+
+  const sankeyData = {
+    type: "sankey",
+    orientation: "h",
+    node: {
+      pad: 15,
+      thickness: 20,
+      line: { color: "black", width: 0.5 },
+      label: nodeLabels,
+      color: [
+        "blue",
+        ...Array(producers.length).fill("green")
+      ]
+    },
+    link: {
+      source: sourceIndices,
+      target: targetIndices,
+      value: values,
+      label: values.map(v => `Allocation: ${v.toFixed(3)}`)
+    }
+  };
+
+  Plotly.react("sankey-diagram", [sankeyData], {
+    margin: { t: 20, b: 20 },
+    autosize: true,
+    responsive: true,
+    legend: { orientation: "v" },
+    title: `Connections from ${injectorName}`
+  });
+}
+
+drawSankeyInjectorWithContext(injectorName) {
+  const data = this._crmpData;
+
+  // Step 1: Get all producers connected to selected injector
+  const directLinks = data.filter(row =>
+    row.INJECTOR === injectorName && row.ALLOCATION > 0
+  );
+  const producers = [...new Set(directLinks.map(r => r.PRODUCER))];
+
+  // Step 2: Get all other injectors connected to those producers (excluding selected injector)
+  const secondLinks = data.filter(row =>
+    producers.includes(row.PRODUCER) &&
+    row.INJECTOR !== injectorName &&
+    row.ALLOCATION > 0
+  );
+
+  const otherInjectors = [...new Set(secondLinks.map(r => r.INJECTOR))];
+
+  // Create node labels: [selected injector], producers, other injectors
+  const nodeLabels = [injectorName, ...producers, ...otherInjectors];
+
+  // Utility to get index in node list
+  const indexOf = label => nodeLabels.indexOf(label);
+
+  // Step 3: Build first layer links: injector → producer
+  const links1 = directLinks.map(row => ({
+    source: indexOf(injectorName),
+    target: indexOf(row.PRODUCER),
+    value: row.ALLOCATION,
+    label: `Alloc: ${row.ALLOCATION.toFixed(3)}`
+  }));
+
+  // Step 4: Build second layer links: producer → other injectors
+  const links2 = secondLinks.map(row => ({
+    source: indexOf(row.PRODUCER),
+    target: indexOf(row.INJECTOR),
+    value: row.ALLOCATION,
+    label: `Alloc: ${row.ALLOCATION.toFixed(3)}`
+  }));
+
+  const allLinks = [...links1, ...links2];
+
+  // Sankey plot data
+  const sankeyData = {
+    type: "sankey",
+    orientation: "h",
+    node: {
+      pad: 15,
+      thickness: 20,
+      line: { color: "black", width: 0.5 },
+      label: nodeLabels,
+      color: nodeLabels.map(label =>
+        label === injectorName
+          ? "blue"
+          : producers.includes(label)
+          ? "green"
+          : "orange"
+      )
+    },
+    link: {
+      source: allLinks.map(l => l.source),
+      target: allLinks.map(l => l.target),
+      value: allLinks.map(l => l.value),
+      label: allLinks.map(l => l.label)
+    }
+  };
+
+  Plotly.react("sankey-diagram", [sankeyData], {
+    margin: { t: 20, b: 20 },
+    autosize: true,
+    responsive: true,
+    title: `Injector ${injectorName} → Producers → Connected Injectors`,
+    legend: { orientation: "v" }
+  });
+
+  //this._lastSankeyData = sankeyData;
+  //this._lastSankeyLayout = layout;
+
+}
+
+no_locs_drawSankeyProducerWithContext(producerName) {
+  const data = this._crmpData;
+
+  // Step 1: Find all injectors connected to the selected producer
+  const incoming = data.filter(row =>
+    row.PRODUCER === producerName && row.ALLOCATION > 0
+  );
+  const injectors = [...new Set(incoming.map(r => r.INJECTOR))];
+
+  // Step 2: For each of those injectors, find other producers they connect to
+  const outgoing = data.filter(row =>
+    injectors.includes(row.INJECTOR) &&
+    row.PRODUCER !== producerName &&
+    row.ALLOCATION > 0
+  );
+
+  const otherProducers = [...new Set(outgoing.map(r => r.PRODUCER))];
+
+  // Step 3: Build full node list
+  const nodeLabels = [...injectors, producerName, ...otherProducers];
+  const indexOf = label => nodeLabels.indexOf(label);
+
+  // Step 4: Build links
+  const links1 = incoming.map(row => ({
+    source: indexOf(row.INJECTOR),
+    target: indexOf(producerName),
+    value: row.ALLOCATION,
+    label: `Alloc: ${row.ALLOCATION.toFixed(3)}`
+  }));
+
+  const links2 = outgoing.map(row => ({
+    source: indexOf(row.INJECTOR),
+    target: indexOf(row.PRODUCER),
+    value: row.ALLOCATION,
+    label: `Alloc: ${row.ALLOCATION.toFixed(3)}`
+  }));
+
+  const allLinks = [...links1, ...links2];
+
+  // Sankey diagram
+  const sankeyData = {
+    type: "sankey",
+    orientation: "h",
+    node: {
+      pad: 15,
+      thickness: 20,
+      line: { color: "black", width: 0.5 },
+      label: nodeLabels,
+      color: nodeLabels.map(label => {
+        if (label === producerName) return "green";
+        if (injectors.includes(label)) return "blue";
+        return "orange"; // other producers
+      })
+    },
+    link: {
+      source: allLinks.map(l => l.source),
+      target: allLinks.map(l => l.target),
+      value: allLinks.map(l => l.value),
+      label: allLinks.map(l => l.label)
+    }
+  };
+
+  Plotly.react("sankey-diagram", [sankeyData], {
+    margin: { t: 20, b: 20 },
+    autosize: true,
+    responsive: true,
+    title: `Injectors → ${producerName} → Other Producers`,
+    legend: { orientation: "v" }
+  });
+}
+
+drawSankeyProducerWithContext(producerName) {
+  const data = this._crmpData;
+
+  // Step 1: Find injectors connected to selected producer
+  const incoming = data.filter(row =>
+    row.PRODUCER === producerName && row.ALLOCATION > 0
+  );
+  const injectors = [...new Set(incoming.map(r => r.INJECTOR))];
+
+  // Step 2: Find other producers connected to those injectors
+  const outgoing = data.filter(row =>
+    injectors.includes(row.INJECTOR) &&
+    row.PRODUCER !== producerName &&
+    row.ALLOCATION > 0
+  );
+  const otherProducers = [...new Set(outgoing.map(r => r.PRODUCER))];
+
+  // Step 3: Build full node list: [other producers, injectors, selected producer]
+  const nodeLabels = [...otherProducers, ...injectors, producerName];
+  const indexOf = label => nodeLabels.indexOf(label);
+
+  const links1 = incoming.map(row => ({
+    source: indexOf(row.INJECTOR),
+    target: indexOf(producerName),
+    value: row.ALLOCATION,
+    label: `Alloc: ${row.ALLOCATION.toFixed(3)}`
+  }));
+
+  const links2 = outgoing.map(row => ({
+    source: indexOf(row.PRODUCER),
+    target: indexOf(row.INJECTOR),
+    value: row.ALLOCATION,
+    label: `Alloc: ${row.ALLOCATION.toFixed(3)}`
+  }));
+
+  const allLinks = [...links2, ...links1];
+
+  // Step 4: Assign fixed horizontal positions (x)
+  const x = nodeLabels.map(label => {
+    if (label === producerName) return 0.9; // far right
+    if (injectors.includes(label)) return 0.5; // middle
+    return 0.1; // left for other producers
+  });
+
+  const sankeyData = {
+    type: "sankey",
+    orientation: "h",
+    node: {
+      pad: 15,
+      thickness: 20,
+      line: { color: "black", width: 0.5 },
+      label: nodeLabels,
+      color: nodeLabels.map(label => {
+        if (label === producerName) return "green";
+        if (injectors.includes(label)) return "blue";
+        return "orange";
+      }),
+      x: x
+    },
+    link: {
+      source: allLinks.map(l => l.source),
+      target: allLinks.map(l => l.target),
+      value: allLinks.map(l => l.value),
+      label: allLinks.map(l => l.label)
+    }
+  };
+
+  Plotly.react("sankey-diagram", [sankeyData], {
+    margin: { t: 20, b: 20 },
+    autosize: true,
+    responsive: true,
+    title: `Other Producers → Injectors → ${producerName}`,
+    legend: { orientation: "v" }
+  });
+
+  //this._lastSankeyData = sankeyData;
+  //this._lastSankeyLayout = layout;
+
+}
+
+
+    drawSankey2(producerName) {
+  const data = this._crmpData;
+
+  const rows = data.filter(row => row.PRODUCER === producerName && row.ALLOCATION > 0);
+  const injectors = [...new Set(rows.map(r => r.INJECTOR))];
+
+  const nodeLabels = [...injectors, producerName];
+  const sourceIndices = rows.map(r => injectors.indexOf(r.INJECTOR));
+  const targetIndex = injectors.length; // producer is last node
+  const targets = rows.map(_ => targetIndex);
+  const values = rows.map(r => r.ALLOCATION);
+
+  console.log("Sankey Data:", {
+    sourceIndices,
+    targets,
+    values
+  });
+
+
+  const sankeyData = {
+    type: "sankey",
+    orientation: "h",
+    node: {
+      pad: 15,
+      thickness: 20,
+      line: { color: "black", width: 0.5 },
+      label: nodeLabels,
+      color: [
+        ...Array(injectors.length).fill("blue"),
+        "red"  // producer
+      ]
+    },
+    link: {
+      source: sourceIndices,
+      target: targets,
+      value: values,
+      label: values.map(v => `Alloc: ${v.toFixed(3)}`) 
+    }
+  };
+
+  /*const annotations = values.map((val, i) => ({
+  x: 0.5, // approximate center horizontally
+  y: 1 - (i + 1) / (values.length + 1), // stagger vertically
+  text: val.toFixed(3),
+  showarrow: false,
+  font: { color: 'black', size: 12 },
+  align: 'center',
+  }));*/
+
+  Plotly.react("sankey-diagram", [sankeyData], {
+    margin: { t: 20, b: 20 },
+    autosize: true,
+    responsive: true,
+    legend: { orientation: "v" },
+    title: `Connections to ${producerName}`,
+    //annotations: annotations // 
+  });
+}
+
+
+  connectEvents(){
+   // sim-results-component-main tab switching
+    const buttons = document.querySelectorAll(".tab-button");
+    const pages = document.querySelectorAll(".sim-results-component-page-content");
+  
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        buttons.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+  
+        pages.forEach((p) => p.classList.remove("active"));
+        const target = document.getElementById(btn.dataset.target);
+        target.classList.add("active");
+  
+        
+        if (btn.dataset.target === "page1") {
+  const { name, type } = this._lastWellSelected || {};
+  if (name && type === "injector") {
+    this.drawSankeyInjectorWithContext(name);
+  } else if (name && type === "producer") {
+    this.drawSankeyProducerWithContext(name);
+  } else {
+    this.drawSankey(); // default overview
+  }
+}
+        
+        if (btn.dataset.target === "page2") {;}
+        
+        //this.drawLineChart();
+        //if (btn.dataset.target === "page0") populateFitTable();
+        
+      });
+    });
+  
+    // Well tab toggle
+    document.querySelectorAll(".sim-results-component-well-tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".sim-results-component-well-tab").forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+  
+        document.querySelectorAll(".sim-results-component-well-tab-content").forEach(c => c.classList.remove("active"));
+        document.getElementById(tab.dataset.target).classList.add("active");
+      });
+    });
+
+  }
+
+  render() {
+    this.innerHTML = `
+   <div class>
+    <!-- Top Bar -->
+    <div class="sim-results-component-top-bar">
+      <div class="sim-results-component-top-left">
+        <div>
+          <label><strong>Simulation Case</strong></label><br />
+          <span id="case-name">Loading...</span>
+        </div>
+        <div>
+          <label><strong>Overall fit quality</strong></label>
+          <div id="sim-results-component-fit-box">Loading...</div>
+        </div>
+      </div>
+
+      <div class="sim-results-component-top-right">
+        <strong>Show in map</strong>
+        <label><input type="checkbox" id="individual_fit" /> Individual fit quality</label>
+        <label><input type="checkbox" id="connectivity" /> Connectivity</label>
+        <label><input type="checkbox" id="recommendation" /> Recommendation</label>
+      </div>
+    </div>
+
+    <!-- sim-results-component-pagination Row -->
+    <div class="sim-results-component-pagination">
+      <button class="tab-button active" data-target="page0">Well-fit quality</button>
+      <button class="tab-button" data-target="page2">AnotherOne</button>
+      <button class="tab-button" data-target="page1">Well-support Details</button>
+      <button class="tab-button" data-target="page3">AnotherTwo</button>
+    </div>
+
+    <!-- sim-results-component-main Page Content -->
+    <div class="sim-results-component-main">
+<!-- Well-fit quality tab -->
+<div id="page0" class="sim-results-component-page-content active">
+  <div class="button-grid" id="sim-results-component-button-grid"></div>
+  <div id="sim-results-component-bar-chart" style="width: 100%; height: 400px;"></div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+      <!-- Well-support Details -->
+      <div id="page1" class="sim-results-component-page-content">
+        <!-- h3>Well-support Details</h3 -->
+        <div class="sim-results-component-well-support-container">
+          <div class="sim-results-component-well-list">
+            <div class="sim-results-component-sim-results-component-well-tabs">
+              <button class="sim-results-component-well-tab active" data-target="injector-list">Injectors</button>
+              <button class="sim-results-component-well-tab" data-target="producer-list">Producers</button>
+            </div>
+            <div id="injector-list" class="sim-results-component-well-tab-content active">
+              <ul>
+                <li>Injector A</li>
+                <li>Injector B</li>
+                <li>Injector C</li>
+              </ul>
+            </div>
+            <div id="producer-list" class="sim-results-component-well-tab-content">
+              <ul>
+                <li>Producer X</li>
+                <li>Producer Y</li>
+                <li>Producer Z</li>
+              </ul>
+            </div>
+          </div>
+          <div id="sankey-diagram" style="flex: 1; min-width: 300px; height: 400px;"></div>
+        </div>
+      </div>
+
+      <!-- AnotherOne -->
+      <div id="page2" class="sim-results-component-page-content">
+        <!-- h2>AnotherOne</h2 -->
+        <div style="margin-bottom: 10px;">
+          <input type="radio" id="liquid" name="match" checked />
+          <label for="liquid">Liquid history match</label>
+          <input type="radio" id="watercut" name="match" style="margin-left: 20px;" />
+          <label for="watercut">Watercut history match</label>
+        </div>
+        <div id="history-match-chart" style="width: 100%; height: 400px;"></div>
+      </div>
+
+      <!-- AnotherTwo -->
+      <div id="page3" class="sim-results-component-page-content">
+        <!-- h2>AnotherTwo</h2 -->
+        <p>This is the content for AnotherTwo.</p>
+      </div>
+    </div>
+  </div>
+    `;
+
+    // After injecting HTML, initialize script-based behavior:
+    this.setup();
+  }
+
+  setup() {
+    // Re-run all JavaScript logic (same as from your original <script>)
+    // For example:
+    document.getElementById("case-name").textContent = "Case_1234";
+    // Add all other logic here (or modularize it externally and call it)
+  }
+
+  //api 
+  setData({ case_name, data }) {
+    
+  this._crmpData = data;
+  this.drawLineChart();
+
+  // Set case name
+  this.querySelector("#case-name").textContent = case_name;
+
+  // Convert raw data into a Map structure
+  const df = data;
+
+  const r2Values = df.map(row => row.R2);
+  const avgR2 = r2Values.reduce((a, b) => a + b, 0) / r2Values.length;
+
+  // Determine overall fit quality
+  let overallQuality = "Unknown";
+  if (avgR2 < 0.6) overallQuality = "poor";
+  else if (avgR2 < 0.8) overallQuality = "medium";
+  else overallQuality = "good";
+  const qualityBox = this.querySelector("#sim-results-component-fit-box");
+  const qualityMap = {
+    poor: { bg: "red", label: "Poor" },
+    medium: { bg: "orange", label: "Medium" },
+    good: { bg: "green", label: "Good" }
+  };
+
+  const q = qualityMap[overallQuality];
+  qualityBox.style.backgroundColor = q.bg;
+  qualityBox.textContent = q.label;
+
+  // List of unique producers and injectors
+  const producers = [...new Set(df.map(row => row.PRODUCER))];
+  const injectors = [...new Set(df.map(row => row.INJECTOR))];
+
+  console.log( "Producers:", producers);
+  console.log( "Injectors:", injectors);
+  console.log( "DataFrame:", df);
+
+ 
+  // Compute fit quality for each producer
+// Compute fit quality for each producer
+const producerMap = {};
+producers.forEach(p => {
+  const pRows = df.filter(row => row.PRODUCER === p);
+  const avg = pRows.reduce((sum, r) => sum + r.R2, 0) / pRows.length;
+  let fit = "poor";
+  if (avg >= 0.8) fit = "good";
+  else if (avg >= 0.6) fit = "medium";
+  producerMap[p] = fit;
+});
+
+// Define producerNames array here
+const producerNames = Object.keys(producerMap);
+
+// Render fit buttons
+const buttonGrid = this.querySelector("#sim-results-component-button-grid");
+buttonGrid.innerHTML = "";
+producerNames.forEach(name => {
+  const btn = document.createElement("button");
+  const quality = producerMap[name];
+  btn.className = `fit-button fit-${quality}`;
+  btn.textContent = name;
+  buttonGrid.appendChild(btn);
+});
+
+// Bar chart
+const counts = {
+  good: producerNames.filter(p => producerMap[p] === 'good').length,
+  medium: producerNames.filter(p => producerMap[p] === 'medium').length,
+  poor: producerNames.filter(p => producerMap[p] === 'poor').length
+};
+
+Plotly.newPlot('sim-results-component-bar-chart', [{
+  x: ['Good', 'Medium', 'Poor'],
+  y: [counts.good, counts.medium, counts.poor],
+  type: 'bar',
+  marker: {
+    color: ['#4caf50', '#ff9800', '#f44336']
+  },
+  text: [counts.good, counts.medium, counts.poor],
+  textposition: 'auto'
+}], {
+  title: {'text':'Fit Quality Distribution'},
+  yaxis: { title: 'Number of Wells' },
+  autosize:true,automargin:true,
+  x:{ automargin:true},  yaxis: {
+  title: {
+    text: 'Count',
+    font: {
+      size: 14
+    }
+  }
+},
+
+  responsive: true
+}, {responsive: true});
+
+
+
+
+
+
+
+
+
+
+
+
+  /*const tableBody = this.querySelector("#sim-results-component-fit-table tbody");
+  tableBody.innerHTML = "";
+
+  const producerNames = Object.keys(producerMap);
+  for (let i = 0; i < producerNames.length; i += 3) {
+    const row = document.createElement("tr");
+    for (let j = 0; j < 3; j++) {
+      const p = producerNames[i + j];
+      const cell = document.createElement("td");
+      if (p) {
+        const quality = producerMap[p];
+        cell.className = `fit-${quality}`;
+        cell.textContent = p;
+      }
+      row.appendChild(cell);
+    }
+    tableBody.appendChild(row);
+  }*/
+
+  // Update Well-support injector/producer lists
+
+  const injectorList = this.querySelector("#injector-list ul");
+  const producerList = this.querySelector("#producer-list ul");
+  injectorList.innerHTML = "";
+  producerList.innerHTML = "";
+
+  injectors.forEach(inj => {
+  const li = document.createElement("li");
+  li.textContent = inj;
+  li.style.cursor = "pointer";
+  li.addEventListener("click", () => {
+    //this.drawSankeyInjector(inj);
+    this._lastWellSelected = { name: inj, type: "injector" };
+    this.drawSankeyInjectorWithContext(inj);
+
+
+  });
+  injectorList.appendChild(li);
+});
+
+  producers.forEach(p => {
+    const li = document.createElement("li");
+    li.textContent = p;
+    li.style.cursor = "pointer";
+    li.addEventListener("click", () => {
+    //this.drawSankey2(p);
+    this.drawSankeyProducerWithContext(p);
+    this._lastWellSelected = { name: p, type: "producer" };
+
+    });
+
+    producerList.appendChild(li);
+    });
+}
+
+
+}
+
+customElements.define("custom-html", CustomHTML);
+</script> 
+</head>
+<body>
+
+
+    <custom-html ></custom-html>
+
+<script>
+const sampleData = {
+  case_name: "TestModel1",
+  data: [
+    { INJECTOR: "I01", PRODUCER: "P1", ALLOCATION: 0.992909593, TAU: 0.349081711, TAUP: 49.99999996, PRODUCTIVITY: 0, Lo: 0, MODEL: "CRMP", R2: 0.991063231, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
+    { INJECTOR: "I02", PRODUCER: "P1", ALLOCATION: 0.474019881, TAU: 0.349081711, TAUP: 49.99999996, PRODUCTIVITY: 0, Lo: 0, MODEL: "CRMP", R2: 0.991063231, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
+    { INJECTOR: "I03", PRODUCER: "P1", ALLOCATION: 0.089225377, TAU: 0.349081711, TAUP: 49.99999996, PRODUCTIVITY: 0, Lo: 0, MODEL: "CRMP", R2: 0.991063231, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
+    { INJECTOR: "I04", PRODUCER: "P1", ALLOCATION: 0.217863424, TAU: 0.349081711, TAUP: 49.99999996, PRODUCTIVITY: 0, Lo: 0, MODEL: "CRMP", R2: 0.991063231, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
+    { INJECTOR: "I05", PRODUCER: "P1", ALLOCATION: 0.088541907, TAU: 0.349081711, TAUP: 49.99999996, PRODUCTIVITY: 0, Lo: 0, MODEL: "CRMP", R2: 0.991063231, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
+    { INJECTOR: "I01", PRODUCER: "P2", ALLOCATION: 0.013931884, TAU: 29.33999056, TAUP: 50, PRODUCTIVITY: 0, Lo: 0.959811962, MODEL: "CRMP", R2: 0.937868466, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
+    { INJECTOR: "I02", PRODUCER: "P2", ALLOCATION: 0, TAU: 29.33999056, TAUP: 50, PRODUCTIVITY: 0, Lo: 0.959811962, MODEL: "CRMP", R2: 0.937868466, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
+    { INJECTOR: "I03", PRODUCER: "P2", ALLOCATION: 0, TAU: 29.33999056, TAUP: 50, PRODUCTIVITY: 0, Lo: 0.959811962, MODEL: "CRMP", R2: 0.937868466, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
+    { INJECTOR: "I04", PRODUCER: "P2", ALLOCATION: 0.099183015, TAU: 29.33999056, TAUP: 50, PRODUCTIVITY: 0, Lo: 0.959811962, MODEL: "CRMP", R2: 0.937868466, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
+    { INJECTOR: "I05", PRODUCER: "P2", ALLOCATION: 0.102164928, TAU: 29.33999056, TAUP: 50, PRODUCTIVITY: 0, Lo: 0.959811962, MODEL: "CRMP", R2: 0.937868466, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" }
+    // ... add the rest of the rows similarly
+  ]
+};
+
+const component = document.getElementsByTagName("custom-html")[0];
+  component.setData(sampleData);
+
+
+</script>
+
+
+
+</body>
+</html>
+
+  <!-- script>
+    // Set simulation case and overall fit quality
+    const case_name = "Case_1234";
+    const fit_quality = "medium";
+    document.getElementById("case-name").textContent = case_name;
+  
+    const fitBox = document.getElementById("sim-results-component-fit-box");
+    const qualityStyles = {
+      poor: { bg: "red", text: "Poor" },
+      medium: { bg: "orange", text: "Medium" },
+      good: { bg: "green", text: "Good" }
+    };
+    const quality = qualityStyles[fit_quality.toLowerCase()] || { bg: "gray", text: "Unknown" };
+    fitBox.style.backgroundColor = quality.bg;
+    fitBox.textContent = quality.text;
+  
+    // sim-results-component-main tab switching
+    const buttons = document.querySelectorAll(".tab-button");
+    const pages = document.querySelectorAll(".sim-results-component-page-content");
+  
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        buttons.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+  
+        pages.forEach((p) => p.classList.remove("active"));
+        const target = document.getElementById(btn.dataset.target);
+        target.classList.add("active");
+  
+        if (btn.dataset.target === "page1") drawSankey();
+        if (btn.dataset.target === "page2") drawLineChart();
+        if (btn.dataset.target === "page0") populateFitTable();
+      });
+    });
+  
+    // Well tab toggle
+    document.querySelectorAll(".sim-results-component-well-tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".sim-results-component-well-tab").forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+  
+        document.querySelectorAll(".sim-results-component-well-tab-content").forEach(c => c.classList.remove("active"));
+        document.getElementById(tab.dataset.target).classList.add("active");
+      });
+    });
+  
+    // Sankey Diagram
+    function drawSankey() {
+      const data = {
+        type: "sankey",
+        orientation: "h",
+        node: {
+          pad: 15,
+          thickness: 20,
+          line: { color: "black", width: 0.5 },
+          label: ["Injector A", "Injector B", "Producer X", "Producer Y"],
+          color: ["blue", "blue", "green", "green"]
+        },
+        link: {
+          source: [0, 1, 0, 1],
+          target: [2, 2, 3, 3],
+          value: [5, 2, 3, 4]
+        }
+      };
+  
+      Plotly.react("sankey-diagram", [data], {
+  margin: { l:0, r: 0, t: 20, b: 20 },
+  autosize: true,
+  //height: 600, 
+  responsive: true
+}, {responsive: true});
+    }
+  
+    // Line Chart
+    function drawLineChart() {
+      const x = Array.from({ length: 50 }, (_, i) => i);
+      const series = Array.from({ length: 5 }, (_, i) => ({
+        x,
+        y: x.map((xi) => Math.sin(xi / 5 + i)),
+        mode: "lines",
+        name: `Series ${i + 1}`
+      }));
+  
+      Plotly.react("history-match-chart", series, {
+  title: "History Match Chart",
+  legend: { orientation: "v" }, // vertical legend
+  margin: { t: 40 },
+  autosize: true,
+  responsive: true
+}, {responsive: true});
+
+    }
+  
+    // Fit Quality Table (Well-fit quality tab)
+    const wellFits = [
+      { name: "Producer A", quality: "good" },
+      { name: "Producer B", quality: "medium" },
+      { name: "Producer C", quality: "poor" },
+      { name: "Producer D", quality: "good" },
+      { name: "Producer E", quality: "medium" },
+      { name: "Producer F", quality: "poor" },
+      { name: "Producer G", quality: "good" },
+      { name: "Producer H", quality: "medium" },
+      { name: "Producer I", quality: "poor" },
+      { name: "Producer J", quality: "good" },
+      { name: "Producer K", quality: "medium" },
+      { name: "Producer L", quality: "good" }
+    ];
+  
+    function populateFitTable() {
+      const tableBody = document.querySelector("#sim-results-component-fit-table tbody");
+      tableBody.innerHTML = "";
+  
+      for (let i = 0; i < wellFits.length; i += 3) {
+        const row = document.createElement("tr");
+  
+        for (let j = 0; j < 3; j++) {
+          const well = wellFits[i + j];
+          const cell = document.createElement("td");
+  
+          if (well) {
+            const cls = `fit-${well.quality}`;
+            cell.className = cls;
+            cell.textContent = well.name;
+          }
+  
+          row.appendChild(cell);
+        }
+  
+        tableBody.appendChild(row);
+      }
+    }
+  
+    // Initial tab rendering
+    drawSankey();
+    drawLineChart();
+    populateFitTable();
+  </script -->
+
+
+
+
+</body>
+</html>
+
+
