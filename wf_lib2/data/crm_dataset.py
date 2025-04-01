@@ -1,6 +1,7 @@
 #from __future__ import annotations
 import math 
 import pandas as pd, numpy as np, json  
+from scipy.spatial import cKDTree
 
 from wf_lib2.crm_definitions import * 
 from wf_lib2.data.crm_pattern import CRMPattern
@@ -486,15 +487,163 @@ class CRMDataset:
           
         return None 
     
-    def get_distances_flat( self ):
+    def get_producer_injectors_distances_flat( self, max_distance:float = 2500.00 ) -> list:
     
+        df = self.locations_df
+        WELL_TYPE = find_column( df.columns, WELL_TYPE_KEYS)
+        NAME = find_column( df.columns, NAME_KEYS)
+        X = find_column( df.columns, X_KEYS)
+        Y = find_column( df.columns, Y_KEYS)
+        
+        
+        injectors = df[df[WELL_TYPE].str.lower()  == "injector"].reset_index(drop=True)
+        producers = df[df[WELL_TYPE].str.lower()  == "producer"].reset_index(drop=True)
+
+        # Split DataFrame
+        injectors = df[df[WELL_TYPE].str.lower()  == "injector"].reset_index(drop=True)
+        producers = df[df[WELL_TYPE].str.lower()  == "producer"].reset_index(drop=True)
+
+        # Extract names and coordinates
+        injector_coords = injectors[[X, Y]].to_numpy()
+        producer_coords = producers[[X, Y]].to_numpy()
+
+        injector_names = injectors[NAME].to_numpy()
+        producer_names = producers[NAME].to_numpy()
+
+        # Build KDTree for fast spatial lookup
+        tree = cKDTree(injector_coords)
+
+        # Query all producers for neighbors within max_distance
+        result = []
+        for i, (p_name, p_coord) in enumerate(zip(producer_names, producer_coords)):
+            indices = tree.query_ball_point(p_coord, r=max_distance)
+            for j in indices:
+                i_name = injector_names[j]
+                i_coord = injector_coords[j]
+                distance = np.hypot(p_coord[0] - i_coord[0], p_coord[1] - i_coord[1])
+                result.append({
+                    "producer": p_name,
+                    "injector": i_name,
+                    "distance": distance
+                })
+        return result    
+            
+        '''
         df = self['distance']
         if df is None: return None
            
-        return [ {"producer": producer, "injector": injector, "distance": df.loc[producer, injector]}
+        flats =  [ {"producer": producer, "injector": injector, "distance": df.loc[producer, injector]  }
         for producer in df.index
-        for injector in df.columns
+        for injector in df.columns if df.loc[producer, injector] < max_distance
         ]
+        
+        return flats
+        '''
+              
+    def get_all_distances_flat(self, max_distance:float = 2500.00 ) -> list:
+        
+        df=  self.locations_df 
+        # Build coordinate array and name list
+        coords = df[['X', 'Y']].to_numpy()
+        names = df['NAME'].to_numpy()
+
+        # types map for quick search later
+        well_type_dict = {} 
+        for name in self.injector_names: 
+            well_type_dict[name] = 'Injector'
+        for name in self.producer_names:
+            well_type_dict[name] = 'Producer'
+
+
+        # Create KDTree, very fast unique pairs. 
+        tree = cKDTree(coords)
+        max_distance = 1500
+        pairs = tree.query_pairs(r=max_distance, output_type='set')
+
+        # Build bidirectional list
+        well_pairs = []
+        for i, j in pairs:
+            for a, b in [(i, j), (j, i)]:
+                name1, name2 = names[a], names[b]
+                type1, type2 = well_type_dict[name1], well_type_dict[name2]
+                distance = np.linalg.norm(coords[a] - coords[b])
+
+                well_pairs.append({
+                    'name1': name1,
+                    'type1': type1,
+                    'name2': name2,
+                    'type2': type2,
+                    'distance': distance
+                })
+        
+        
+        return well_pairs 
+    
+        '''
+        Returns an array of these items: 
+        [{
+        "well_1": "AG4353",
+        "type_1": "Producer",
+        "well_2": "I32-001",
+        "type_2": "Injector",
+        "distance": 1000.0
+        }, {} ] 
+        '''
+        
+        xx = self.get_producer_injectors_distances_flat( max_distance )
+            
+         
+        def to_bidirectional(data):
+            result = []
+            for entry in data:
+                p = entry['producer']
+                i = entry['injector']
+                d = entry['distance']
+                result.append({'well1': p, 'well2': i, 'distance': d})
+                result.append({'well1': i, 'well2': p, 'distance': d})
+            return result
+        
+        return to_bidirectional(xx)
+         
+        
+    
+        df = self.locations_df
+        WELL_TYPE = find_column( df.columns, WELL_TYPE_KEYS)
+        NAME = find_column( df.columns, NAME_KEYS)
+        X = find_column( df.columns, X_KEYS)
+        Y = find_column( df.columns, Y_KEYS)
+        
+          
+          
+        well_coords = df[[X, Y]].to_numpy()
+        well_names = df[NAME].to_numpy()
+        well_types = df[WELL_TYPE].to_numpy()
+
+        # Build KDTree on all wells
+        tree = cKDTree(well_coords)
+
+        # Query: find all well pairs within max_distance
+        result = []
+        for i, (name_i, coord_i, type_i) in enumerate(zip(well_names, well_coords, well_types)):
+            nearby_indices = tree.query_ball_point(coord_i, r=max_distance)
+            for j in nearby_indices:
+                if j <= i:
+                    continue  # avoid self and duplicate pairs
+                name_j = well_names[j]
+                type_j = well_types[j]
+                coord_j = well_coords[j]
+                distance = np.hypot(*(coord_i - coord_j))
+                result.append({
+                    "well_1": name_i,
+                    "type_1": type_i,
+                    "well_2": name_j,
+                    "type_2": type_j,
+                    "distance": distance
+                })
+                
+        return result# to_bidirectional(result)
+    
+                
               
     def get_distances( self )->None:
         '''

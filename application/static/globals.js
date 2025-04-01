@@ -6,6 +6,8 @@ let highlighted_marker_size = 30;
 
 let locations_chart_pane = 'middle-top';
 
+//let all_well_distances = undefined;
+
 
 let selected_well_names_in_scatter_chart = undefined;  //user selected wells in a wells chart 
 let selected_well_names = undefined;                   //user selected wells in a locations chart 

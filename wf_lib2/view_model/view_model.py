@@ -5,6 +5,8 @@ from wf_lib2.data.crm_pattern  import CRMPattern
 import numpy as np  
 from pyproj import Proj, Transformer
 import copy
+from scipy.spatial import cKDTree
+
 
 default_colors = ['green','cyan','lightgrey','salmon','blue','red','purple','yellow','brown','pink']
  
@@ -850,3 +852,133 @@ def get_field_wells_snapshot( crm_dataset, filters = None ):
                 font: {size: 14, color: "gray"}
             }]'''
 
+
+
+## The next three functions are to support the little well-details-dialog. 
+## They will not work unless the dataset is previously filtered to one and only one RMU 
+def get_closest_neighbors(well_pairs, well_name, N=5):
+    neighbors = []
+
+    for pair in well_pairs:
+        if pair['name1'] == well_name:
+            neighbors.append({
+                'name': pair['name2'],
+                'type': pair['type2'],
+                'distance': round( pair['distance'],1 ) 
+            })
+
+    # Sort by distance and return top N
+    neighbors.sort(key=lambda x: x['distance'])
+    return neighbors[:N]
+
+def get_all_distances_flat(acrm_dataset, max_distance:float = 2500.00 ) -> list:
+        
+
+    df=  acrm_dataset.locations_df 
+    # Build coordinate array and name list
+    coords = df[['X', 'Y']].to_numpy()
+    names = df['NAME'].to_numpy()
+
+    # types map for quick search later
+    well_type_dict = {} 
+    for name in acrm_dataset.injector_names: 
+        well_type_dict[name] = 'Injector'
+    for name in acrm_dataset.producer_names:
+        well_type_dict[name] = 'Producer'
+
+
+    # Create KDTree, very fast unique pairs. 
+    tree = cKDTree(coords)
+    pairs = tree.query_pairs(r=max_distance, output_type='set')
+
+    # Build bidirectional list
+    well_pairs = []
+    for i, j in pairs:
+        for a, b in [(i, j), (j, i)]:
+            name1, name2 = names[a], names[b]
+            type1, type2 = well_type_dict[name1], well_type_dict[name2]
+            distance = np.linalg.norm(coords[a] - coords[b])
+
+            well_pairs.append({
+                    'name1': name1,
+                    'type1': type1,
+                    'name2': name2,
+                    'type2': type2,
+                    'distance': distance
+                })
+        
+        
+    return well_pairs 
+    
+    '''
+        Returns an array of these items: 
+        [{
+        "well_1": "AG4353",
+        "type_1": "Producer",
+        "well_2": "I32-001",
+        "type_2": "Injector",
+        "distance": 1000.0
+        }, {} ] 
+    ''' 
+        
+def get_everything_for_this_well( crm_dataset, well_name, max_neighbours_distance = 2000, max_neighbours = 10 ):
+    """
+    dict_keys(['neighbours', 'rates', 'well_name', 'type'])
+    [{'name': 'Producer2', 'type': 'Producer', 'distance': 707.1},
+    {'name': 'Inj3', 'type': 'Injector', 'distance': 1000.0},
+    {'name': 'Inj2', 'type': 'Injector', 'distance': 1000.0},
+    {'name': 'Inj0', 'type': 'Injector', 'distance': 1000.0},
+    {'name': 'Inj1', 'type': 'Injector', 'distance': 1000.0},
+    {'name': 'Producer3', 'type': 'Producer', 'distance': 1414.2}]
+    """
+
+    if well_name in crm_dataset.injector_names:
+        W_COL = find_column(crm_dataset.injectors_df.columns, WATER_INJECTION_KEYS)
+        N_COL = find_column(crm_dataset.injectors_df.columns, NAME_KEYS)
+        w = crm_dataset.filter_by(N_COL, [well_name] + crm_dataset.producer_names )
+        p = w.injectors_df
+        well_type = 'Injector'
+        dates = p.index.values.astype('datetime64[D]').astype( str ).tolist()  if p.index.name == 'DATE' \
+            else p['DATE'].values.astype('datetime64[D]').astype( str ).tolist() 
+            
+        water = p[W_COL].fillna(0.0).values.tolist() 
+        rates = { 'dates':dates, 'Injection': water } 
+        
+    else:
+        O_COL,G_COL,W_COL = find_column(crm_dataset.producers_df.columns, OIL_PRODUCTION_KEYS), find_column(crm_dataset.producers_df.columns, GAS_PRODUCTION_KEYS), find_column(crm_dataset.producers_df.columns, WATER_PRODUCTION_KEYS)
+        L_COL= find_column(crm_dataset.producers_df.columns, LIQUID_PRODUCTION_KEYS)
+        N_COL = find_column(crm_dataset.injectors_df.columns, NAME_KEYS)
+        well_type   = 'Producer'
+        w = crm_dataset.filter_by(N_COL, [well_name] + crm_dataset.injector_names)
+        p = w.producers_df.sort_values( by =['DATE'], ascending=True)
+        
+        dates = p.index.values.astype('datetime64[D]').astype( str ).tolist()  if p.index.name == 'DATE' \
+            else p['DATE'].values.astype('datetime64[D]').astype( str ).tolist() 
+
+        oil    = p[O_COL].fillna(0.0).values.tolist()
+        water  = p[W_COL].fillna(0.0).values.tolist()
+        gas    = p[G_COL].fillna(0.0).values.tolist()
+        liquid = p[L_COL].fillna(0.0).values.tolist()
+        
+        rates = { 'dates':dates, 'Oil': oil, 'Gas': gas, 'Water': water, 'Liquid': liquid }
+        
+        
+    well_types = {} 
+    for iname in w.injector_names:
+        well_types[iname] = 'Injector'
+    for pname in w.producer_names:
+        well_types[pname] = 'Producer'
+            
+ 
+    flat_all_pairs_distances = get_all_distances_flat(crm_dataset, max_neighbours_distance) 
+    result = get_closest_neighbors(flat_all_pairs_distances, well_name, max_neighbours)
+        
+    data = {'neighbours': result, 'rates':rates,
+            'well_name': well_name,
+            'type': well_type 
+            
+            }  
+    
+    return data 
+    
+    

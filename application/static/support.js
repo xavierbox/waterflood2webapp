@@ -217,15 +217,9 @@ function populate_field_wells_snapshot( data ){
     plot.style.height = '1000px';
     plot.style.width = '100%';
 
-    /*console.log('***************Data keys are**************');
-    for( let key in data){
-        console.log(key);
-    }*/
-
-
     const layout = {
         grid: {rows: 3, columns: 1, pattern: 'independent'},
-        title: { text:' Volumes vs water produced'},
+        title: { text:' Cummulated volumes vs water produced'},
         autosize: true,
         automargin: true,
         //margin: {l: 70, r: 40, t: 40, b: 30},

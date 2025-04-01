@@ -48,6 +48,7 @@ function highlightWellsInLocationsChart( locs_container, names, key ){
 
                 let lats  = [] 
                 let longs = [] 
+                let text  = [];
                 for( let name of names){
                     const [index,series] = findWellInLocationsChart( locs_container, name );
     
@@ -55,6 +56,7 @@ function highlightWellsInLocationsChart( locs_container, names, key ){
                         const [lat,long] = [series['lat'][index], series['lon'][index]];
                         lats.push(lat);
                         longs.push(long);
+                        text.push(name);
                     }
                 }
                     
@@ -64,13 +66,13 @@ function highlightWellsInLocationsChart( locs_container, names, key ){
                         mode: "markers",
                         lat: lats,
                         lon: longs,
+                        text: text,
                         marker: { size: highlighted_marker_size, color:highlighted_marker_color, opacity: highlighted_marker_opacity  },
                 }
          
                 
                 Plotly.addTraces(locs_container, newTrace);
 }
-
             
 function populate_locations_plot( data ){
     let app_layout = Id('main-layout');

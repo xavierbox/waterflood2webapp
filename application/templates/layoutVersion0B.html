@@ -28,77 +28,20 @@
 
 </head>
 
-<style>
 
-
-    .dell-detail-dialog-panel {
-      position: absolute;
-      top: 100px;
-      left: 100px;
-      background-color: #fff;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 0.75rem;
-      width: 450px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-      display: none;
-      flex-direction: column;
-      gap: 0.75rem;
-      z-index: 999;
-    }
-
-    .dell-detail-dialog-header {
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: move;
-      user-select: none;
-    }
-
-    .dell-detail-dialog-close {
-      position: absolute;
-      top: 0.5rem;
-      right: 0.75rem;
-      cursor: pointer;
-      font-size: 1.1rem;
-      color: #888;
-    }
-
-    .dell-detail-dialog-chart {
-      width: 100%;
-      height: 200px;
-    }
-
-    .dell-detail-dialog-table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    .dell-detail-dialog-table th,
-    .dell-detail-dialog-table td {
-      padding: 0.4rem;
-      border: 1px solid #ccc;
-      text-align: left;
-      font-size: 0.85rem;
-    }
-
-    .dell-detail-dialog-table th {
-      background-color: #f9f9f9;
-    }
-
-
-  
-
-  </style>
 
 
 <body>
+    <script>function Id(id){return document.getElementById(id)}</script>
 
     <!-- floating well-detail-dialog -->
     <div id="dell-detail-dialog" class="dell-detail-dialog-panel">
         <div class="dell-detail-dialog-close" onclick="closeWellDetailDialog()">✖</div>
         <div id="dell-detail-dialog-header" class="dell-detail-dialog-header">WELL NAME</div>
-        <div id="dell-detail-dialog-chart" class="dell-detail-dialog-chart"></div>
-        <h4>Closest neighbours</h4>
+    
+      
+        <div style='min-height:400px; height:400px' id="dell-detail-dialog-chart" class="dell-detail-dialog-chart"></div>
+        <span class="subtitle">Closest neighbours</span>
         <table class="dell-detail-dialog-table">
           <thead>
             <tr>
@@ -109,13 +52,14 @@
           </thead>
           <tbody id="dell-detail-dialog-table-body"></tbody>
         </table>
-        Sector: 3<br>
+        <!-- Sector: 3<br>
         Reservoir: Wara<br>
-        RMU: LW<br>
+        RMU: LW<br> -->
         <hr>
         <button class="well-detail-dialog-close-button btn btn-danger" onclick="closeWellDetailDialog()">Close</button>
+        
     </div>
-
+  
 
 
     <!-- spinning indicator of a long operation -->
@@ -131,8 +75,7 @@
       
 
     }</script>
-    <script>function Id(id){return document.getElementById(id)}</script>
-
+  
 
     <div id='projects-component-container' class="hidden pane projects-component-container">
 
@@ -520,6 +463,40 @@
 
     }
 
+    async function get_charts_data(read_data){
+
+        try{
+            toggleLoading(true);
+
+            const resp1 = await get_server('get_locations_chart','POST', JSON.stringify(read_data))
+            populate_locations_plot(resp1.data);
+            all_well_names_visible = resp1.data['all_names'];
+            
+            const resp2 = await get_server('get_field_charts','POST', JSON.stringify(read_data))
+            populate_field_plots(resp2.data);
+                
+            const resp3 = await get_server('get_field_wells','POST', JSON.stringify(read_data))
+            populate_field_wells_snapshot(resp3.data);
+
+
+            const resp4 = await get_server('get_field_wells','POST', JSON.stringify(read_data))
+            toggleLoading(false);
+
+            //const resp5= await  get_server('get_wells_data','POST', JSON.stringify(read_data))
+            //all_well_distances = resp5.all_well_distances;
+
+            
+            
+        }
+
+
+        catch (error){
+                console.log(error);
+                toggleLoading(false);
+                alert('Error getting data for basic plots');
+            }; 
+
+    }
     /*when the user double-clicks in one workflow item*/
     Id('workflow-selector').addEventListener('dclicked',(evt)=>{
         //console.log('Workflow double-clicked:', evt.detail);
@@ -723,8 +700,14 @@
              });
             return
         }
+        if(read_data!=undefined){
 
-        
+            get_charts_data( read_data );
+        }
+
+
+
+        /* old version working smoothly 
         if(read_data!=undefined){
 
             toggleLoading(true);
@@ -761,13 +744,7 @@
             .catch ((error) =>{
                 console.log(error);alert('Error getting data for field data');
             }); 
-
-
-            ///////////////
-
-
-
-        }
+        }*/
     }); 
 
     Id('debug-stuff1').addEventListener('click', (evt)=>{
@@ -1007,7 +984,7 @@
       document.getElementById("dell-detail-dialog").style.display = "none";
     }
   
-    function showSampleDialog() {
+    function showSampleDialog( well_details ) {
       const sampleChartData = [{
         x: ['2024-01', '2024-02', '2024-03', '2024-04'],
         y: [100, 120, 110, 130],
@@ -1054,7 +1031,7 @@
 <script id="window-controller">
 
 
-
+    /*chart-exchange*/
     window.addEventListener('wells-names-selected-in-scatter-chart', (evt)=>{
         console.log('MAIN app: wells-names-selected-in-scatter-chart', evt.detail);
         let names = evt.detail.names;
@@ -1066,6 +1043,7 @@
         highlightWellsInLocationsChart( locs_container, names, key );
     })
 
+    /*chart-exchange*/
     window.addEventListener('wells-names-selected-in-locs-chart', (evt)=>{
 
 
@@ -1172,9 +1150,73 @@
 
     })
 
+    /*single-well detail*/
     window.addEventListener('well-name-selected', (evt)=>{
         
-        showSampleDialog();
+  
+        let read_data = get_project_data_selection();
+        read_data['well_name'] = evt.detail.name;
+   
+
+           
+
+        toggleLoading(true);
+        get_server('tell_me_everything_about_this_well','POST',JSON.stringify(read_data))
+        .then( (resp) =>{
+            console.log('tell_me_everything_about_this_well returned', resp);
+            let data = resp.data;
+            console.log( resp )
+            console.log( data )
+
+            const dialog = document.getElementById("dell-detail-dialog");
+            dialog.style.display = "flex";
+            document.getElementById("dell-detail-dialog-header").textContent = data['well_name'];
+
+            const tbody = document.getElementById("dell-detail-dialog-table-body");
+            tbody.innerHTML = "";
+            data['neighbours'].forEach(row => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `<td>${row.name}</td><td>${row.distance}</td><td>${row.type}</td>`;
+                tbody.appendChild(tr);
+            });
+
+            let rates =  data['rates'];
+            let dates =  data['rates']['dates'];
+            const traces = [];
+            for (const rate in rates) {
+                if(rate=='dates')
+                continue;
+
+                traces.push({
+                    x: dates, y: rates[rate], mode: 'lines', name: rate,
+                    type: 'scatter'
+                });
+            }
+
+
+            Plotly.newPlot("dell-detail-dialog-chart", traces, 
+            { autosize:true, 
+              x: {automargin:true},y: {automargin:true},
+              //title: {'text':'Well rates', font: {size:20}},
+              responsive: true
+            },
+            {responsive: true});
+        
+            //let chartData = data['chart_data'];
+            //let tableData = data['table_data'];
+            //showSampleDialog(33);
+
+            toggleLoading(false);
+        })
+        .catch ((error) =>{
+            console.log(error);alert('Error getting data for field data');
+            toggleLoading(false);
+        });
+
+
+
+        //l/et well_details = 1120.00; 
+        ///showSampleDialog( well_details );
 
     });
 

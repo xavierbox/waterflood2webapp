@@ -1,0 +1,24 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "debugpy",
+            "request": "launch",
+            "name": "Launch Flask App",
+            "program": "${workspaceFolder}/app.py",
+            "args": [],
+            "env": {
+                "FLASK_APP": "app.py",
+                "FLASK_ENV": "development"
+            },
+            "jinja": true
+        },
+        {
+            "type": "chrome",
+            "name": "Debug JavaScript in Flask App",
+            "request": "launch",
+            "url": "http://127.0.0.1:5000/layout",
+            "webRoot": "${workspaceFolder}/application/static"
+        }
+    ]
+}

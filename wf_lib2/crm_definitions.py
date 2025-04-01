@@ -152,6 +152,8 @@ LONG_KEYS = ["LONG"]
 
 #the potential name of the columns in datasets that refer to the well type 
 WELL_TYPE = ["WELL_TYPE", "TYPE"]
+WELL_TYPE_KEYS = ["WELL_TYPE", "TYPE"]
+
 INDEX_KEYS=['INDEX']
 
 SIM_SUFFIX = '_sim'
