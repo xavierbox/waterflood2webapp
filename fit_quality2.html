@@ -8,10 +8,10 @@
 
 
   <style>
-.button-grid {
+.sim-results-component-button-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
-  gap: 4px;
+  gap: 8px;
   margin-top: 1px;
 }
 .fit-button {
@@ -26,10 +26,21 @@
   border-radius: 4px;
   cursor: default;
 }
-.fit-good { background-color: #4caf50; }
-.fit-medium { background-color: #ff9800; }
-.fit-poor { background-color: #f44336; }
-
+ 
+  
+.fit-good {
+      background-color: #056308;
+    }
+  
+    .fit-medium {
+      background-color: #ff9800;
+    }
+  
+    .fit-poor {
+      background-color: #f44336;
+    }
+  
+    
 
     .sim-results-component-top-bar {
       display: flex;
@@ -163,19 +174,7 @@
       xxheight: 30px;
       xxfont-size: 14px; /* optional: ensure it's readable */
     }
-  
-    .fit-good {
-      background-color: #056308;
-    }
-  
-    .fit-medium {
-      background-color: #ff9800;
-    }
-  
-    .fit-poor {
-      background-color: #f44336;
-    }
-  
+
     /* Plots full width and responsive */
     .xxsim-results-component-plot-container {
       width: 100%;
@@ -686,18 +685,24 @@ drawSankeyProducerWithContext(producerName) {
     <!-- sim-results-component-pagination Row -->
     <div class="sim-results-component-pagination">
       <button class="tab-button active" data-target="page0">Well-fit quality</button>
-      <button class="tab-button" data-target="page2">AnotherOne</button>
+      <!-- button class="tab-button" data-target="page2">AnotherOne</button -->
       <button class="tab-button" data-target="page1">Well-support Details</button>
-      <button class="tab-button" data-target="page3">AnotherTwo</button>
+      <!-- button class="tab-button" data-target="page3">AnotherTwo</button -->
     </div>
 
     <!-- sim-results-component-main Page Content -->
     <div class="sim-results-component-main">
 <!-- Well-fit quality tab -->
 <div id="page0" class="sim-results-component-page-content active">
-  <div class="button-grid" id="sim-results-component-button-grid"></div>
   <div id="sim-results-component-bar-chart" style="width: 100%; height: 400px;"></div>
-</div>
+  <div class="sim-results-component-button-grid" id="sim-results-component-button-grid"></div>
+  <input type="checkbox" id="show-all" checked />
+  <label for="show-all">Show all</label>
+  <div style='height:600px; background-color:red'>
+  <div id="history-match-chart" style="width: 100%; height: 100%;"></div>
+  </div>
+  </div>
+
 
 
 
@@ -736,24 +741,24 @@ drawSankeyProducerWithContext(producerName) {
           <div id="sankey-diagram" style="flex: 1; min-width: 300px; height: 400px;"></div>
         </div>
       </div>
-
+ 
       <!-- AnotherOne -->
-      <div id="page2" class="sim-results-component-page-content">
+      <!-- div id="page2" class="sim-results-component-page-content">
         <!-- h2>AnotherOne</h2 -->
-        <div style="margin-bottom: 10px;">
+        <!-- div style="margin-bottom: 10px;">
           <input type="radio" id="liquid" name="match" checked />
           <label for="liquid">Liquid history match</label>
           <input type="radio" id="watercut" name="match" style="margin-left: 20px;" />
           <label for="watercut">Watercut history match</label>
-        </div>
-        <div id="history-match-chart" style="width: 100%; height: 400px;"></div>
-      </div>
+        </div -->
+        <div id="history-match-chart2" style="width: 100%; height: 400px;"></div>
+      </div -->
 
       <!-- AnotherTwo -->
-      <div id="page3" class="sim-results-component-page-content">
-        <!-- h2>AnotherTwo</h2 -->
+      <!-- div id="page3" class="sim-results-component-page-content">
+      
         <p>This is the content for AnotherTwo.</p>
-      </div>
+      </div -->
     </div>
   </div>
     `;
@@ -825,7 +830,7 @@ producers.forEach(p => {
 const producerNames = Object.keys(producerMap);
 
 // Render fit buttons
-const buttonGrid = this.querySelector("#sim-results-component-button-grid");
+const buttonGrid = this.querySelector(".sim-results-component-button-grid");
 buttonGrid.innerHTML = "";
 producerNames.forEach(name => {
   const btn = document.createElement("button");
@@ -949,15 +954,23 @@ const sampleData = {
   case_name: "TestModel1",
   data: [
     { INJECTOR: "I01", PRODUCER: "P1", ALLOCATION: 0.992909593, TAU: 0.349081711, TAUP: 49.99999996, PRODUCTIVITY: 0, Lo: 0, MODEL: "CRMP", R2: 0.991063231, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
-    { INJECTOR: "I02", PRODUCER: "P1", ALLOCATION: 0.474019881, TAU: 0.349081711, TAUP: 49.99999996, PRODUCTIVITY: 0, Lo: 0, MODEL: "CRMP", R2: 0.991063231, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
+    { INJECTOR: "I02", PRODUCER: "P1", ALLOCATION: 0.474019881, TAU: 0.349081711, TAUP: 49.99999996, PRODUCTIVITY: 0, Lo: 0, MODEL: "CRMP", R2: 0.491063231, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
     { INJECTOR: "I03", PRODUCER: "P1", ALLOCATION: 0.089225377, TAU: 0.349081711, TAUP: 49.99999996, PRODUCTIVITY: 0, Lo: 0, MODEL: "CRMP", R2: 0.991063231, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
-    { INJECTOR: "I04", PRODUCER: "P1", ALLOCATION: 0.217863424, TAU: 0.349081711, TAUP: 49.99999996, PRODUCTIVITY: 0, Lo: 0, MODEL: "CRMP", R2: 0.991063231, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
+    { INJECTOR: "I04", PRODUCER: "P1", ALLOCATION: 0.217863424, TAU: 0.349081711, TAUP: 49.99999996, PRODUCTIVITY: 0, Lo: 0, MODEL: "CRMP", R2: 0.891063231, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
     { INJECTOR: "I05", PRODUCER: "P1", ALLOCATION: 0.088541907, TAU: 0.349081711, TAUP: 49.99999996, PRODUCTIVITY: 0, Lo: 0, MODEL: "CRMP", R2: 0.991063231, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
-    { INJECTOR: "I01", PRODUCER: "P2", ALLOCATION: 0.013931884, TAU: 29.33999056, TAUP: 50, PRODUCTIVITY: 0, Lo: 0.959811962, MODEL: "CRMP", R2: 0.937868466, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
+    { INJECTOR: "I01", PRODUCER: "P2", ALLOCATION: 0.013931884, TAU: 29.33999056, TAUP: 50, PRODUCTIVITY: 0, Lo: 0.959811962, MODEL: "CRMP", R2: 0.6937868466, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
     { INJECTOR: "I02", PRODUCER: "P2", ALLOCATION: 0, TAU: 29.33999056, TAUP: 50, PRODUCTIVITY: 0, Lo: 0.959811962, MODEL: "CRMP", R2: 0.937868466, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
     { INJECTOR: "I03", PRODUCER: "P2", ALLOCATION: 0, TAU: 29.33999056, TAUP: 50, PRODUCTIVITY: 0, Lo: 0.959811962, MODEL: "CRMP", R2: 0.937868466, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
-    { INJECTOR: "I04", PRODUCER: "P2", ALLOCATION: 0.099183015, TAU: 29.33999056, TAUP: 50, PRODUCTIVITY: 0, Lo: 0.959811962, MODEL: "CRMP", R2: 0.937868466, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
-    { INJECTOR: "I05", PRODUCER: "P2", ALLOCATION: 0.102164928, TAU: 29.33999056, TAUP: 50, PRODUCTIVITY: 0, Lo: 0.959811962, MODEL: "CRMP", R2: 0.937868466, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" }
+    { INJECTOR: "I04", PRODUCER: "P2", ALLOCATION: 0.099183015, TAU: 29.33999056, TAUP: 50, PRODUCTIVITY: 0, Lo: 0.959811962, MODEL: "CRMP", R2: 0.737868466, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
+    { INJECTOR: "I05", PRODUCER: "P2", ALLOCATION: 0.102164928, TAU: 29.33999056, TAUP: 50, PRODUCTIVITY: 0, Lo: 0.959811962, MODEL: "CRMP", R2: 0.3937868466, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" }
+    ,
+    { INJECTOR: "I03", PRODUCER: "P4", ALLOCATION: 0.099183015, TAU: 29.33999056, TAUP: 50, PRODUCTIVITY: 0, Lo: 0.959811962, MODEL: "CRMP", R2: 0.737868466, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
+    { INJECTOR: "I05", PRODUCER: "P5", ALLOCATION: 0.102164928, TAU: 29.33999056, TAUP: 50, PRODUCTIVITY: 0, Lo: 0.959811962, MODEL: "CRMP", R2: 0.3937868466, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" }
+    ,
+    { INJECTOR: "I04", PRODUCER: "P3", ALLOCATION: 0.099183015, TAU: 29.33999056, TAUP: 50, PRODUCTIVITY: 0, Lo: 0.959811962, MODEL: "CRMP", R2: 0.8737868466, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
+    { INJECTOR: "I05", PRODUCER: "P3", ALLOCATION: 0.102164928, TAU: 29.33999056, TAUP: 50, PRODUCTIVITY: 0, Lo: 0.959811962, MODEL: "CRMP", R2: 0.9937868466, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" }
+    
+    
     // ... add the rest of the rows similarly
   ]
 };

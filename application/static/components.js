@@ -315,6 +315,10 @@ class QuickJS_ComboBoxSelector extends HTMLElement {
 
     setValue(txt) {
         this.selectElement.value = txt;
+        this.dispatchEvent(new CustomEvent("clicked", {
+            detail: { text: this.selectElement.value }
+        }));
+        
     }
 
     getValue() {

@@ -71,6 +71,18 @@ function validateProjectDataSelection(read_data) {
     return message;
 }
 
+function valueToColor(value) {
+    // Clamp between 0 and 1
+    const v = Math.max(0, Math.min(1, value));
+
+    // Blue = (0, 0, 255), Red = (255, 0, 0)
+    const r = Math.round(255 * v);
+    const g = 0;
+    const b = Math.round(255 * (1 - v));
+
+    return `rgb(${r},${g},${b})`;
+}
+
 
 /*called when the user selects some wells with the lasso in the locations chart
   the window also emits an event that other component can subscribe to

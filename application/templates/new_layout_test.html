@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  
+  <script src='https://cdn.plot.ly/plotly-3.0.0.min.js'></script>
+
+  <title>QS Three Column Layout</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+
+    .qsthree-col-layout-navbar {
+      position: sticky;
+      top: 0;
+      height: 56px;
+      background-color: #333;
+      color: white;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      z-index: 10;
+    }
+
+    .qsthree-col-layout-main {
+      display: flex;
+      height: calc(100vh - 56px - 1px);
+      margin-top: 1px;
+    }
+
+    .qsthree-col-layout-column {
+      height: 100%;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .qsthree-col-layout-col1 {
+      width: 20%;
+    }
+
+    .qsthree-col-layout-col2 {
+      width: 40%;
+    }
+
+    .qsthree-col-layout-col3 {
+      width: 40%;
+    }
+
+    #left-top,
+    #left-bottom {
+      flex: 1;
+      overflow: auto;
+    }
+
+    .qsthree-col-layout-horizontal-resizer {
+      flex: 0 0 5px;
+      height: 5px;
+      background: #ccc;
+      cursor: row-resize;
+      z-index: 2;
+    }
+
+    .qsthree-col-layout-vertical-resizer {
+      width: 5px;
+      background: #ccc;
+      cursor: col-resize;
+      position: relative;
+      z-index: 1;
+    }
+
+    .qsthree-col-layout-content {
+      flex: 1;
+      overflow: auto;
+    }
+
+    .qsthree-col-layout-resizing {
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="qsthree-col-layout-navbar">Navbar (56px)</div>
+  <new-three-column-main-layout></new-three-column-main-layout>
+  
+  <script>
+
+  class QuickJS_ThreeColLayout extends HTMLElement{
+    _renderedTabs
+    constructor(){
+
+      super();
+      this._renderedTabs = new Set();
+    }
+
+    getTemplate(){
+
+    return `
+      <div class="qsthree-col-layout-main">
+        <!-- Column 1 -->
+        <div class="qsthree-col-layout-column qsthree-col-layout-col1" id="left">
+          <div id="left-top">Left Top</div>
+          <div class="qsthree-col-layout-horizontal-resizer" id="horizontalResizer"></div>
+          <div id="left-bottom">Left Bottom</div>
+        </div>
+        <div class="qsthree-col-layout-vertical-resizer" id="vResizer1"></div>
+
+        <!-- Column 2 -->
+        <div class="qsthree-col-layout-column qsthree-col-layout-col2" id="middle">
+          <div class="qsthree-col-layout-content">Center</div>
+        </div>
+        <div class="qsthree-col-layout-vertical-resizer" id="vResizer2"></div>
+
+        <!-- Column 3 -->
+        <div class="qsthree-col-layout-column qsthree-col-layout-col3" style='background-color:red;' id="right">
+          <div class="qsthree-col-layout-content">Right</div>
+        </div>
+      </div>
+      `;
+    }
+
+    connectedCallback(){
+
+      this.render();
+
+      this.setup();
+    }
+
+    render(){
+
+      this.innerHTML = this.getTemplate();
+
+    }
+
+    setupVerticalResizer(resizer, leftEl, rightEl) {
+      let isDragging = false;
+
+      resizer.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        document.body.classList.add('qsthree-col-layout-resizing');
+
+        const container = resizer.parentElement;
+        const startX = e.clientX;
+        const startLeftWidth = leftEl.getBoundingClientRect().width;
+        const startRightWidth = rightEl.getBoundingClientRect().width;
+        const containerWidth = container.clientWidth;
+
+        function onMouseMove(e) {
+          if (!isDragging) return;
+
+          const dx = e.clientX - startX;
+          let newLeftWidth = startLeftWidth + dx;
+          let newRightWidth = startRightWidth - dx;
+
+          if (newLeftWidth < 50 || newRightWidth < 50) return;
+
+          const newLeftPercent = (newLeftWidth / containerWidth) * 100;
+          const newRightPercent = (newRightWidth / containerWidth) * 100;
+
+          leftEl.style.width = `${newLeftPercent}%`;
+          rightEl.style.width = `${newRightPercent}%`;
+        }
+
+        function onMouseUp() {
+          isDragging = false;
+          document.body.classList.remove('qsthree-col-layout-resizing');
+          window.removeEventListener('mousemove', onMouseMove);
+          window.removeEventListener('mouseup', onMouseUp);
+
+          // Emit custom event
+          const event = new CustomEvent('pane-resized', {
+            detail: {
+              id: leftEl.id,
+              offsetWidth: leftEl.offsetWidth,
+              offsetHeight: leftEl.offsetHeight
+            },
+            bubbles: true,
+            composed: true
+          });
+          resizer.dispatchEvent(event);
+
+
+
+          // Emit custom event
+          const event2 = new CustomEvent('pane-resized', {
+            detail: {
+              id:  rightEl.id,
+              offsetWidth: rightEl.offsetWidth,
+              offsetHeight: rightEl.offsetHeight
+
+            },
+            bubbles: true,
+            composed: true
+          });
+          resizer.dispatchEvent(event2);
+
+
+
+        }
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+
+
+
+
+      });
+    }
+
+    setupHorizontalResizer(resizer, topEl, bottomEl) {
+      let isDragging = false;
+
+      resizer.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        document.body.classList.add('qsthree-col-layout-resizing');
+
+        const container = topEl.parentElement;
+        const startY = e.clientY;
+        const startTopHeight = topEl.getBoundingClientRect().height;
+        const startBottomHeight = bottomEl.getBoundingClientRect().height;
+        const containerHeight = container.clientHeight;
+
+        function onMouseMove(e) {
+          if (!isDragging) return;
+
+          const dy = e.clientY - startY;
+          let newTopHeight = startTopHeight + dy;
+          let newBottomHeight = startBottomHeight - dy;
+
+          if (newTopHeight < 50 || newBottomHeight < 50) return;
+
+          const newTopPercent = (newTopHeight / containerHeight) * 100;
+          const newBottomPercent = 100 - newTopPercent;
+
+          topEl.style.flex = '0 0 ' + newTopPercent + '%';
+          bottomEl.style.flex = '0 0 ' + newBottomPercent + '%';
+        }
+
+        function onMouseUp() {
+          isDragging = false;
+          document.body.classList.remove('qsthree-col-layout-resizing');
+          window.removeEventListener('mousemove', onMouseMove);
+          window.removeEventListener('mouseup', onMouseUp);
+
+          // Emit custom event
+          const event = new CustomEvent('pane-resized', {
+            detail: {
+              id: topEl.id,
+              offsetWidth: topEl.offsetWidth,
+              offsetHeight: topEl.offsetHeight
+              
+            },
+            bubbles: true,
+            composed: true
+          });
+          resizer.dispatchEvent(event);
+
+
+          // Emit custom event
+          const event2 = new CustomEvent('pane-resized', {
+            detail: {
+              id:   bottomEl.id,
+              offsetWidth: bottomEl.offsetWidth,
+              offsetHeight: bottomEl.offsetHeight
+            },
+            bubbles: true,
+            composed: true
+          });
+          resizer.dispatchEvent(event2);
+          
+
+        }
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+      });
+    }
+
+    setup(){
+    // Init vertical resizers
+    this.setupVerticalResizer(
+      this.querySelector('#vResizer1'),
+      this.querySelector('.qsthree-col-layout-col1'),
+      this.querySelector('#middle')
+    );
+
+    this.setupVerticalResizer(
+      this.querySelector('#vResizer2'),
+      this.querySelector('#middle'),
+      this.querySelector('#right')
+    );
+
+    // Init horizontal resizer
+    this.setupHorizontalResizer(
+      this.querySelector('#horizontalResizer'),
+      this.querySelector('#left-top'),
+      this.querySelector('#left-bottom')
+    );
+
+    }
+  
+  
+    set(where, content) {
+        const validPanes = ['left-top', 'left-bottom','middle', 'right'];
+
+        // Check if 'where' is valid
+        if (validPanes.includes(where)) {
+            const pane = this.querySelector(`#${where}`);
+
+            if (typeof content === 'string') {
+                pane.innerHTML = content;  // Set content as innerHTML if it's a string
+            } else if (content instanceof HTMLElement) {
+                pane.innerHTML = ''; // Clear existing content
+                pane.appendChild(content);  // Append the HTML element
+            } else {
+                console.error('Content must be a string or an HTML element');
+            }
+        } else {
+            console.error('Invalid pane ID');
+        }
+
+
+    }
+    clear(where) {
+      const validPanes = ['left-top', 'left-bottom','middle', 'right'];
+
+        // Check if 'where' is valid
+        if (validPanes.includes(where)) {
+            const pane = this.querySelector(`#${where}`);
+            pane.innerHTML = ''; // Clear existing content
+        }
+
+
+    }
+    append(where, content) {
+      const validPanes = ['left-top', 'left-bottom','middle', 'right'];
+
+        // Check if 'where' is valid
+        if (validPanes.includes(where)) {
+            const pane = this.querySelector(`#${where}`);
+
+            //if (typeof content === 'string') {
+            //    pane.innerHTML = content;  // Set content as innerHTML if it's a string
+
+            if (content instanceof HTMLElement) {
+                //pane.innerHTML = ''; // Clear existing content
+                pane.appendChild(content);  // Append the HTML element
+            } else {
+                console.error('Content must be a an HTML element');
+            }
+        } else {
+            console.error('Invalid pane ID');
+        }
+
+
+    }
+    get_pane(id) {
+        const validPanes = ['left-top', 'left-bottom',
+            'middle',  'right'
+        ];
+
+        // Check if 'where' is valid
+        if (validPanes.includes(id)) {
+            const pane = this.querySelector(`#${id}`);
+            return pane;
+        }else {
+        console.error(`Invalid pane ID "${id}". Valid IDs are: ${validPanes.join(', ')}`);
+        return null;
+            }
+
+    }
+
+
+  }
+  customElements.define("new-three-column-main-layout", QuickJS_ThreeColLayout);
+
+
+
+  </script>
+
+
+  
+<script>
+function add_pagination_to_right(layoutEl) {
+  const items = ['Field', 'Sector', 'Wells', 'Workflows', 'Simulations'];
+  const container = document.createElement('div');
+  container.style.display = 'flex';
+  container.style.flexWrap = 'wrap';
+  container.style.gap = '8px';
+  container.style.padding = '8px';
+
+  const contentWrapper = document.createElement('div');
+  contentWrapper.style.flex = '1';
+  contentWrapper.style.overflow = 'auto';
+  contentWrapper.style.display = 'flex';
+  contentWrapper.style.flexDirection = 'column';
+  contentWrapper.style.height = '100%';
+
+  const contentDivs = {};
+
+  items.forEach(item => {
+    const btn = document.createElement('button');
+    btn.textContent = item;
+    btn.style.padding = '8px 12px';
+    btn.style.border = '1px solid #ccc';
+    btn.style.borderRadius = '4px';
+    btn.style.background = '#f0f0f0';
+    btn.style.cursor = 'pointer';
+
+    const contentDiv = document.createElement('div');
+    contentDiv.style.display = 'none';
+    contentDiv.style.flex = '1';
+    contentDiv.style.padding = '8px';
+    contentDiv.style.backgroundColor='orange';
+    contentDiv.innerHTML = `<div id="chart-container-${item}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:16px;"></div>`;
+    contentWrapper.appendChild(contentDiv);
+    contentDivs[item] = contentDiv;
+
+    btn.addEventListener('click', () => {
+      Object.values(contentDivs).forEach(div => div.style.display = 'none');
+      contentDiv.style.display = 'block';
+
+      const event = new CustomEvent('pagination-click', {
+        detail: { item },
+        bubbles: true,
+        composed: true
+      });
+      btn.dispatchEvent(event);
+    });
+
+    container.appendChild(btn);
+  });
+
+  const firstItem = items[0];
+  contentDivs[firstItem].style.display = 'block';
+
+  const rightPane = layoutEl.querySelector('#right');
+  rightPane.innerHTML = '';
+  rightPane.appendChild(container);
+  rightPane.appendChild(contentWrapper);
+
+
+
+
+  let z= document.querySelector('button');
+  document.querySelector('button').addEventListener('click', (e) => {
+  document.querySelectorAll('.js-plotly-plot').forEach(plot => {
+    Plotly.Plots.resize(plot);
+  });
+});
+
+}
+
+function renderCharts(layoutEl, tabName) {
+  const container = layoutEl.querySelector(`#chart-container-${tabName}`);
+  if (!container || container.dataset.rendered) return;
+
+  const plots = [];
+  function makeChart(div, data, layout = {}) {
+  div.style.width = '100%';
+  div.style.height = '100%';
+  div.style.flex = '1';
+  container.appendChild(div);
+
+  const tightLayout = {
+    ...layout,
+    automargin: true, autosize: true,responsive: true,
+    margin: {t: 30, b: 30, l: 30, r: 30},  // reduce margins
+    title: layout.title ? {text: layout.title, pad: {t: 4}} : undefined,
+  };
+
+  Plotly.react(div, data, tightLayout, {responsive: true});
+  plots.push(div);
+}
+
+  if (tabName === 'Field') {
+    makeChart(document.createElement('div'), [{
+      type: 'pie',
+      labels: ['Oil', 'Gas', 'Water'],
+      values: [30, 50, 20]
+    }], {title: 'Production Distribution'});
+
+    makeChart(document.createElement('div'), [{
+      x: [1, 2, 3], y: [10, 15, 13], type: 'scatter'
+    }], {title: 'Field Pressure'});
+
+    makeChart(document.createElement('div'), [{
+      x: [1, 2, 3], y: [5, 10, 8], type: 'scatter'
+    }], {title: 'Fluid Rate'});
+  }
+
+  else if (tabName === 'Sector') {
+    makeChart(document.createElement('div'), [{
+      x: [1, 2, 3], y: [2, 6, 4], type: 'scatter'
+    }], {title: 'Sector Performance'});
+  }
+
+  else if (tabName === 'Wells') {
+    const div = document.createElement('div');
+    div.style.flex = '1';
+    div.style.width = '100%';
+    div.style.height = '100%';
+    container.appendChild(div);
+
+    const trace1 = {x: [1, 2, 3], y: [2, 4, 6], type: 'scatter', name: 'Well A', xaxis: 'x1', yaxis: 'y1'};
+    const trace2 = {x: [1, 2, 3], y: [1, 3, 5], type: 'scatter', name: 'Well B', xaxis: 'x2', yaxis: 'y2'};
+    const trace3 = {x: [1, 2, 3], y: [0, 2, 4], type: 'scatter', name: 'Well C', xaxis: 'x3', yaxis: 'y3'};
+
+    Plotly.newPlot(div, [trace1, trace2, trace3], {
+      grid: {rows: 3, columns: 1, pattern: 'independent'},
+      title: 'Wells Overview',
+    }, {responsive: true});
+    plots.push(div);
+  }
+
+  container.dataset.rendered = "true";
+
+  // Resize plot after it's visible (slight delay ensures layout is applied)
+  setTimeout(() => {
+    plots.forEach(p => Plotly.Plots.resize(p));
+  }, 100);
+}
+
+
+
+
+document.querySelector('new-three-column-main-layout').addEventListener('pane-resized', (e) => {
+  document.querySelectorAll('.js-plotly-plot').forEach(plot => {
+    Plotly.Plots.resize(plot);
+  });
+});
+
+window.addEventListener('resize', () => {
+  document.querySelectorAll('.js-plotly-plot').forEach(plot => {
+    Plotly.Plots.resize(plot);
+  });
+});
+
+window.addEventListener('resize', () => {
+  document.querySelectorAll('.js-plotly-plot').forEach(plot => {
+    Plotly.Plots.resize(plot);
+  });
+});
+
+
+window.addEventListener('DOMContentLoaded', () => {
+  const layout = document.querySelector('new-three-column-main-layout');
+
+  add_pagination_to_right(layout);
+  renderCharts(layout, 'Field'); // initial tab
+
+  layout.addEventListener('pagination-click', (e) => {
+    renderCharts(layout, e.detail.item);
+  });
+});
+
+
+/*document.querySelector('three-column-main-layout').addEventListener('pane-resized', (e) => {
+  console.log('Pane resized:', e.detail);
+});*/
+
+
+</script>
+
+
+
+
+</body>
+</html>
+

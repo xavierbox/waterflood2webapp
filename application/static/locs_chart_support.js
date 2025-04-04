@@ -67,6 +67,11 @@ function highlightWellsInLocationsChart( locs_container, names, key ){
                         lat: lats,
                         lon: longs,
                         text: text,
+                        //line: {
+                        //    width: 33,
+                        //    color: 'red'
+                        //  },
+
                         marker: { size: highlighted_marker_size, color:highlighted_marker_color, opacity: highlighted_marker_opacity  },
                 }
          
@@ -97,22 +102,22 @@ function populate_locations_plot( data ){
         let config = {
 
             responsive: true,
-            modeBarButtonsToAdd: [
+            /*modeBarButtonsToAdd: [
                 {
                     name: 'Custom Button',
                     icon: Plotly.Icons.camera,  // You can use a built-in icon or a custom SVG
                     click: function(gd) {
-                        alert('Custom button clicked!');
+                        //alert('Custom button clicked!');
                         console.log(gd); // Access the plot div if needed
                     }
                 }
-            ]
+            ]*/
         };
 
         Plotly.react(locs_container, data[key]['data'], l, config )
         .then((p)=>{
 
-            console.log('-------------------Locations chart initialized---------------------');
+            //console.log('-------------------Locations chart initialized---------------------');
             locs_chart_initialized = true;
             relayout( locs_container );
             set_selected_well_names( undefined );

@@ -98,7 +98,10 @@ function populate_project_description( data ){
     Id('end-date').value = new Date(data['dates'][1]).toISOString().slice(0, 10);
     Id('start-date').value = new Date(data['dates'][0]).toISOString().slice(0, 10);
     Id('study-selector').set_data(data['studies']);
-    Id('workflow-selector').set_data(data['workflows']);         
+    Id('workflow-selector').set_data(data['workflows']);     
+    
+    Id('project_name').innerHTML = data['project_name'];
+
 }
 
 function get_project_data_selection( ){
@@ -107,7 +110,8 @@ function get_project_data_selection( ){
     data['subzone'] = Id('reservoir-unit-selector').getValue();
     data['date']   = [Id('start-date').value, Id('end-date').value];
     data['sector'] = Id('sector-selector').getCheckedItems().map(str => parseInt(str));
- 
+    data['project_name'] = Id('project_name').innerHTML;
+    
 
     if(selected_well_names != undefined)
         data['name']   = selected_well_names
@@ -133,9 +137,14 @@ function populate_field_plots( data ){
     container.innerHTML = '';
 
 
-    const xdata = [ ]
+    /*const xdata = [ ]
     let xplot = document.createElement('div');
     container.appendChild(xplot);
+    xplot.style.height = '100%';
+    xplot.style.minHeight = '100%';
+    xplot.style.maxHeight = '100%';
+    xplot.style.width = '100%';*/
+
     for( let key of chart_keys){
 
         console.log(key + 'keys are');
@@ -147,7 +156,15 @@ function populate_field_plots( data ){
         let plot = document.createElement('div');
         container.appendChild(plot);
         plot.id = 'field-plot-'+key;
+        plot.style.height =   '31%';
+        plot.style.minHeight = '31%';
+        plot.style.maxHeight = '31%';
+        plot.style.width     = '100%';
+
+
+        
         Plotly.newPlot(plot, data[key]['data'], data[key]['layout'], {responsive: true})
+        .then (()=>{})
         //.then ((p)=>{
         //    field_plots.push(plot);
         //    //resizeObserver.observe( plot );
@@ -177,6 +194,12 @@ function populate_field_plots( data ){
     let plot = document.createElement('div');
     activity_container.appendChild(plot);
     plot.id = 'activity-plot';
+    plot.style.height =   '31%';
+    plot.style.minHeight = '31%';
+    plot.style.maxHeight = '31%';
+    plot.style.width     = '100%';
+
+
     Plotly.newPlot(plot, activity_data['data'], activity_data['layout'], {responsive: true})
     //.then ((p)=>{
     //    resizeObserver.observe( plot );
@@ -188,6 +211,11 @@ function populate_field_plots( data ){
     plot = document.createElement('div');
     sector_container.appendChild(plot);
     plot.id = 'sector-plot-volumes';
+    plot.style.height =   '50%';
+    plot.style.minHeight = '50%';
+    plot.style.maxHeight = '50%';
+    plot.style.width     = '100%';
+
     Plotly.newPlot(plot, data['sector_volumes']['data'], data['sector_volumes']['layout'], {responsive: true})
     //.then ((p)=>{
     //    //resizeObserver.observe( plot );
@@ -211,10 +239,14 @@ function populate_field_wells_snapshot( data ){
 
     let container = Id('wells-charts-container');
     container.innerHTML = '';
+    
     let plot = document.createElement('div');
     container.appendChild(plot);
     plot.id = 'sector-plot-wells';
-    plot.style.height = '1000px';
+    
+    plot.style.height = '100%';
+    plot.style.minHeight = '100%';
+    plot.style.maxHeight = '100%';
     plot.style.width = '100%';
 
     const layout = {
@@ -239,7 +271,6 @@ function populate_field_wells_snapshot( data ){
         xaxis2: { title:{text: 'Water production'}},
         xaxis3: { title:{text: 'Water production'}},*/
         //height: 1000,//  width: 1000,
-        autosize: true
         
     };
 

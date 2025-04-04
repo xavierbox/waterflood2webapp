@@ -23,13 +23,414 @@
 
      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+     <script src="{{ url_for('static', filename='crm_simulation_export.js') }}"></script>
 
  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 
+ <style>
+ 
+
+    .qsthree-col-layout-navbar {
+      position: sticky;
+      top: 0;
+      height: 56px;
+      background-color: #333;
+      color: white;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      z-index: 10;
+    }
+
+    .qsthree-col-layout-main {
+      display: flex;
+      height: calc(100vh - 76px - 11px);
+      margin-top: 1px;
+      border: 2px solid black;
+    }
+
+    .qsthree-col-layout-column {
+      height: 100%;
+      overflow: auto;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+    }
+
+    .qsthree-col-layout-col1 {
+      width: 20%;
+    }
+
+    .qsthree-col-layout-col2 {
+      width: 40%;
+    }
+
+    .qsthree-col-layout-col3 {
+      width: 40%;
+    }
+
+    #left-top,
+    #left-bottom {
+      aaflex: 1;
+      overflow-y: auto;
+    }
+
+    .qsthree-col-layout-horizontal-resizer {
+      flex: 0 0 5px;
+      min-height: 15px;
+      background: #ccc;
+      cursor: row-resize;
+      z-index: 2;
+    }
+    .qsthree-col-layout-horizontal-resizer:hover {
+    background-color: #333;
+    }
+
+    .qsthree-col-layout-vertical-resizer:hover {
+
+        background-color: #333;
+    }
+
+    .qsthree-col-layout-vertical-resizer {
+      width: 15px;
+      background: #ccc;
+      cursor: col-resize;
+      position: relative;
+      z-index: 1;
+    }
+
+    .qsthree-col-layout-content {
+      flex: 1;
+      overflow: auto;
+    }
+
+    .qsthree-col-layout-resizing {
+      user-select: none;
+    }
+  </style>
 </head>
 
+<script>
+
+    class QuickJS_ThreeColLayout extends HTMLElement{
+      _renderedTabs
+      constructor(){
+  
+        super();
+        this._renderedTabs = new Set();
+      }
+  
+      getTemplate(){
+  
+      return `
+        <div class="qsthree-col-layout-main">
+          <!-- Column 1 -->
+          <div style='overflow-y:hidden;'  class="qsthree-col-layout-column qsthree-col-layout-col1" id="left">
+            <div style= 'max-height: 100%;flex-basis: 70%;' id="left-top">Left Top</div>
+            <div class="qsthree-col-layout-horizontal-resizer" id="horizontalResizer"></div>
+            <div style='max-height: 100%;flex-basis: 30%;'id="left-bottom">Left Bottom</div>
+          </div>
+          <div class="qsthree-col-layout-vertical-resizer" id="vResizer1"></div>
+  
+          <!-- Column 2 -->
+          <div class="qsthree-col-layout-column qsthree-col-layout-col2" id="middle">
+            <div class="qsthree-col-layout-content">Center</div>
+          </div>
+          <div class="qsthree-col-layout-vertical-resizer" id="vResizer2"></div>
+  
+          <!-- Column 3 -->
+          <div class="qsthree-col-layout-column qsthree-col-layout-col3" id="right">
+            <div class="qsthree-col-layout-content">Right</div>
+          </div>
+        </div>
+        `;
+      }
+  
+      connectedCallback(){
+  
+        this.render();
+  
+        this.setup();
+      }
+  
+      render(){
+  
+        this.innerHTML = this.getTemplate();
+  
+      }
+  
+      setupVerticalResizer(resizer, leftEl, rightEl) {
+        let isDragging = false;
+  
+        resizer.addEventListener('mousedown', (e) => {
+          isDragging = true;
+          document.body.classList.add('qsthree-col-layout-resizing');
+  
+          const container = resizer.parentElement;
+          const startX = e.clientX;
+          const startLeftWidth = leftEl.getBoundingClientRect().width;
+          const startRightWidth = rightEl.getBoundingClientRect().width;
+          const containerWidth = container.clientWidth;
+  
+          function onMouseMove(e) {
+            if (!isDragging) return;
+  
+            const dx = e.clientX - startX;
+            let newLeftWidth = startLeftWidth + dx;
+            let newRightWidth = startRightWidth - dx;
+  
+            if (newLeftWidth < 50 || newRightWidth < 50) return;
+  
+            const newLeftPercent = (newLeftWidth / containerWidth) * 100;
+            const newRightPercent = (newRightWidth / containerWidth) * 100;
+  
+            leftEl.style.width = `${newLeftPercent}%`;
+            rightEl.style.width = `${newRightPercent}%`;
+          }
+  
+          function onMouseUp() {
+            isDragging = false;
+            document.body.classList.remove('qsthree-col-layout-resizing');
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+  
+            // Emit custom event
+            const event = new CustomEvent('pane-resized', {
+              detail: {
+                id: leftEl.id,
+                offsetWidth: leftEl.offsetWidth,
+                offsetHeight: leftEl.offsetHeight
+              },
+              bubbles: true,
+              composed: true
+            });
+            resizer.dispatchEvent(event);
+  
+  
+  
+            // Emit custom event
+            const event2 = new CustomEvent('pane-resized', {
+              detail: {
+                id:  rightEl.id,
+                offsetWidth: rightEl.offsetWidth,
+                offsetHeight: rightEl.offsetHeight
+  
+              },
+              bubbles: true,
+              composed: true
+            });
+            resizer.dispatchEvent(event2);
+  
+  
+  
+          }
+  
+          window.addEventListener('mousemove', onMouseMove);
+          window.addEventListener('mouseup', onMouseUp);
+  
+  
+  
+  
+        });
+      }
+  
+      setupHorizontalResizer(resizer, topEl, bottomEl) {
+        let isDragging = false;
+  
+        resizer.addEventListener('mousedown', (e) => {
+          isDragging = true;
+          document.body.classList.add('qsthree-col-layout-resizing');
+  
+          const container = topEl.parentElement;
+          const startY = e.clientY;
+          const startTopHeight = topEl.getBoundingClientRect().height;
+          const startBottomHeight = bottomEl.getBoundingClientRect().height;
+          const containerHeight = container.clientHeight;
+  
+          function onMouseMove(e) {
+            if (!isDragging) return;
+  
+            const dy = e.clientY - startY;
+            let newTopHeight = startTopHeight + dy;
+            let newBottomHeight = startBottomHeight - dy;
+  
+            if (newTopHeight < 50 || newBottomHeight < 50) return;
+  
+            const newTopPercent = (newTopHeight / containerHeight) * 100;
+            const newBottomPercent = 100 - newTopPercent;
+  
+            topEl.style.flex = '0 0 ' + newTopPercent + '%';
+            bottomEl.style.flex = '0 0 ' + newBottomPercent + '%';
+          }
+  
+          function onMouseUp() {
+            isDragging = false;
+            document.body.classList.remove('qsthree-col-layout-resizing');
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+  
+            // Emit custom event
+            const event = new CustomEvent('pane-resized', {
+              detail: {
+                id: topEl.id,
+                offsetWidth: topEl.offsetWidth,
+                offsetHeight: topEl.offsetHeight
+                
+              },
+              bubbles: true,
+              composed: true
+            });
+            resizer.dispatchEvent(event);
+  
+  
+            // Emit custom event
+            const event2 = new CustomEvent('pane-resized', {
+              detail: {
+                id:   bottomEl.id,
+                offsetWidth: bottomEl.offsetWidth,
+                offsetHeight: bottomEl.offsetHeight
+              },
+              bubbles: true,
+              composed: true
+            });
+            resizer.dispatchEvent(event2);
+            
+  
+          }
+  
+          window.addEventListener('mousemove', onMouseMove);
+          window.addEventListener('mouseup', onMouseUp);
+        });
+      }
+  
+      setup(){
+      // Init vertical resizers
+      this.setupVerticalResizer(
+        this.querySelector('#vResizer1'),
+        this.querySelector('.qsthree-col-layout-col1'),
+        this.querySelector('#middle')
+      );
+  
+      this.setupVerticalResizer(
+        this.querySelector('#vResizer2'),
+        this.querySelector('#middle'),
+        this.querySelector('#right')
+      );
+  
+      // Init horizontal resizer
+      this.setupHorizontalResizer(
+        this.querySelector('#horizontalResizer'),
+        this.querySelector('#left-top'),
+        this.querySelector('#left-bottom')
+      );
+  
+      }
+    
+    
+      set(where, content) {
 
 
+          
+   
+          const validPanes = ['left-top', 'left-bottom','middle', 'right', 'middle-top', 'middle-bottom', 'right-top', 'right-bottom']; 
+
+  
+          // Check if 'where' is valid
+          if (validPanes.includes(where)) {
+            if( where == 'middle-top') where = 'middle';
+              if( where == 'right-top') where = 'right';
+              
+
+              const pane = this.querySelector(`#${where}`);
+  
+              if (typeof content === 'string') {
+                  pane.innerHTML = content;  // Set content as innerHTML if it's a string
+              } else if (content instanceof HTMLElement) {
+                  pane.innerHTML = ''; // Clear existing content
+                  pane.appendChild(content);  // Append the HTML element
+              } else {
+                  console.error('Content must be a string or an HTML element');
+              }
+          } else {
+              console.error('Invalid pane ID');
+          }
+  
+  
+      }
+      clear(where) {
+        //const validPanes = ['left-top', 'left-bottom','middle', 'right'];
+        const validPanes = ['left-top', 'left-bottom','middle', 'right', 'middle-top', 'middle-bottom', 'right-top', 'right-bottom']; 
+    
+          // Check if 'where' is valid
+          if (validPanes.includes(where)) {
+            if( where == 'middle-top') where = 'middle';
+              if( where == 'right-top') where = 'right';
+              
+
+
+              const pane = this.querySelector(`#${where}`);
+              pane.innerHTML = ''; // Clear existing content
+          }
+  
+  
+      }
+      append(where, content) {
+        //const validPanes = ['left-top', 'left-bottom','middle', 'right'];
+        const validPanes = ['left-top', 'left-bottom','middle', 'right', 'middle-top', 'middle-bottom', 'right-top', 'right-bottom']; 
+      
+          // Check if 'where' is valid
+          if (validPanes.includes(where)) {
+            if( where == 'middle-top') where = 'middle';
+              if( where == 'right-top') where = 'right';
+              
+
+              const pane = this.querySelector(`#${where}`);
+  
+              //if (typeof content === 'string') {
+              //    pane.innerHTML = content;  // Set content as innerHTML if it's a string
+  
+              if (content instanceof HTMLElement) {
+                  //pane.innerHTML = ''; // Clear existing content
+                  pane.appendChild(content);  // Append the HTML element
+              } else {
+                  console.error('Content must be a an HTML element');
+              }
+          } else {
+              console.error('Invalid pane ID');
+          }
+  
+  
+      }
+      get_pane(id) {
+         // const validPanes = ['left-top', 'left-bottom',
+         //     'middle',  'right'
+         // ];
+          const validPanes = ['left-top', 'left-bottom','middle', 'right', 'middle-top', 'middle-bottom', 'right-top', 'right-bottom']; 
+          let where = id; 
+          // Check if 'where' is valid
+          if (validPanes.includes(id)) {
+
+              if( where == 'middle-top') where = 'middle';
+              if( where == 'right-top') where = 'right';
+              
+
+              const pane = this.querySelector(`#${where}`);
+              return pane;
+          }else {
+          console.error(`Invalid pane ID "${id}". Valid IDs are: ${validPanes.join(', ')}`);
+          return null;
+              }
+  
+      }
+  
+  
+    }
+    customElements.define("new-three-column-main-layout", QuickJS_ThreeColLayout);
+  
+  
+  
+    </script>
 
 <body>
     <script>function Id(id){return document.getElementById(id)}</script>
@@ -239,7 +640,7 @@
     <!-- Sticky Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
 
-            <button id="debug-stuff1">Fetch data for CRM modelling</button>
+            <button id="debug-stuff1">Debug stuffg</button>
 
             <div class="container-fluid">
                 <a class="navbar-brand" href="#">Waterflood insights</a>
@@ -313,7 +714,9 @@
                 </div-->
 
             <div id='field-stuff' class="col-12">
-            <three-column-main-layout id = "main-layout"></three-column-main-layout>
+            <!--three-column-main-layout id = "main-layout"></three-column-main-layout-->
+            <new-three-column-main-layout id = "main-layout"></three-column-main-layout>
+
             </div>
 
             <div id='extaara-stuff' class="col-12 hidden" style="height: 100vh;">
@@ -664,13 +1067,51 @@
 
                 /*run clicked*/
                 component.addEventListener('clicked', (evt)=>{
-                    console.log('run clicked', evt.detail);
 
-                    let control_setup = evt.detail.control_setup;
+                    console.log('Debugging setting a crm simulation parameters launch');
 
-                    
+                    //crm setup
+                    let crm_control_setup = evt.detail['crm_setup'];
+
+                    //project name, sectors, subzone, etc.... 
+                    let project_setup_details = get_project_data_selection();
+
+  
+                    let sim_params  = prepare_crm_simulation_export( crm_control_setup, project_setup_details);
+
+
+                    console.log('Simulation parameters:', sim_params);
+
+
+
+                    //send the entire thing to the backend
+                    toggleLoading(true);
+                    get_server('start_liquid_history_match_simulation','POST', JSON.stringify(sim_params))
+                    .then( (resp) =>{
+  
+                        console.log('start_liquid_history_match_simulation returned', resp);
+                      
+                            let message = 'Simulation exported/launched successfully<br>'; 
+
+                            Swal.fire({
+                                title: "Simulation started",
+                                html: message, 
+                                icon: "success"
+                            });
+                
+                        toggleLoading(false);
+
+                    })  
+                    .catch ((error) =>{
+                        console.log(error);
+                        alert('Error getting data for locations');
+                        toggleLoading(false);
+                    }); 
+
+                     
 
                 });
+
 
 
                 toggleLoading(false);
@@ -794,22 +1235,22 @@
     }); 
 
     Id('debug-stuff1').addEventListener('click', (evt)=>{
-
-        function valueToColor(value) {
-        // Clamp between 0 and 1
-        const v = Math.max(0, Math.min(1, value));
-
-        // Blue = (0, 0, 255), Red = (255, 0, 0)
-        const r = Math.round(255 * v);
-        const g = 0;
-        const b = Math.round(255 * (1 - v));
-
-        return `rgb(${r},${g},${b})`;
-        }
-
-
         console.log('debug-stuff1 clicked');
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+        return 
         let connectivities = [
             { 'producer':'BG-0724-3_P', 'injector': 'BG-0756-1_I', 'ALLOCATION': 0.96},
             { 'producer':'BG-0724-3_P', 'injector': 'BG-1723-1_I', 'ALLOCATION': 0.3},
