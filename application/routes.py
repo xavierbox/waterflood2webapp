@@ -376,12 +376,56 @@ def get_project_description():
 def get_field_wells():
     
     filters = request.get_json()
-    print('Request for /**************************get_field_wells_snapshot received', filters)
-
+ 
     crm_dataset = Storage(local_config).get_project_dataset( filters['project_name'], filters )
     chart = get_field_wells_snapshot( crm_dataset )#, filters  )
 
     return jsonify( {'message':'Data loaded', 'data' : chart }), 200  
+
+@app.route('/get_default_charts',methods=['GET','POST'])
+def get_default_charts():
+    filters = request.get_json()
+    crm_dataset = Storage(local_config).get_project_dataset( filters['project_name'], filters )
+    dataset_filters = filters
+            
+    # locations chart 
+    locs_fig  = get_dataset_locations_plot( crm_dataset )#, filters  )
+    #locs_charts = dict(locations = locs_fig)
+    all_names = crm_dataset.injector_names + crm_dataset.producer_names
+    #locs_charts['all_names'] = all_names
+
+
+    # first tab of charts 
+    producers_fig, fractions_fig, active_fig  =  get_dataset_field_summary_plots( crm_dataset )# , filters  )
+    sector_volumes_fig = get_dataset_sector_summary_plots( crm_dataset )
+    #field_charts = dict( fractions = fractions_fig, 
+    #                    historical_production = producers_fig, 
+    #                    activity = active_fig,
+    #                    sector_volumes = sector_volumes_fig
+    #                    )
+    
+    
+    wells_chart = get_field_wells_snapshot( crm_dataset )#, filters  )
+    
+    charts = dict( 
+                   #first tab of charts 
+                   fractions = fractions_fig, 
+                   historical_production = producers_fig, 
+                   activity = active_fig,
+                   
+                   #second tab
+                   sector_volumes = sector_volumes_fig, 
+                   
+                   #third tab
+                   wells = wells_chart,
+                     
+                   #locations 
+                   locations = locs_fig,
+                   all_names = all_names)
+    
+
+    return jsonify( {'message':'Data loaded', 'data' : charts }), 200   
+
 
 
 @app.route('/get_field_charts',methods=['GET','POST'])
@@ -442,38 +486,6 @@ def get_locations_chart():
     #                    )
     #return jsonify( {'message':'Data loaded', 'data' : field_charts }), 200   
 
-
-@app.route('/get_well_charts',methods=['GET','POST'])
-def get_well_charts():
-
-    return "all good", 200 
-
-    filters = request.get_json()
-    print('Request for /get_well_charts received', filters)
-
-    crm_dataset = mock_get_dataset( filters )
-       
-    producers_fig, fractions_fig, active_fig  =  get_dataset_field_summary_plots( crm_dataset )# , filters  )
-    sector_volumes_fig = get_dataset_sector_summary_plots( crm_dataset )
-    field_charts = dict( fractions = fractions_fig, 
-                        historical_production = producers_fig, 
-                        activity = active_fig,
-                        sector_volumes = sector_volumes_fig
-                        )
-     
-    return jsonify( {'message':'Data loaded', 'data' : field_charts }), 200   
-    
-
-    # field 
-    # time cummulatives, current step aggregates and active wells in time 
-    #producers_fig, fractions_fig, active_fig, locs  = mock_get_field_plots() 
-    #field_charts = dict( fractions = fractions_fig, 
-    #                    historical_production = producers_fig, 
-    #                    activity = active_fig,
-    #                    locations = locs
-    #                    )
-    #return jsonify( {'message':'Data loaded', 'data' : field_charts }), 200   
-    
     
 @app.route('/get_wells_data',methods=['GET','POST'])
 def get_wells_data(): 
@@ -617,7 +629,7 @@ def old_get_well_details():
 def layout():
      #return render_template('layoutVersion1B.html')
      #return render_template('FixedColumnLeftSide.html')
-     
+     return render_template('layoutVersion0C.html')
      return render_template('layoutVersion0B.html')
       
 

@@ -1,1 +1,0 @@
-{"pfm_strategy_name": "Default", "strategy_type": "IE", "injection_capacity": 6150, "shape_weighting_curve": 2, "efficiency_range": 1, "minimum_weight": -1, "maximum_weight": 1, "generated_from_crm": "true", "crm_project_name": "IX5I_4P", "crm_study_name": "XavierToDevelopPFMData", "subzone_name": "WARA1", "date": "2023-12-31", "save-strategy-checkbox": "on"}

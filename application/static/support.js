@@ -136,41 +136,51 @@ function populate_field_plots( data ){
     let container =   Id('field-charts-container');
     container.innerHTML = '';
 
+    let div1  = document.createElement('div');div1.classList.add('plots-tab-1');
+    let div2  = document.createElement('div');div2.classList.add('plots-tab-2');
+    div1.style.height = '100%';
+    div1.style.width  = '100%';
+    div2.style.height = '100%';
+    div2.style.width  = '100%';
+    div1.style.display = 'flex';
+    div1.style.flexDirection = 'column';
+    div1.style.flexWrap = 'wrap';
+    div2.style.display = 'flex';
+    div2.style.flexDirection = 'column';
+    div2.style.flexWrap = 'wrap';
+    
+    container.appendChild(div1);
+    container.appendChild(div2);
+    //
 
-    /*const xdata = [ ]
-    let xplot = document.createElement('div');
-    container.appendChild(xplot);
-    xplot.style.height = '100%';
-    xplot.style.minHeight = '100%';
-    xplot.style.maxHeight = '100%';
-    xplot.style.width = '100%';*/
+
+
 
     for( let key of chart_keys){
 
-        console.log(key + 'keys are');
-        for( let x in data[key]){
-            console.log(key);
-        }
-
         //xdata.push(data[key]['data']);
-        let plot = document.createElement('div');
-        container.appendChild(plot);
+        /*let plot = document.createElement('div');
+        plot.classList.add('plots-tab-1');
         plot.id = 'field-plot-'+key;
-        plot.style.height =   '31%';
-        plot.style.minHeight = '31%';
-        plot.style.maxHeight = '31%';
+        plot.style.height =   '33%';
+        plot.style.minHeight = '33%';
+        plot.style.maxHeight = '33%';
         plot.style.width     = '100%';
+        container.appendChild(plot);
+        console.log('appendsing oine')*/
 
+        /*let plot = document.createElement('div');
+        plot.style.height    =   '33%';
+        plot.style.minHeight = '33%';
+        plot.style.maxHeight = '33%';
+        plot.style.width     = '100%';
+        plot.style.display = 'flex';
+        plot.style.flexDirection = 'row';*/
 
+        //div1.appendChild(plot);
+        Plotly.newPlot(div1, data[key]['data'], data[key]['layout'], {responsive: true}).then ((p)=>{});    
         
-        Plotly.newPlot(plot, data[key]['data'], data[key]['layout'], {responsive: true})
-        .then (()=>{})
-        //.then ((p)=>{
-        //    field_plots.push(plot);
-        //    //resizeObserver.observe( plot );
-        //    relayout( plot );
-        //});    
-        
+   
         
     }
     //const layout = { autosize:true, grid: { rows: 2, columns: 1, pattern: 'independent' }};
@@ -179,44 +189,58 @@ function populate_field_plots( data ){
     //});
     //resizeObserver.observe( xplot );
 
+   
+    let activity_container = container;
 
-    let activity_container = container;//Id('activity-charts-container');
-    //activity_container.innerHTML = '';
     let activity_data = data['activity'];
 
-    console.log('Activity keys are');
-    for( let key in activity_data){
-        console.log(key);
-    }
-
-
-
+   /*
     let plot = document.createElement('div');
     activity_container.appendChild(plot);
     plot.id = 'activity-plot';
-    plot.style.height =   '31%';
-    plot.style.minHeight = '31%';
-    plot.style.maxHeight = '31%';
-    plot.style.width     = '100%';
+    plot.classList.add('plots-tab-1');
+    plot.style.height =   '33%';
+    plot.style.minHeight = '33%';
+    plot.style.width     = '100%';*/
 
 
-    Plotly.newPlot(plot, activity_data['data'], activity_data['layout'], {responsive: true})
+    Plotly.newPlot(div1, activity_data['data'], activity_data['layout'], {responsive: true})
+    .then ((p)=>{
+
+        setTimeout(() => {
+            document.querySelectorAll('.js-plotly-plot').forEach(xplot => {Plotly.Plots.resize(xplot);});
+            Id('main-layout').addEventListener('pane-resized', (evt) =>{
+                document.querySelectorAll('.js-plotly-plot').forEach(xplot => {Plotly.Plots.resize(xplot);});
+            });
+
+        
+        }, 500);
+
+    });
+ 
+
+
+
     //.then ((p)=>{
     //    resizeObserver.observe( plot );
     //});
     //field_plots.push(plot);
      
+    /******
     let sector_container = Id('sector-charts-container');
     sector_container.innerHTML = '';
-    plot = document.createElement('div');
-    sector_container.appendChild(plot);
+    */
+    /*plot = document.createElement('div');
+    container.appendChild(plot);
     plot.id = 'sector-plot-volumes';
-    plot.style.height =   '50%';
+    plot.classList.add('plots-tab-2');
+    plot.style.height    = '50%';
     plot.style.minHeight = '50%';
-    plot.style.maxHeight = '50%';
-    plot.style.width     = '100%';
+    plot.style.width     = '100%';*/
+    Plotly.newPlot(div2, data['sector_volumes']['data'], data['sector_volumes']['layout'], {responsive: true})
+ 
 
-    Plotly.newPlot(plot, data['sector_volumes']['data'], data['sector_volumes']['layout'], {responsive: true})
+
     //.then ((p)=>{
     //    //resizeObserver.observe( plot );
     //    relayout( plot );
@@ -237,18 +261,24 @@ function populate_field_plots( data ){
 
 function populate_field_wells_snapshot( data ){
 
-    let container = Id('wells-charts-container');
-    container.innerHTML = '';
-    
-    let plot = document.createElement('div');
-    container.appendChild(plot);
-    plot.id = 'sector-plot-wells';
-    
-    plot.style.height = '100%';
+    let div3  = document.createElement('div');div3.classList.add('plots-tab-3');
+    div3.style.height = '100%';
+    div3.style.width  = '100%';
+    let container =   Id('field-charts-container');
+    container.appendChild(div3);
+
+    //let container = Id('wells-charts-container');
+    //let container =   Id('field-charts-container');
+
+
+    /*let plot = document.createElement('div');
+    plot.classList.add('plots-tab-3');
+    plot.style.height =   '100%';
     plot.style.minHeight = '100%';
     plot.style.maxHeight = '100%';
-    plot.style.width = '100%';
-
+    plot.style.width     = '100%';
+    container.appendChild(plot);
+    plot.id = 'sector-plot-wells';*/
     const layout = {
         grid: {rows: 3, columns: 1, pattern: 'independent'},
         title: { text:' Cummulated volumes vs water produced'},
@@ -274,13 +304,8 @@ function populate_field_wells_snapshot( data ){
         
     };
 
-    let p = Plotly.newPlot(plot, data['data'], layout, {responsive: true})
+    let p = Plotly.newPlot(div3, data['data'], layout, {responsive: true})
     p.then ((p)=>{
-        //resizeObserver.observe( plot );
-        //relayout( plot );
-
-
-
         p.on('plotly_selected', function(eventData) {
             if (eventData) {
                 //console.log("---------Selection type:", eventData.range ? "box" : "lasso");
@@ -301,7 +326,6 @@ function populate_field_wells_snapshot( data ){
                 set_selected_well_names_in_scatter_chart( undefined );
             }
         });
-
     }); 
 
  

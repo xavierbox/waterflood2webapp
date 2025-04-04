@@ -494,38 +494,184 @@
     </div>
 
 
-    <div id="top-right-pagination">
-        <ul class="pagination">
-          <li class="page-item">
-            <a id='field-tab-button' class="field-tab btn-sm page-link">Field</a>
-          </li>
+    <div id="top-right-pagination" style="display:flex;flex-direction: column;height: 100%;">
 
-          <li class="page-item">
-            <a id='sector-tab-button' class="field-tab btn-sm  page-link">Sector </a>
-          </li>
-          <li class="page-item">
-            <a id='wells-tab-button'class="field-tab btn-sm page-link">Wells</a>
-          </li>
-          <li class="page-item">
-            <a id='workflows-tab-button'class="field-tab btn-sm page-link">Workflows</a>
-          </li>
-          <li class="page-item">
-            <a id='results-tab-button'class="field-tab btn-sm page-link">Simulation</a>
-          </li>
+        <!-- top menu -->
+        <div style='display: flex; height: 50px; flex-wrap: wrap; gap: 8px; padding: 8px;'>
+            <ul class="pagination">
+            <li class="page-item">
+                <a onclick="showCharts([0, 1, 2],this)" id='field-tab-button' class="field-tab btn-sm page-link">Field</a>
+            </li>
 
-        </ul>
+            <li class="page-item">
+                <a onclick="showCharts([3],this)"  id='sector-tab-button' class="field-tab btn-sm  page-link">Sector </a>
+            </li>
+            <li class="page-item">
+                <a onclick="showCharts([4],this)"  id='wells-tab-button'class="field-tab btn-sm page-link">Wells</a>
+            </li>
+            <li class="page-item">
+                <a onclick="showCharts([5],this)"  id='workflows-tab-button'class="field-tab btn-sm page-link">Workflows</a>
+            </li>
+            <li class="page-item">
+                <a onclick="showCharts([6],this)"  id='results-tab-button'class="field-tab btn-sm page-link">Simulation</a>
+            </li>
+
+            </ul>
+        </div>
+
+        <!-- charts menu -->
+        <div id="chart-container" style="background-color: blueviolet; display: flex; flex-direction: column; gap: 5px; height: 100%; width: 100%;">
+            <div id="chart-1" class="chart-box" style="flex: 1; width: 100%;"></div>
+            <div id="chart-2" class="chart-box" style="flex: 1; width: 100%;"></div>
+            <div id="chart-3" class="chart-box" style="flex: 1; width: 100%;"></div>
+            <div id="chart-4" class="chart-box" style="flex: 1; width: 100%;"></div>
+            <div id="chart-5" class="chart-box" style="flex: 1; width: 100%;"></div>
+
+            <div id="chart-6" class="chart-box" style="flex: 1;">Workflows</div>
+            <div id="chart-7" class="chart-box" style="flex: 1;">Simulations</div>
+        </div>
+
         <script>
-            let tabs = document.querySelectorAll('.field-tab');
-            tabs.forEach((tab) => {
-                tab.addEventListener('click', function(){
-                    tabs.forEach((t) => {
-                        t.classList.remove('selected');
-                    });
-                    this.classList.add('selected');
+              function showCharts(indexes, ele) {
+                const chartDivs = [
+                document.getElementById('chart-1'),
+                document.getElementById('chart-2'),
+                document.getElementById('chart-3'),
+                document.getElementById('chart-4'),
+                document.getElementById('chart-5'),
+
+                document.getElementById('chart-6'),
+                document.getElementById('chart-7')
+                ];
+            
+                document.querySelectorAll('.field-tab').forEach((tab) => {
+                    tab.classList.remove('selected');
                 });
-            });
+                ele.classList.add('selected');
+
+                chartDivs.forEach((div, i) => {
+                div.style.display = indexes.includes(i) ? 'block' : 'none';if (indexes.includes(i)) Plotly.Plots.resize(div);});
+            }
+
+
+
         </script>
+    </div>
+
      
+
+            <!--script>
+
+                Id('field-tab-button').addEventListener( 'click',()=>{
+              
+                    document.querySelectorAll('.plots-tab-1').forEach(container => {
+                        container.style.display = 'flex';
+                    });
+                    document.querySelectorAll('.plots-tab-2').forEach(container => {
+                        container.style.display = 'none';
+                    });
+                    document.querySelectorAll('.plots-tab-3').forEach(container => {
+                        container.style.display = 'none';
+                    });
+                });
+
+                Id('wells-tab-button').addEventListener( 'click',()=>{
+                    document.querySelectorAll('.plots-tab-1').forEach(container => {
+                        container.style.display = 'none';
+                    });
+                    document.querySelectorAll('.plots-tab-2').forEach(container => {
+                        container.style.display = 'none';
+                    });
+                    document.querySelectorAll('.plots-tab-3').forEach(container => {
+                        container.style.display = 'flex';
+                    });
+
+                });
+                Id('sector-tab-button').addEventListener( 'click',()=>{
+                    document.querySelectorAll('.plots-tab-1').forEach(container => {
+                        container.style.display = 'none';
+                    });
+                    document.querySelectorAll('.plots-tab-2').forEach(container => {
+                        container.style.display = 'flex';
+                    });
+                    document.querySelectorAll('.plots-tab-3').forEach(container => {
+                        container.style.display = 'none';
+                    });
+
+                });
+
+
+                /*let tabs = document.querySelectorAll('.field-tab');
+
+                
+
+                tabs.forEach((tab) => {
+                    tab.addEventListener('click', function(){
+                        alert('clicled', )
+                        /*tabs.forEach((t) => {
+                            t.classList.remove('selected');
+                        });
+                        this.classList.add('selected');
+                        */
+                   // });
+                //});*/
+            </script -->
+        
+     
+
+        <!-- div style="gap:8px; display:flex;flex-direction: column;height: 100%;background-color: aqua;" 
+        id="field-charts-container" 
+        class="aafield-chart-container">
+        </div -->
+
+        <!-- wrapper for all charts -->
+        <!-- div style="aflex: 1 1 100%; overflow: auto; adisplay: flex; aflex-direction: acolumn; heigh:100%; min-height: 100%; background-color: indianred;">
+    -->
+            <!-- just for margins...etc-->
+            <!--div style="display: block; flex: 1 1 0%; padding: 8px; background-color: orange;">
+
+                <div id="field-charts-container" class="field-chart-container" style="width:100%;height:100%;display:flex;flex-direction:column;gap:16px;">
+                    <p>Field charts go here...</p></div>
+            </div>
+
+            <div style="display: none; flex: 1 1 0%; padding: 8px; background-color: orange;">
+
+                <div id="sector-charts-container" class="field-chart-container" style="width:100%;height:100%;display:flex;flex-direction:column;gap:16px;">
+                <p>Sector charts go here...</p></div>
+
+            </div>
+
+           
+            <div style="display: block; flex: 1 1 0%; padding: 8px; background-color: orange;">
+                <div id="wells-charts-container" class="field-chart-container" style="width:100%;height:100%;display:flex;flex-direction:column;gap:16px;">
+                    <p>Wells charts go here...</p></div>   
+            </div>
+
+            <div style="display: block; flex: 1 1 0%; padding: 8px; background-color: orange;">
+                <div id="workflows-charts-container" class="field-chart-container" style="width:100%;height:100%;display:flex;flex-direction:column;gap:16px;">
+                    <p>workflows go here...</p></div>   
+            </div>
+
+            <div style="display: block; flex: 1 1 0%; padding: 8px; background-color: orange;" style="width:100%;height:100%;display:flex;flex-direction:column;gap:16px;">
+                <div id="results-charts-container" class="field-chart-container">
+                    <p>workflows results go here...</p></div> 
+            </div-->
+
+        <!--/div -->
+
+
+
+ 
+    <!--script>
+        document.querySelector('.field-tab').addEventListener('click', (e) => {
+        alert('clicked', e.target.id);
+        document.querySelectorAll('.js-plotly-plot').forEach(plot => {
+            Plotly.Plots.resize(plot);
+        });
+        });
+    </script-->
+
+        <!--    
         <div id="field-charts-container" class="field-chart-container" xstyle="background-color: grey; min-height:99vh; max-height:99vh; height: 99vh">
         <p>Field charts go here...</p></div>
         <div id="sector-charts-container" class="field-chart-container" xstyle="background-color: grey; min-height:99vh; max-height:99vh; height: 99vh">
@@ -536,27 +682,30 @@
             <p>workflows go here...</p></div>        
     
             <div id="results-charts-container" class="field-chart-container">
-                <p>workflows results go here...</p></div>   
-
+                <p>workflows results go here...</p>
+            </div>   
+        -->    
             
 
-        <script>
-            let items = document.querySelectorAll('.field-tab');
+        <!-- script>
+            let items = document.querySelectorAll('.field-tab');     
             items.forEach((item) => {
-                item.addEventListener('click', function(){
-                    
-                    let tabs = document.querySelectorAll('.field-chart-container'); 
-                    tabs.forEach((tab) => {
-                        tab.classList.add('hidden');// .style.display = 'none';
-                    });
+                item.addEventListener('click', function(){                  
+                    console.log()
+                    let atabs = document.querySelectorAll('.field-chart-container'); 
                     let tab_id = this.id.split('-')[0]+'-charts-container';
-                    document.getElementById(tab_id).classList.remove('hidden');// .style.display = 'block';
-                    
-
+                    atabs.forEach((aatab) => {
+                        console.log('aatab id', aatab.parentElement.id)
+                        if( aatab.id!=tab_id)
+                            {aatab.parentElement.style.display = 'none';
+                            
+                            }
+                        else {aatab.parentElement.style.display = 'block'; console.log('showing ', aatab)} 
+                    });
                 });
             }); 
-        </script>
-    </div>
+        </script -->
+
 
     <div id='side-bar-top' class="h50  p-3">
           
@@ -704,7 +853,7 @@
     </nav>
 
 
-    <div id='all-app-wrapper' class="container-fluid hidden">
+    <div id='all-app-wrapper' class="container-fluid no-hidden">
 
 
     <div style="position: relative;top: 75px;" >
@@ -833,7 +982,8 @@
     layout.addEventListener('pane-resized', () => {resizePending = true;});
     window.addEventListener('mouseup', () => { 
         
-        console.log('mouseup...', resizePending);
+        return;
+        //console.log('mouseup...', resizePending);
         if(resizePending == true){
         
             let containers = document.querySelectorAll('.field-chart-container');
@@ -866,15 +1016,6 @@
     });
   
 
-
-    /*let app_layout = Id('main-layout');
-    app_layout.addEventListener('pane-resized', (evt)=>
-    {
-        console.log( evt.detail );
-    });*/
-
-    
-
 </script>
    
 <script id='ui_events'>
@@ -903,10 +1044,82 @@
     }
 
     async function get_charts_data(read_data){
+    /*
+    Get the hard-coded charts to show by default
+    */
+
 
         try{
             toggleLoading(true);
 
+            resp = await get_server('get_default_charts','POST', JSON.stringify(read_data));
+
+            let data = resp.data;
+            console.log('get_default_charts returned',data);
+
+            //let locs_figure = data['locations'];
+            populate_locations_plot( data );
+            all_well_names_visible = data['all_names'];
+
+            const chartDivs = [
+                document.getElementById('chart-1'),
+                document.getElementById('chart-2'),
+                document.getElementById('chart-3'),
+                document.getElementById('chart-4'),
+                document.getElementById('chart-5'),
+
+                document.getElementById('chart-6'),
+                document.getElementById('chart-7')
+                ];
+
+            
+            //#first tab of charts 
+            let chart_keys = ['fractions','historical_production', 'activity'];
+            Plotly.newPlot(chartDivs[0], data['fractions']['data'], data['fractions']['layout'], {responsive: true}).then ((p)=>{});  
+            Plotly.newPlot(chartDivs[1], data['historical_production']['data'], data['historical_production']['layout'], {responsive: true}).then ((p)=>{});  
+            Plotly.newPlot(chartDivs[2], data['activity']['data'], data['activity']['layout'], {responsive: true}).then ((p)=>{});  
+
+            Plotly.newPlot(chartDivs[3], data['sector_volumes']['data'], data['sector_volumes']['layout'], {responsive: true}).then ((p)=>{});
+            
+            const layout = {
+                grid: {rows: 3, columns: 1, pattern: 'independent'},
+                title: { text:' Cummulated volumes vs water produced'},
+                autosize: true,
+                automargin: true,
+                //margin: {l: 70, r: 40, t: 40, b: 30},
+                xaxis1:  {matches: 'x'},
+                xaxis2: {matches: 'x'},
+                xaxis3: {matches: 'x'},
+                xaxis4: {matches: 'x'},
+                yaxis1: { title:{text: 'Gas production'}},
+                yaxis2: { title:{text: 'Oil production'}},
+                yaxis3: { title:{text: 'Liquid production'}},
+            };
+            Plotly.newPlot(chartDivs[4], data['wells']['data'], layout, {responsive: true}).then ((p)=>{});  
+
+            let component = new CRMSetupElement();//crm-setup-element
+            chartDivs[5].innerHTML = '';
+            chartDivs[5].appendChild(component);
+
+            console.log('here');
+            /*
+                   fractions = fractions_fig, 
+                   historical_production = producers_fig, 
+                   activity = active_fig,
+
+                   #second tab
+                   sector_volumes = sector_volumes_fig, 
+                   
+                   #third tab
+                   wells = wells_chart,
+                     
+                   #locations 
+                   locations = locs_fig,
+                   all_names = all_names)
+                   */
+
+
+            /*
             const resp1 = await get_server('get_locations_chart','POST', JSON.stringify(read_data))
             populate_locations_plot(resp1.data);
             all_well_names_visible = resp1.data['all_names'];
@@ -916,10 +1129,12 @@
                 
             const resp3 = await get_server('get_field_wells','POST', JSON.stringify(read_data))
             populate_field_wells_snapshot(resp3.data);
-
-
+            
             const resp4 = await get_server('get_field_wells','POST', JSON.stringify(read_data))
+            */
+
             toggleLoading(false);
+            
 
             //const resp5= await  get_server('get_wells_data','POST', JSON.stringify(read_data))
             //all_well_distances = resp5.all_well_distances;
@@ -936,6 +1151,8 @@
             }; 
 
     }
+    
+    
     /*when the user double-clicks in one workflow item*/
     Id('workflow-selector').addEventListener('dclicked',(evt)=>{
         //console.log('Workflow double-clicked:', evt.detail);
