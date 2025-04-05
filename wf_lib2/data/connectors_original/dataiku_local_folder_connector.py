@@ -1,8 +1,7 @@
 
-from wf_lib2.crm_definitions import * #just need dataiku  
-
-
 import pandas as pd, pickle 
+import  dataiku
+from wf_lib2.crm_definitions import * 
 from wf_lib2.data.crm_dataset import CRMDataset 
 from wf_lib2.data.crm_data_utils import find_columns, dataframe_to_json,aggregate_column
 from wf_lib2.data.dataiku_storage_api import DataikuStorageAPI 
@@ -150,7 +149,7 @@ class KOCDataikuLocalStorageConnector(DataikuLocalFolderConnector):
 
     '''
     This object was created to support the KOC project.
-    It inherits most of its functionality from wf_lib but adds bits and pieces to support the UI and the multi-RMU data. 
+    It inherits most of its functionality from wf_lib2 but adds bits and pieces to support the UI and the multi-RMU data. 
     
     
     Will work assuming only one zone (ONE reservoir) per project although there  might be one or more subzones (RMU)
@@ -827,16 +826,13 @@ class KOCDataikuLocalStorageConnector(DataikuLocalFolderConnector):
         producers_liquid_rates['DATE'] = pd.to_datetime( producers_liquid_rates['DATE'] )
         
   
-        injectors_liquid_rates = injectors_liquid_rates[ injectors_liquid_rates['NAME'].isin(injector_names) ]
-        producers_liquid_rates = producers_liquid_rates[ producers_liquid_rates['NAME'].isin(producer_names) ]
-        locations = locations[ locations['NAME'].isin(producer_names + injector_names) ]
-     
 
 
-        return  (historical_koval_crm,   #
-                 historical_koval_rates, #
-                 historical_liquid_crm,  #
-                 historical_liquid_rates,# 
+
+        return  (historical_koval_crm, 
+                 historical_koval_rates, 
+                 historical_liquid_crm, 
+                 historical_liquid_rates, 
                  injectors_liquid_rates,
                  producers_liquid_rates,
                  locations) 

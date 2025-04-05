@@ -1,7 +1,5 @@
 
-from wf_lib2.crm_definitions import *
-from wf_lib2.crm_storage_config import *
-
+import dataiku
 import pickle, json, os, pandas as pd, numpy as np  
 from typing   import Union  
 #from datetime import date
@@ -9,9 +7,9 @@ from typing   import Union
 import datetime
 
 
-#from wf_lib.data.raw_data_processing import RawDataProcessing
+#from wf_lib2.data.raw_data_processing import RawDataProcessing
 from wf_lib2.data.crm_dataset import CRMDataset 
- 
+from wf_lib2.crm_definitions import * 
 
 import warnings
 warnings.filterwarnings(action='ignore', category=UserWarning) 
@@ -417,23 +415,18 @@ class DataikuStorageAPI:
         except:
             return {}
    
-    def get_sim_results( self, project, sim_name,parse_dates = True ):
-
- 
+    def get_sim_results( self, project, sim_name ):
 
         known_files = ['crm.csv', 'rates.csv', 'optimization.txt' ]  
-        study_files = self.list_study_files( project, sim_name )
-        #files = [ f for f in self.list_study_files( project, sim_name) if f in known_files ]
-        files = [ f for f in study_files for x in known_files if x in f ]
-         
-
+        files = [ f for f in self.list_study_files( project, sim_name) if f in known_files ]
+ 
         data = {} 
         crm, rates = None,None  
-         
+        parse_dates = True 
         nrows = None 
         data = {} 
         crm, rates = None,None  
-   
+        parse_dates = True 
         nrows = None 
 
         for file_name in files:
@@ -455,15 +448,9 @@ class DataikuStorageAPI:
 
 
             if 'optimization.txt' in file_name.lower(): 
-                try:
-                    print('parsing here ')
-                    opt = self.read_json( path )#, 'optimization.txt' )
-                    data['optimization'] = opt        
-                except:
-                
-                    pass
-        
-        return data 
+                print('parsing here ')
+                opt = self.read_json( path )#, 'optimization.txt' )
+                data['optimization'] = opt        
         
         inj,prod,loc,events = None,None,None,None
         files = [ f for f in self.list_study_files( project, sim_name) if 'dataset' in f ]

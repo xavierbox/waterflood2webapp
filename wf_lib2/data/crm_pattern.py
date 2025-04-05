@@ -296,6 +296,9 @@ class CRMPattern (dict):
         # from a multi-well pattern create a list of single-well patterns 
         p = self 
         producer_names = list(p.producer_names) 
+        
+ 
+        
           
         
         injector_names = list(p.injector_names) 
@@ -306,16 +309,22 @@ class CRMPattern (dict):
             x= CRMPattern()
             for key in p.keys():
                 data = p[ key ]
-
-                #these are all the rates 
-                if producer_names[n] in data.columns:
+                
+                if data is None:
+                    pass 
+                
+                elif not isinstance(data, pd.DataFrame):
+                    x[key] = data.copy()
+                    
+                elif not producer_names[n] in data.columns:
+                    x[key] = data.copy()
+    
+            
+                #these are all the producer rates 
+                else: 
                     x_data = data[ producer_names[n] ]
                     x[key] = pd.DataFrame( x_data.copy() )
-                    
- 
-                #these may be distances and locations 
-                else:
-                    x[key] = data.copy() 
+                        
 
             #now the distances and locations 
             #locations 

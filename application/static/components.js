@@ -617,7 +617,10 @@ class QuickJS_Stringlist extends HTMLElement {
             //console.log('dispatching event, data ', data )
             }
 
-      set_data( strings ){
+      setData = ( strings ) => {
+        this.set_data(strings);
+      }
+      set_data = ( strings )=>{
           let this_object = this;
           let table = this_object.getElementsByTagName('table')[0];
           let thead = table.getElementsByTagName('thead')[0];
@@ -629,7 +632,7 @@ class QuickJS_Stringlist extends HTMLElement {
           
       }
   
-      has_body(){
+      has_body = ()=> {
           return this.innerHTML.replace(/ /g, '').length  > 0; 
       }
   

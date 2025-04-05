@@ -14,7 +14,7 @@ const resizeObserver = new ResizeObserver(entries => {
 function relayout( container){
 
     //container.style.padding = '20px';
-    let inner_offset = 30; 
+    let inner_offset = 5; 
     let pad = 45;
 
     let body = document.getElementsByTagName('body')[0];
@@ -34,7 +34,7 @@ function relayout( container){
         'margin': {
         'l': inner_offset,
         'r': inner_offset,
-        'b': inner_offset,
+        'b': 10*inner_offset,
         't': inner_offset,
         //'pad': 4  
         },

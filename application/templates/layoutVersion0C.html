@@ -9,23 +9,24 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
      <!-- Add Plotly CDN -->
-     <script src='https://cdn.plot.ly/plotly-3.0.0.min.js'></script>
+
+ 
+
+   
+    
      <!--script src = "components.js"></script-->
      <!--script src= "app_components.js"></script-->
-
      <script src="{{ url_for('static', filename='globals.js') }}"></script>
      <script src="{{ url_for('static', filename='components.js') }}"></script>
      <script src="{{ url_for('static', filename='app_components.js') }}"></script>
      <script src="{{ url_for('static', filename='support.js') }}"></script>
      <script src="{{ url_for('static', filename='locs_chart_support.js') }}"></script>
-     
      <link href ="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
-
      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
      <script src="{{ url_for('static', filename='crm_simulation_export.js') }}"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 
- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src='https://cdn.plot.ly/plotly-3.0.1.min.js'></script>
 
  <style>
  
@@ -430,7 +431,7 @@
   
   
   
-    </script>
+</script>
 
 <body>
     <script>function Id(id){return document.getElementById(id)}</script>
@@ -497,6 +498,28 @@
     <div id="top-right-pagination" style="display:flex;flex-direction: column;height: 100%;">
 
         <!-- top menu -->
+      <script>
+            function showCharts(indexes, ele) {
+              const chartDivs = [
+              document.getElementById('chart-1'),
+              document.getElementById('chart-2'),
+              document.getElementById('chart-3'),
+              document.getElementById('chart-4'),
+              document.getElementById('sector-plot-wells'),
+
+              document.getElementById('workflows-charts-container'),
+              document.getElementById('results-charts-container')
+              ];
+          
+              document.querySelectorAll('.field-tab').forEach((tab) => {
+                  tab.classList.remove('selected');
+              });
+              ele.classList.add('selected');
+
+              chartDivs.forEach((div, i) => {
+              div.style.display = indexes.includes(i) ? 'block' : 'none';if (indexes.includes(i)) Plotly.Plots.resize(div);});
+          }
+      </script>
         <div style='display: flex; height: 50px; flex-wrap: wrap; gap: 8px; padding: 8px;'>
             <ul class="pagination">
             <li class="page-item">
@@ -520,191 +543,19 @@
         </div>
 
         <!-- charts menu -->
-        <div id="chart-container" style="background-color: blueviolet; display: flex; flex-direction: column; gap: 5px; height: 100%; width: 100%;">
+        <div id="chart-container" style="display: flex; flex-direction: column; gap: 5px; height: 100%; width: 100%;">
             <div id="chart-1" class="chart-box" style="flex: 1; width: 100%;"></div>
             <div id="chart-2" class="chart-box" style="flex: 1; width: 100%;"></div>
             <div id="chart-3" class="chart-box" style="flex: 1; width: 100%;"></div>
             <div id="chart-4" class="chart-box" style="flex: 1; width: 100%;"></div>
-            <div id="chart-5" class="chart-box" style="flex: 1; width: 100%;"></div>
+            <div id="sector-plot-wells" class="chart-box" style="flex: 1; width: 100%;"></div>
 
-            <div id="chart-6" class="chart-box" style="flex: 1;">Workflows</div>
-            <div id="chart-7" class="chart-box" style="flex: 1;">Simulations</div>
+            <div id="workflows-charts-container" class="no-chart-box" style="xxflex: 1;">Workflows</div>
+            <div id="results-charts-container" class="chart-box" style="flex: 1;">Simulations</div>
         </div>
 
-        <script>
-              function showCharts(indexes, ele) {
-                const chartDivs = [
-                document.getElementById('chart-1'),
-                document.getElementById('chart-2'),
-                document.getElementById('chart-3'),
-                document.getElementById('chart-4'),
-                document.getElementById('chart-5'),
 
-                document.getElementById('chart-6'),
-                document.getElementById('chart-7')
-                ];
-            
-                document.querySelectorAll('.field-tab').forEach((tab) => {
-                    tab.classList.remove('selected');
-                });
-                ele.classList.add('selected');
-
-                chartDivs.forEach((div, i) => {
-                div.style.display = indexes.includes(i) ? 'block' : 'none';if (indexes.includes(i)) Plotly.Plots.resize(div);});
-            }
-
-
-
-        </script>
     </div>
-
-     
-
-            <!--script>
-
-                Id('field-tab-button').addEventListener( 'click',()=>{
-              
-                    document.querySelectorAll('.plots-tab-1').forEach(container => {
-                        container.style.display = 'flex';
-                    });
-                    document.querySelectorAll('.plots-tab-2').forEach(container => {
-                        container.style.display = 'none';
-                    });
-                    document.querySelectorAll('.plots-tab-3').forEach(container => {
-                        container.style.display = 'none';
-                    });
-                });
-
-                Id('wells-tab-button').addEventListener( 'click',()=>{
-                    document.querySelectorAll('.plots-tab-1').forEach(container => {
-                        container.style.display = 'none';
-                    });
-                    document.querySelectorAll('.plots-tab-2').forEach(container => {
-                        container.style.display = 'none';
-                    });
-                    document.querySelectorAll('.plots-tab-3').forEach(container => {
-                        container.style.display = 'flex';
-                    });
-
-                });
-                Id('sector-tab-button').addEventListener( 'click',()=>{
-                    document.querySelectorAll('.plots-tab-1').forEach(container => {
-                        container.style.display = 'none';
-                    });
-                    document.querySelectorAll('.plots-tab-2').forEach(container => {
-                        container.style.display = 'flex';
-                    });
-                    document.querySelectorAll('.plots-tab-3').forEach(container => {
-                        container.style.display = 'none';
-                    });
-
-                });
-
-
-                /*let tabs = document.querySelectorAll('.field-tab');
-
-                
-
-                tabs.forEach((tab) => {
-                    tab.addEventListener('click', function(){
-                        alert('clicled', )
-                        /*tabs.forEach((t) => {
-                            t.classList.remove('selected');
-                        });
-                        this.classList.add('selected');
-                        */
-                   // });
-                //});*/
-            </script -->
-        
-     
-
-        <!-- div style="gap:8px; display:flex;flex-direction: column;height: 100%;background-color: aqua;" 
-        id="field-charts-container" 
-        class="aafield-chart-container">
-        </div -->
-
-        <!-- wrapper for all charts -->
-        <!-- div style="aflex: 1 1 100%; overflow: auto; adisplay: flex; aflex-direction: acolumn; heigh:100%; min-height: 100%; background-color: indianred;">
-    -->
-            <!-- just for margins...etc-->
-            <!--div style="display: block; flex: 1 1 0%; padding: 8px; background-color: orange;">
-
-                <div id="field-charts-container" class="field-chart-container" style="width:100%;height:100%;display:flex;flex-direction:column;gap:16px;">
-                    <p>Field charts go here...</p></div>
-            </div>
-
-            <div style="display: none; flex: 1 1 0%; padding: 8px; background-color: orange;">
-
-                <div id="sector-charts-container" class="field-chart-container" style="width:100%;height:100%;display:flex;flex-direction:column;gap:16px;">
-                <p>Sector charts go here...</p></div>
-
-            </div>
-
-           
-            <div style="display: block; flex: 1 1 0%; padding: 8px; background-color: orange;">
-                <div id="wells-charts-container" class="field-chart-container" style="width:100%;height:100%;display:flex;flex-direction:column;gap:16px;">
-                    <p>Wells charts go here...</p></div>   
-            </div>
-
-            <div style="display: block; flex: 1 1 0%; padding: 8px; background-color: orange;">
-                <div id="workflows-charts-container" class="field-chart-container" style="width:100%;height:100%;display:flex;flex-direction:column;gap:16px;">
-                    <p>workflows go here...</p></div>   
-            </div>
-
-            <div style="display: block; flex: 1 1 0%; padding: 8px; background-color: orange;" style="width:100%;height:100%;display:flex;flex-direction:column;gap:16px;">
-                <div id="results-charts-container" class="field-chart-container">
-                    <p>workflows results go here...</p></div> 
-            </div-->
-
-        <!--/div -->
-
-
-
- 
-    <!--script>
-        document.querySelector('.field-tab').addEventListener('click', (e) => {
-        alert('clicked', e.target.id);
-        document.querySelectorAll('.js-plotly-plot').forEach(plot => {
-            Plotly.Plots.resize(plot);
-        });
-        });
-    </script-->
-
-        <!--    
-        <div id="field-charts-container" class="field-chart-container" xstyle="background-color: grey; min-height:99vh; max-height:99vh; height: 99vh">
-        <p>Field charts go here...</p></div>
-        <div id="sector-charts-container" class="field-chart-container" xstyle="background-color: grey; min-height:99vh; max-height:99vh; height: 99vh">
-        <p>Sector charts go here...</p></div>
-        <div id="wells-charts-container" class="field-chart-container" xstyle="background-color: grey; min-height:99vh; max-height:99vh; height: 99vh">
-        <p>Wells charts go here...</p></div>        
-        <div id="workflows-charts-container" class="field-chart-container">
-            <p>workflows go here...</p></div>        
-    
-            <div id="results-charts-container" class="field-chart-container">
-                <p>workflows results go here...</p>
-            </div>   
-        -->    
-            
-
-        <!-- script>
-            let items = document.querySelectorAll('.field-tab');     
-            items.forEach((item) => {
-                item.addEventListener('click', function(){                  
-                    console.log()
-                    let atabs = document.querySelectorAll('.field-chart-container'); 
-                    let tab_id = this.id.split('-')[0]+'-charts-container';
-                    atabs.forEach((aatab) => {
-                        console.log('aatab id', aatab.parentElement.id)
-                        if( aatab.id!=tab_id)
-                            {aatab.parentElement.style.display = 'none';
-                            
-                            }
-                        else {aatab.parentElement.style.display = 'block'; console.log('showing ', aatab)} 
-                    });
-                });
-            }); 
-        </script -->
 
 
     <div id='side-bar-top' class="h50  p-3">
@@ -977,44 +828,6 @@
     }
  
 
-    let resizePending = false;
-    window.addEventListener('resize', () => {resizePending = true;});
-    layout.addEventListener('pane-resized', () => {resizePending = true;});
-    window.addEventListener('mouseup', () => { 
-        
-        return;
-        //console.log('mouseup...', resizePending);
-        if(resizePending == true){
-        
-            let containers = document.querySelectorAll('.field-chart-container');
-            containers.forEach((container) => {
-
-                console.log('container:', container.offsetWidth, container.offsetHeight);
-                let parent = container.parentElement;
-                console.log('parent container:', parent.id,parent.offsetWidth, parent.offsetHeight);
-                
-
-                let plots = container.querySelectorAll('.js-plotly-plot');
-                if(plots != null){
-                    
-                    for(let plt of plots){
-                    try{
-                    const layout = plt.layout;
-                    console.log('layout', layout);
-                    layout['width'] = parent.offsetWidth;
-                    layout['autosize'] = true;
-                    Plotly.Plots.resize(plt);
-                    }catch(e){
-                        console.log('Error resizing plot:', e);
-                    }}
-
-                }
-            }); 
-
-            resizePending = false;
-        }
-    });
-  
 
 </script>
    
@@ -1032,32 +845,18 @@
         }
     }
 
-    function load_and_display_study(study_name){
-
-        console.log('loading and displaying a study named ', study_name);
-        toggleLoading(true);
-        setTimeout(()=>{
-            toggleLoading(false);
-        }, 2000);
-        
-
-    }
 
     async function get_charts_data(read_data){
     /*
     Get the hard-coded charts to show by default
     */
-
-
         try{
             toggleLoading(true);
 
             resp = await get_server('get_default_charts','POST', JSON.stringify(read_data));
 
             let data = resp.data;
-            console.log('get_default_charts returned',data);
 
-            //let locs_figure = data['locations'];
             populate_locations_plot( data );
             all_well_names_visible = data['all_names'];
 
@@ -1066,21 +865,25 @@
                 document.getElementById('chart-2'),
                 document.getElementById('chart-3'),
                 document.getElementById('chart-4'),
-                document.getElementById('chart-5'),
+                document.getElementById('sector-plot-wells'),
 
-                document.getElementById('chart-6'),
-                document.getElementById('chart-7')
+                document.getElementById('workflows-charts-container'),
+                document.getElementById('results-charts-container')
                 ];
 
-            
+            //clean all the divs 
+            chartDivs.forEach((div) => {div.innerHTML = '';});
+       
             //#first tab of charts 
             let chart_keys = ['fractions','historical_production', 'activity'];
             Plotly.newPlot(chartDivs[0], data['fractions']['data'], data['fractions']['layout'], {responsive: true}).then ((p)=>{});  
             Plotly.newPlot(chartDivs[1], data['historical_production']['data'], data['historical_production']['layout'], {responsive: true}).then ((p)=>{});  
             Plotly.newPlot(chartDivs[2], data['activity']['data'], data['activity']['layout'], {responsive: true}).then ((p)=>{});  
 
+            //second one 
             Plotly.newPlot(chartDivs[3], data['sector_volumes']['data'], data['sector_volumes']['layout'], {responsive: true}).then ((p)=>{});
             
+            //third one
             const layout = {
                 grid: {rows: 3, columns: 1, pattern: 'independent'},
                 title: { text:' Cummulated volumes vs water produced'},
@@ -1095,52 +898,31 @@
                 yaxis2: { title:{text: 'Oil production'}},
                 yaxis3: { title:{text: 'Liquid production'}},
             };
-            Plotly.newPlot(chartDivs[4], data['wells']['data'], layout, {responsive: true}).then ((p)=>{});  
+            let p = Plotly.newPlot(chartDivs[4], data['wells']['data'], layout, {responsive: true});  
+            
+            //now we want inter-chart communication
+            p.then ((p)=>{
+                p.on('plotly_selected', function(eventData) {
+                    if (eventData) {
+                        let local_selected_well_names = [];
+                        for( let point of eventData.points){
+                            let index = point.pointIndex;
+                            let well_name = point.data.text[index];
+                            local_selected_well_names.push(well_name);
+                        }
+                        set_selected_well_names_in_scatter_chart( local_selected_well_names );
+                    }
+                    else{
+                        console.log('No data selected');
+                        set_selected_well_names_in_scatter_chart( undefined );
+                    }
+                });
+            }); 
 
-            let component = new CRMSetupElement();//crm-setup-element
+            /*let component = new CRMSetupElement();//crm-setup-element
             chartDivs[5].innerHTML = '';
-            chartDivs[5].appendChild(component);
-
-            console.log('here');
-            /*
-                   fractions = fractions_fig, 
-                   historical_production = producers_fig, 
-                   activity = active_fig,
-
-                   #second tab
-                   sector_volumes = sector_volumes_fig, 
-                   
-                   #third tab
-                   wells = wells_chart,
-                     
-                   #locations 
-                   locations = locs_fig,
-                   all_names = all_names)
-                   */
-
-
-            /*
-            const resp1 = await get_server('get_locations_chart','POST', JSON.stringify(read_data))
-            populate_locations_plot(resp1.data);
-            all_well_names_visible = resp1.data['all_names'];
-            
-            const resp2 = await get_server('get_field_charts','POST', JSON.stringify(read_data))
-            populate_field_plots(resp2.data);
-                
-            const resp3 = await get_server('get_field_wells','POST', JSON.stringify(read_data))
-            populate_field_wells_snapshot(resp3.data);
-            
-            const resp4 = await get_server('get_field_wells','POST', JSON.stringify(read_data))
-            */
-
+            chartDivs[5].appendChild(component);*/
             toggleLoading(false);
-            
-
-            //const resp5= await  get_server('get_wells_data','POST', JSON.stringify(read_data))
-            //all_well_distances = resp5.all_well_distances;
-
-            
-            
         }
 
 
@@ -1272,6 +1054,12 @@
                 Id('workflows-charts-container').classList.remove('hidden');
                 Id('workflows-charts-container').appendChild(component);
                 Id('workflows-tab-button').click();
+                
+                
+                //let tab_component = new CRMSetupElement();//crm-setup-element
+                //chartDivs[5].innerHTML = '';
+                //chartDivs[5].appendChild(component);*/
+
 
                 component.setData( resp['distances'], rates )
 
@@ -1296,20 +1084,19 @@
   
                     let sim_params  = prepare_crm_simulation_export( crm_control_setup, project_setup_details);
 
-
-                    console.log('Simulation parameters:', sim_params);
-
-
-
                     //send the entire thing to the backend
                     toggleLoading(true);
                     get_server('start_liquid_history_match_simulation','POST', JSON.stringify(sim_params))
                     .then( (resp) =>{
   
-                        console.log('start_liquid_history_match_simulation returned', resp);
+                        let list_studies = resp.data['studies'];
+                        console.log( list_studies )
+                        console.log( Id('study-selector') )
+                        Id('study-selector').setData( list_studies );
+                        //console.log('start_liquid_history_match_simulation returned', resp);
                       
                             let message = 'Simulation exported/launched successfully<br>'; 
-
+  
                             Swal.fire({
                                 title: "Simulation started",
                                 html: message, 
@@ -1319,9 +1106,15 @@
                         toggleLoading(false);
 
                     })  
+                    .then (()=>{
+
+                        get_server('run_history_match_simulation','POST', JSON.stringify(sim_params))
+                        .then (()=>{Swal.fire({title: "Simulation finished",html: message, icon: "success"});})
+
+                    })
                     .catch ((error) =>{
                         console.log(error);
-                        alert('Error getting data for locations');
+                        //alert('Error getting data for locations');
                         toggleLoading(false);
                     }); 
 
@@ -1353,14 +1146,14 @@
     });
 
     /* Trigerred when the user clicks on a study in the list.*/
-    Id('study-selector-button').addEventListener('click',(evt)=>{
+    /*Id('study-selector-button').addEventListener('click',(evt)=>{
 
         //the study name is fetched from the list 
         let study_name = Id('study-selector').selected()[0]['cell_text'];
         console.log('**Study name clicked:', study_name);
 
         load_and_display_study(study_name);
-    });
+    });*/
 
     /*When the user selects a project in the projects list page*/
     Id('project-list-component').addEventListener('clicked', event => {
@@ -1755,26 +1548,56 @@
     });
     
 
+    function get_liquid_history_match_tau_lambda_results(study_name){
+        
+        
+        toggleLoading(true);
+         
+        //need the project name, fetch it from the ui with other stuff we dont need 
+        let read_data = get_project_data_selection();
+        read_data['study_name'] = study_name; 
+        let iurl = '/fetch_liquid_history_match_tau_lambda_results';
+        get_server( iurl,'POST', JSON.stringify(read_data))
+        .then( (resp)=>{
+
+            let data = resp.data;
+            console.log('data received from server', data );
+
+            let component = new CRMResultsComponent(); 
+            Id('results-charts-container').innerHTML = '';
+            Id('results-charts-container').classList.remove('hidden');
+            Id('results-charts-container').appendChild(component);
+
+
+            component.setData(study_name,data);
+            component.addEventListener('close-clicked', ()=>{
+                Id('results-charts-container').innerHTML = '';
+                Id('results-charts-container').classList.add('hidden'); 
+                Id('field-tab-button').click();
+            });
+
+            Id('results-tab-button').click();
+            toggleLoading(false);
+        })
+        .catch((error)=>{
+            console.log(error);
+            toggleLoading(false);
+        });
+    }
+
+
+
     Id('study-selector-button').addEventListener('click', (evt)=>{
 
-        toggleLoading(true);
 
-        console.log('study-selector-button clicked');
         let study_name = Id('study-selector').selected()[0]['cell_text'];
-        console.log('**Study name clicked:', study_name);
-        
-        
-                let component = new CRMResultsComponent();//crm-results-element
-                Id('results-charts-container').innerHTML = '';
-                Id('results-charts-container').classList.remove('hidden');
-                Id('results-charts-container').appendChild(component);
-                Id('results-tab-button').click();
-
-             
+        get_liquid_history_match_tau_lambda_results(study_name);
+        return 
+ 
 
 
-                /*debug*/
-                const sampleData = {
+        /*debug*/
+        const sampleData = {
   case_name: "TestModel1",
   data: [
     { INJECTOR: "I01", PRODUCER: "P1", ALLOCATION: 0.992909593, TAU: 0.349081711, TAUP: 49.99999996, PRODUCTIVITY: 0, Lo: 0, MODEL: "CRMP", R2: 0.991063231, SUBZONE: "SUBZONEUNIQUE", SIMULATION: "TestModel1" },
@@ -1807,6 +1630,7 @@
                     Id('field-tab-button').click();
                 });
 
+                toggleLoading(false);
 
     });
 
@@ -1902,7 +1726,7 @@
 
     /*chart-exchange*/
     window.addEventListener('wells-names-selected-in-scatter-chart', (evt)=>{
-        console.log('MAIN app: wells-names-selected-in-scatter-chart', evt.detail);
+
         let names = evt.detail.names;
         let key = 'Highlighted';
         
@@ -1941,8 +1765,6 @@
             let points = [];
 
             for(let trace of data){
-                
-                console.log('checking one trace named ', trace.name);
                 traceIndex = traceIndex + 1;
                 let text = trace.text;
                 if(text == undefined) continue;
@@ -1951,7 +1773,7 @@
                     
                     let index = text.indexOf(name);
                     if( index !=-1 ) {
-                        console.log('found well name', name, 'in trace', traceIndex, ' point index', index, 'axes',trace.xaxis,trace.yaxis  ); 
+                        //console.log('found well name', name, 'in trace', traceIndex, ' point index', index, 'axes',trace.xaxis,trace.yaxis  ); 
                         points.push( {x:trace.x[index], y:trace.y[index],text:trace.text[index],xaxis:trace.xaxis,yaxis:trace.yaxis} )
                         markersAdded+=1;
                     }
@@ -2000,14 +1822,9 @@
             return Plotly.addTraces(plot, traces );//, plot.layout, plot.config);
         }
 
-
-        console.log('**MAIN app: wells-names-selected-in-locs-chart', evt.detail);
-        
         //can i highlight the wells in the wells selected in the charts in the locs chart? 
         let plot = Id('sector-plot-wells');
-
         if(plot!=undefined){
-        
             let data = plot.data;
             let names = evt.detail.names;
             deleteTracesInLegendGroup(plot, 'Selected loc.'). then( ()=>{
@@ -2026,9 +1843,6 @@
         let read_data = get_project_data_selection();
         read_data['well_name'] = evt.detail.name;
    
-
-           
-
         toggleLoading(true);
         get_server('tell_me_everything_about_this_well','POST',JSON.stringify(read_data))
         .then( (resp) =>{
@@ -2089,6 +1903,34 @@
 
     });
 
+
+    /*pane-resized*/
+    layout.addEventListener('pane-resized', ()=>{
+        let plots = layout.querySelectorAll('.js-plotly-plot');
+                if(plots != null){
+                    
+                    for(let plt of plots){
+                        if(plt.offsetParent !== null)
+                        Plotly.Plots.resize(plt);
+                    }
+                }
+    })          
+
+
+    // this works !!
+    // Plotly chart initialization
+    layout.addEventListener('pane-resized', (evt)=>{
+    if( evt.detail.id.includes('middle') )
+    {
+        let locs_container = layout.get_pane( 'middle' );// Id('locs-chart');
+        relayout( locs_container );
+
+    }}) ;
+    
+    window.addEventListener('resize', function () {
+        let locs_container = layout.get_pane( 'middle' );// Id('locs-chart');
+        relayout( locs_container );
+    });
 
 </script>
 

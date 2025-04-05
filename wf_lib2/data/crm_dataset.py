@@ -3,6 +3,7 @@ import math
 import pandas as pd, numpy as np, json  
 from scipy.spatial import cKDTree
 
+
 from wf_lib2.crm_definitions import * 
 from wf_lib2.data.crm_pattern import CRMPattern
 from wf_lib2.data.crm_data_utils   import * 
@@ -487,6 +488,7 @@ class CRMDataset:
           
         return None 
     
+    
     def get_producer_injectors_distances_flat( self, max_distance:float = 2500.00 ) -> list:
     
         df = self.locations_df
@@ -539,6 +541,19 @@ class CRMDataset:
         
         return flats
         '''
+        
+    
+    
+    def get_distances_flat( self ):
+    
+        df = self['distance']
+        if df is None: return None
+           
+        return [ {"producer": producer, "injector": injector, "distance": df.loc[producer, injector]}
+        for producer in df.index
+        for injector in df.columns
+        ]
+              
               
     def get_all_distances_flat(self, max_distance:float = 2500.00 ) -> list:
         
@@ -643,7 +658,9 @@ class CRMDataset:
                 
         return result# to_bidirectional(result)
     
-                
+                 
+              
+              
               
     def get_distances( self )->None:
         '''

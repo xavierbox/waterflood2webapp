@@ -1,0 +1,136 @@
+{
+  "project_name": "Demo1",
+  "filters": {
+    "sector": [],
+    "subzone": "LW",
+    "date": [
+      "2020-10-05",
+      "2021-11-25"
+    ]
+  },
+  "managed_folder_name": "azFolder",
+  "app_name": "WF",
+  "data_folder_name": "data",
+  "projects_folder_name": "projects",
+  "studies_folder_name": "studies",
+  "dt": 1,
+  "max_running_time": 1000,
+  "primary": true,
+  "regularization": 0,
+  "export_only": true,
+  "distance": 675,
+  "explicit": {
+    "subzone": {
+      "LW": {
+        "BG-0234P": [
+          "BG-1768I"
+        ],
+        "BG-0873ST1P": [
+          "BG-1581I"
+        ],
+        "BG-1054P": [
+          "BG-1206I",
+          "BG-1204I"
+        ],
+        "BG-1447P": [
+          "BG-0711I"
+        ],
+        "BG-1490P": [
+          "BG-1491I"
+        ],
+        "BG-1492P": [
+          "BG-1506I"
+        ],
+        "BG-1494P": [
+          "BG-1506I",
+          "BG-1298I"
+        ],
+        "BG-1495P": [
+          "BG-1491I"
+        ],
+        "BG-1498ST1P": [
+          "BG-1581I",
+          "BG-1724I"
+        ],
+        "BG-1502P": [
+          "BG-1506I"
+        ],
+        "BG-1665P": [
+          "BG-1666I",
+          "BG-1521I"
+        ],
+        "BG-1679P": [
+          "BG-1521I",
+          "MG-0402I"
+        ],
+        "BG-1723P": [
+          "BG-0722I",
+          "BG-0756I"
+        ],
+        "BG-1728P": [
+          "BG-1588I",
+          "BG-1692I"
+        ],
+        "MG-0401P": [
+          "BG-1521I",
+          "MG-0402I"
+        ]
+      }
+    }
+  },
+  "simulation": {
+    "name": "TestModel3",
+    "type": "crmp_constrained",
+    "balance": {
+      "type": "quick",
+      "max_iter": 100,
+      "tolerance": 0.01
+    },
+    "dates": [
+      "2021-06-12",
+      "2021-10-14"
+    ],
+    "parameters": {
+      "tau": {
+        "bounds": [
+          0.5,
+          50
+        ],
+        "init_value": 1
+      },
+      "taup": {
+        "bounds": [
+          0.5,
+          50
+        ],
+        "init_value": 1
+      },
+      "lambda": {
+        "bounds": [
+          0,
+          1
+        ],
+        "init_value": 0.1
+      },
+      "productivity_index": {
+        "bounds": [
+          0,
+          1
+        ],
+        "init_value": 0
+      },
+      "qo_lambda": {
+        "bounds": [
+          0,
+          1
+        ],
+        "init_value": 1
+      }
+    },
+    "optimizer": {
+      "maxiter": 1234,
+      "name": "SLSQP",
+      "tolerance": 0.001
+    }
+  }
+}

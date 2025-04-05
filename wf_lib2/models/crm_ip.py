@@ -2,7 +2,7 @@ import numpy as np, pandas as pd, math, multiprocessing as mp
 from datetime import date, datetime, timedelta
 from joblib   import Parallel, delayed
 
-from sklearn.metrics      import mean_squared_error,r2_score,root_mean_squared_error
+from sklearn.metrics      import r2_score,root_mean_squared_error
 
 
 from sklearn.linear_model import Ridge, Lasso, LinearRegression
@@ -1553,9 +1553,9 @@ class CRMIDSingleConstrained(CRMIPSingle):
         pred_series = lambdas * self._get_P_matrix( invI, invP, invDP, tau , taup)
         yhat = pred_series.sum( axis = 1 ).reshape( invP.shape )
         
-        scaled_lambdas = [x*100.0 for x in lambdas ]
+        #scaled_lambdas = [x*100.0 for x in lambdas ]
         #error_metric =  mean_squared_error(invP, yhat, squared=False) *( 1.0 + state['regularization'] * (np.abs(scaled_lambdas[0:num_injectors]).sum()) )#dot( lambdas, lambdas ) 
-        error_metric =  root_mean_squared_error(invP, yhat)*( 1.0 + state['regularization'] * (np.abs(scaled_lambdas[0:num_injectors]).sum()) )# , squared=False) *( 1.0 + state['regularization'] * (np.abs(scaled_lambdas[0:num_injectors]).sum()) )#dot( lambdas, lambdas ) 
+        error_metric =  root_mean_squared_error(invP, yhat)#*( 1.0 + state['regularization'] * (np.abs(scaled_lambdas[0:num_injectors]).sum()) )# , squared=False) *( 1.0 + state['regularization'] * (np.abs(scaled_lambdas[0:num_injectors]).sum()) )#dot( lambdas, lambdas ) 
         
         state['rmse'] = error_metric
         state['r2'] = r2_score(invP, yhat)
@@ -1903,7 +1903,7 @@ class CRMIDConstrained(CRMIP):
                 sum_error = sum_error + rmse  
                             
             
-            options = {'maxiter': self.args['balance'].get('max_iter',100)}
+            options = {'maxiter': self.args['balance'].get('maxiter',100)}
             if 'eps' in self.args['balance']:
                 options['eps'] = self.args['balance']['eps']
             if 'ftol' in self.args['balance']:

@@ -3542,8 +3542,8 @@ Plotly.newPlot('chart-grid', data, layout, {responsive: true});
         <option value="crm_tank">CRMT</option>
         <option value="crm_p">CRMP</option>
         <option value="crmip">CRMIP</option>
-        <option value="crmp_constrained">CRMP Constrained</option>
-        <option selected value="crmid_constrained">CRMID Constrained</option>
+        <option selected value="crmp_constrained">CRMP Constrained</option>
+        <option value="crmid_constrained">CRMID Constrained</option>
         
 
     </select>
@@ -4174,7 +4174,7 @@ drawSankeyProducerWithContext(producerName) {
   <div id="history-match-chart" style="width: 100%; height: 100%;"></div>
   </div>
 
-    <button class='sim-results-component-close-button btn btn-danger'>Close </button>
+
   </div>
 
 
@@ -4234,6 +4234,9 @@ drawSankeyProducerWithContext(producerName) {
         <p>This is the content for AnotherTwo.</p>
       </div -->
     </div>
+        
+    <button class='sim-results-component-close-button btn btn-danger'>Close </button>
+
   </div>
     `;
 
@@ -4249,7 +4252,7 @@ drawSankeyProducerWithContext(producerName) {
   }
 
   //api 
-  setData({ case_name, data }) {
+  setData = ( case_name, data) => {
     
   this._crmpData = data;
   this.drawLineChart();

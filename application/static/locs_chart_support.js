@@ -85,16 +85,17 @@ function populate_locations_plot( data ){
     let locs_container = app_layout.get_pane(where);// Id('locs-chart');
 
     if(2<1){ //if(locs_chart_initialized == true){
-        let layout = locs_container.layout;
+        let key = 'locations';
+        let layout = data[key]['layout'];
         Plotly.react(locs_container, data[key]['data'], layout )//, config )
         .then((p)=>{
             locs_chart_initialized = true;
             set_selected_well_names( undefined );
-            resizeObserver.observe(locs_container);
+            //resizeObserver.observe(locs_container);
         });
     }
     else{
-        key = 'locations';
+        let key = 'locations';
         l = data[key]['layout'];
         l['height'] = locs_container.offsetHeight;
         l['autosize'] = true;
@@ -160,7 +161,7 @@ function populate_locations_plot( data ){
 
 
 
-            resizeObserver.observe(locs_container);
+            //resizeObserver.observe(locs_container);
         }); 
     
 

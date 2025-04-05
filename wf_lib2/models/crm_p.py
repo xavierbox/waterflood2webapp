@@ -180,6 +180,9 @@ class CRMPSingle( CRMSingleModel ):
 
         self.optimization_result = {} 
         data = self._data
+        
+        print( self._data )
+        
         if data is None:
             raise ValueError('[fit] Cannot fit the data because fit_preprocess failed or was never called')
         
@@ -1218,7 +1221,7 @@ class CRMP(CRMModel):
                 sub_model._update_from_optimization()
 
                     
-            print('balancer loss ', error )
+            #print('balancer loss ', error )
             return error 
 
         
@@ -1443,7 +1446,7 @@ class CRMP(CRMModel):
         
         params_ = self._get_submodel().get_default_params()
         params_['serial'] = True 
-        params_['balance'] = { 'type':'full', 'max_iter':1000, 'tolerance': 0.01 }
+        params_['balance'] = { 'type':'quick', 'maxiter':100, 'tolerance': 0.001 }
         return params_
  
 
@@ -1600,7 +1603,6 @@ class CRMPSingleConstrained( CRMPSingle ):
             'max_running_time': 1000.0,
             'optimizer': {'maxiter': 1000,'name': 'SLSQP', 'tolerance': 1e-04},
             'pre_optimizer': {'name': 'Powell'},
-            'integrated': False,
             'primary': True 
         }
         
@@ -1630,8 +1632,7 @@ class CRMPSingleConstrained( CRMPSingle ):
         
         invP = self._state['invP']
         yhat = (lambdas * pred_series).sum(axis=1).reshape( invP.shape )     
-        #error_metric = extra_loss * mean_squared_error(invP, yhat, squared=False)# if self._state['integrated']==False else integrated_error(invP, yhat, squared=False)
-        error_metric = extra_loss * root_mean_squared_error(invP, yhat, squared=False)# if self._state['integrated']==False else integrated_error(invP, yhat, squared=False)
+        error_metric = extra_loss * root_mean_squared_error(invP, yhat)# if self._state['integrated']==False else integrated_error(invP, yhat, squared=False)
        
         state['rmse'] = error_metric
         state['r2'] = r2_score(invP, yhat)

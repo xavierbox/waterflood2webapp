@@ -1,0 +1,93 @@
+{
+  "project_name": "Demo1",
+  "filters": {
+    "sector": [],
+    "subzone": "RW",
+    "date": [
+      "2020-10-05",
+      "2021-11-25"
+    ]
+  },
+  "managed_folder_name": "azFolder",
+  "app_name": "WF",
+  "data_folder_name": "data",
+  "projects_folder_name": "projects",
+  "studies_folder_name": "studies",
+  "dt": 1,
+  "max_running_time": 1000,
+  "primary": true,
+  "regularization": 0,
+  "export_only": true,
+  "distance": 891,
+  "explicit": {
+    "subzone": {
+      "RW": {
+        "BG-1236P": [
+          "BG-1429I"
+        ],
+        "BG-1254P": [
+          "BG-1263I"
+        ],
+        "BG-1654P": [
+          "BG-1263I",
+          "BG-1264I"
+        ]
+      }
+    }
+  },
+  "simulation": {
+    "name": "TestModel2",
+    "type": "crmp_constrained",
+    "balance": {
+      "type": "quick",
+      "max_iter": 100,
+      "tolerance": 0.01
+    },
+    "dates": [
+      "2021-06-12",
+      "2021-10-14"
+    ],
+    "parameters": {
+      "tau": {
+        "bounds": [
+          0.5,
+          50
+        ],
+        "init_value": 1
+      },
+      "taup": {
+        "bounds": [
+          0.5,
+          50
+        ],
+        "init_value": 1
+      },
+      "lambda": {
+        "bounds": [
+          0,
+          1
+        ],
+        "init_value": 0.1
+      },
+      "productivity_index": {
+        "bounds": [
+          0,
+          1
+        ],
+        "init_value": 0
+      },
+      "qo_lambda": {
+        "bounds": [
+          0,
+          1
+        ],
+        "init_value": 1
+      }
+    },
+    "optimizer": {
+      "maxiter": 1234,
+      "name": "SLSQP",
+      "tolerance": 0.001
+    }
+  }
+}

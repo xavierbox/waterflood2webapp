@@ -57,8 +57,10 @@
     --separator-hover-color: var(--separator-hover-color-blue);
 
   }
- 
-
+  
+/*Example of adding a dummy image to resolve the missing image error
+  map.addImage("-15", { width: 1, height: 1, data: new Uint8Array([0, 0, 0, 0]) }); // Transparent 1x1 image
+*/
 .navbar{
     
     height:  var( --navbar-height) !important;
@@ -839,21 +841,25 @@ float:right;
   
     .sim-results-component-button-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
-      gap: 8px;
+      grid-template-columns: repeat(auto-fill, minmax(121px, 1fr));
+      gap: 5px;
       margin-top: 1px;
     }
     .fit-button {
       height: 30px;
-      width: 70px;
-      min-width: 70px;
-      max-width: 70px;
+      width: 120px;
+      min-width: 120px;
+      max-width: 120px;
       
       border: none;
       color: white;
       xxfont-weight: bold;
       border-radius: 4px;
       cursor: default;
+    }
+    .fit-button:hover {
+      border: 2px solid var(--hover-color);
+      font-weight: bold;
     }
      
       

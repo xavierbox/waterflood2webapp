@@ -3,11 +3,10 @@ import numpy as np, pandas as pd, math, multiprocessing as mp
 from datetime import date, datetime, timedelta
 from joblib   import Parallel, delayed
 
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import root_mean_squared_error # mean_squared_error
 from sklearn.linear_model import LinearRegression
 
-from wf_lib2.models.crm_p import CRMPSingle, CRMP , integrated_error
-from wf_lib2.models.crm_model import integrated_error
+from wf_lib2.models.crm_p import CRMPSingle, CRMP 
 from wf_lib2.data.crm_pattern   import CRMPattern
 from wf_lib2.crm_helper      import CRMHelper 
 from wf_lib2.crm_definitions     import *
@@ -41,6 +40,9 @@ class CRMTankSingle( CRMPSingle ):
 
         for key in pattern.keys():
 
+            if pattern[key] is None:
+                continue 
+            
             column_meaning = name_to_meaning( key, RATE_KEYWORDS )
             is_pressure_column = name_to_meaning( key,  [PRODUCER_PRESSURE_KEYS])
             

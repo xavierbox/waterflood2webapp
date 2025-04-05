@@ -15,7 +15,9 @@ class DataikuRemoteFolderConnector(DataikuStorageAPI):
     def __init__(self, config, kwargs = None  ):
         '''
         example: 
-
+            
+ 
+           
            config = 
             {
             'managed_folder_name':'Data',

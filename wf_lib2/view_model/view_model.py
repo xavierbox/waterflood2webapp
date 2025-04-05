@@ -385,9 +385,10 @@ def get_dataset_locations_plot( crm_dataset, filters: dict = None ):
   
     layout = {
             'hoverlabel': {
+                'bgcolor':'white',
                 'font': {
-                    'size': 16,      
-                    'color': 'grey'
+                    'size': 20,      
+                    'color': 'black'
                 }},
                 
             #'fitbounds':"locations",  
@@ -395,7 +396,7 @@ def get_dataset_locations_plot( crm_dataset, filters: dict = None ):
             'autosize':True,
             'textposition':  'top center',
             #'title': {'text':'Field locations'},
-            'margin': { 'r': 10, 't': 10, 'b': 10, 'l': 10 }
+            #'margin': { 'r': 10, 't': 10, 'b': 10, 'l': 10 }
         }  
       
     if LAT_COL in f:
